@@ -1,28 +1,43 @@
-import 'package:corevia_mobile/screens/home_screen.dart';
+import 'package:corevia_mobile/routing/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 
 class NavigationMenu extends StatelessWidget {
   final int currentIndex;
+  final ValueChanged<int>? onItemSelected;
 
-  const NavigationMenu({super.key, required this.currentIndex,});
+  const NavigationMenu({
+    super.key, 
+    required this.currentIndex,
+    this.onItemSelected,
+  });
 
   void _onItemTapped(BuildContext context, int index) {
-    if (index == currentIndex) return; // Évite de recharger la même page
-
-    Widget page;
+    if (index == currentIndex) return; // Avoid reloading the same page
+    
+    // If there's a custom onItemSelected callback, use it
+    if (onItemSelected != null) {
+      onItemSelected!(index);
+      return;
+    }
+    
+    // Otherwise use default navigation
+    String route;
     switch (index) {
       case 0:
-        page = const HomeScreen();
+        route = AppRouter.home;
+        break;
+      case 1:
+        route = AppRouter.scanner;
+        break;
+      case 2:
+        route = AppRouter.search;
         break;
       default:
-        page = const HomeScreen();
+        route = AppRouter.home;
     }
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => page),
-    );
+    
+    Navigator.pushReplacementNamed(context, route);
   }
 
   @override
@@ -30,12 +45,19 @@ class NavigationMenu extends StatelessWidget {
     return NavigationBar(
       selectedIndex: currentIndex,
       onDestinationSelected: (index) => _onItemTapped(context, index),
-      destinations: [
-        const NavigationDestination(icon: Icon(Iconsax.home), label: 'Home'),
-        const NavigationDestination(
-            icon: Icon(Iconsax.scanner), label: 'Scanner'),
-        const NavigationDestination(
-            icon: Icon(Iconsax.search_normal), label: 'Search'),
+      destinations: const [
+        NavigationDestination(
+          icon: Icon(Iconsax.home), 
+          label: 'Home',
+        ),
+        NavigationDestination(
+          icon: Icon(Iconsax.scanner), 
+          label: 'Scanner',
+        ),
+        NavigationDestination(
+          icon: Icon(Iconsax.search_normal), 
+          label: 'Search',
+        ),
       ],
     );
   }

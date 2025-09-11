@@ -1,8 +1,23 @@
-import 'package:corevia_mobile/routing/app_router.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'core/routes/app_router.dart';
+import 'features/home/presentation/screens/home_screen.dart';
+import 'shared/theme/app_theme.dart';
+import 'features/home/presentation/providers/home_provider.dart';
+import 'features/home/data/repositories/home_repository_impl.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (context) => HomeProvider(HomeRepositoryImpl()),
+        ),
+        // Ajoutez d'autres providers ici au besoin
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -10,14 +25,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      initialRoute: '/home',
-      onGenerateRoute: AppRouter.generateRoute,
+      title: 'CoreVia Mobile',
+      theme: AppTheme.lightTheme,
+      routerConfig: router,
     );
   }
 }
