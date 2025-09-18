@@ -1,64 +1,67 @@
-import 'package:corevia_mobile/routing/app_router.dart';
 import 'package:flutter/material.dart';
-import 'package:iconsax/iconsax.dart';
+import 'package:go_router/go_router.dart';
 
-class NavigationMenu extends StatelessWidget {
-  final int currentIndex;
-  final ValueChanged<int>? onItemSelected;
+class BottomNavBar extends StatelessWidget {
+  final String currentLocation;
 
-  const NavigationMenu({
-    super.key, 
-    required this.currentIndex,
-    this.onItemSelected,
+  const BottomNavBar({
+    super.key,
+    required this.currentLocation,
   });
-
-  void _onItemTapped(BuildContext context, int index) {
-    if (index == currentIndex) return; // Avoid reloading the same page
-    
-    // If there's a custom onItemSelected callback, use it
-    if (onItemSelected != null) {
-      onItemSelected!(index);
-      return;
-    }
-    
-    // Otherwise use default navigation
-    String route;
-    switch (index) {
-      case 0:
-        route = AppRouter.home;
-        break;
-      case 1:
-        route = AppRouter.scanner;
-        break;
-      case 2:
-        route = AppRouter.search;
-        break;
-      default:
-        route = AppRouter.home;
-    }
-    
-    Navigator.pushReplacementNamed(context, route);
-  }
 
   @override
   Widget build(BuildContext context) {
-    return NavigationBar(
-      selectedIndex: currentIndex,
-      onDestinationSelected: (index) => _onItemTapped(context, index),
-      destinations: const [
-        NavigationDestination(
-          icon: Icon(Iconsax.home), 
-          label: 'Home',
+    final items = [
+      {'icon': Icons.home_filled, 'route': '/home'},
+      {'icon': Icons.bar_chart, 'route': '/stats'},
+      {'icon': Icons.chat_bubble_outline, 'route': '/chat'},
+      {'icon': Icons.calendar_today, 'route': '/calendar'},
+      {'icon': Icons.person_outline, 'route': '/profile'},
+    ];
+
+    return Container(
+      height: 90,
+      decoration: const BoxDecoration(
+        color: Color(0xFF1D1D1F),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(25),
+          topRight: Radius.circular(25),
         ),
-        NavigationDestination(
-          icon: Icon(Iconsax.scanner), 
-          label: 'Scanner',
+      ),
+      child: SafeArea(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: items.map((item) {
+            final isActive = currentLocation.startsWith(item['route'] as String);
+            return GestureDetector(
+              onTap: () => context.go(item['route'] as String),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      item['icon'] as IconData,
+                      color: isActive ? const Color(0xFF34C759) : const Color(0xFF8E8E93),
+                      size: 24,
+                    ),
+                    if (isActive)
+                      Container(
+                        margin: const EdgeInsets.only(top: 4),
+                        width: 4,
+                        height: 4,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF34C759),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
         ),
-        NavigationDestination(
-          icon: Icon(Iconsax.search_normal), 
-          label: 'Search',
-        ),
-      ],
+      ),
     );
   }
 }

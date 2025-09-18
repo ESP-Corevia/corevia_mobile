@@ -1,16 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/home/presentation/screens/home_screen.dart';
+// Les écrans
+//import '../../features/home/presentation/screens/home_screen.dart';
+import '../../screens/home_screen.dart';
+
+//  la navbar
+import '../../widgets/navigation_bar.dart';
 
 final GoRouter router = GoRouter(
-  initialLocation: '/',
+  initialLocation: '/home',
   routes: [
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const HomeScreen(),
+    ShellRoute(
+      builder: (context, state, child) {
+        return Scaffold(
+          body: child,
+          bottomNavigationBar: BottomNavBar(
+            currentLocation: state.uri.toString(),
+          ),
+        );
+      },
+      routes: [
+        GoRoute(
+          path: '/home',
+          builder: (context, state) => const HomeScreen(),
+        ),
+      ],
     ),
-    // Ajoutez ici vos autres routes
   ],
   errorBuilder: (context, state) => Scaffold(
     body: Center(
