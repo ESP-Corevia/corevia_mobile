@@ -1,0 +1,14 @@
+name: 🧾 Commit Message Lint
+
+on: [pull_request]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  CommitLint:
+    name: ✅ Lint Commit Messages
+    uses: ESP-Corevia/.github/.github/workflows/commit-lint.yml@master
+    permissions:
+      contents: read
+      pull-requests: read
