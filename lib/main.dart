@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/routes/app_router.dart';
-import 'features/home/presentation/screens/home_screen.dart';
 import 'shared/theme/app_theme.dart';
 import 'features/home/presentation/providers/home_provider.dart';
 import 'features/home/data/repositories/home_repository_impl.dart';

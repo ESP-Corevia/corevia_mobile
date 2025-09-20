@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:iconsax/iconsax.dart';
 
 class QuickActionItem {
   final IconData icon;
@@ -66,7 +65,7 @@ class _QuickActionItem extends StatelessWidget {
         width: (MediaQuery.of(context).size.width - 64) / 3,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
