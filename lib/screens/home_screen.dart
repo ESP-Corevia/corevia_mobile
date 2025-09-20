@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart' hide NavigationBar;
-import 'package:corevia_mobile/widgets/navigation_bar.dart';
 import 'package:corevia_mobile/features/home/presentation/widgets/home_header.dart';
 import 'package:corevia_mobile/features/home/presentation/widgets/quick_actions.dart';
 import 'package:corevia_mobile/features/home/presentation/widgets/recent_activity.dart';
 import 'package:iconsax/iconsax.dart';
 
-void main() {
-  runApp(MedicalApp());
-}
-
 class MedicalApp extends StatelessWidget {
+  const MedicalApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -125,7 +122,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
@@ -496,57 +492,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return Container(
-      height: 90,
-      decoration: BoxDecoration(
-        color: Color(0xFF1D1D1F),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(25),
-          topRight: Radius.circular(25),
-        ),
-      ),
-      child: SafeArea(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildNavIcon(Icons.home_filled, true),
-            _buildNavIcon(Icons.bar_chart, false),
-            _buildNavIcon(Icons.chat_bubble_outline, false),
-            _buildNavIcon(Icons.calendar_today, false),
-            _buildNavIcon(Icons.person_outline, false),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavIcon(IconData icon, bool isActive) {
-    return Container(
-      padding: EdgeInsets.all(8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: isActive ? Color(0xFF34C759) : Color(0xFF8E8E93),
-            size: 24,
-          ),
-          if (isActive)
-            Container(
-              margin: EdgeInsets.only(top: 4),
-              width: 4,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Color(0xFF34C759),
-                shape: BoxShape.circle,
-              ),
-            ),
-        ],
-      ),
     );
   }
 }
