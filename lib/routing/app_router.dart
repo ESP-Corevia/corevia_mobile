@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:corevia_mobile/screens/home_screen.dart';
+import 'package:corevia_mobile/features/home/presentation/screens/home_screen.dart';
 
 enum AppRoute { home, scanner, search }
 

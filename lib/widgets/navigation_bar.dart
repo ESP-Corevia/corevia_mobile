@@ -1,64 +1,89 @@
-import 'package:corevia_mobile/routing/app_router.dart';
 import 'package:flutter/material.dart';
-import 'package:iconsax/iconsax.dart';
+import 'package:go_router/go_router.dart';
 
-class NavigationMenu extends StatelessWidget {
-  final int currentIndex;
-  final ValueChanged<int>? onItemSelected;
+class BottomNavBar extends StatelessWidget {
+  final String currentLocation;
 
-  const NavigationMenu({
-    super.key, 
-    required this.currentIndex,
-    this.onItemSelected,
-  });
-
-  void _onItemTapped(BuildContext context, int index) {
-    if (index == currentIndex) return; // Avoid reloading the same page
-    
-    // If there's a custom onItemSelected callback, use it
-    if (onItemSelected != null) {
-      onItemSelected!(index);
-      return;
-    }
-    
-    // Otherwise use default navigation
-    String route;
-    switch (index) {
-      case 0:
-        route = AppRouter.home;
-        break;
-      case 1:
-        route = AppRouter.scanner;
-        break;
-      case 2:
-        route = AppRouter.search;
-        break;
-      default:
-        route = AppRouter.home;
-    }
-    
-    Navigator.pushReplacementNamed(context, route);
-  }
+  const BottomNavBar({super.key, required this.currentLocation});
 
   @override
   Widget build(BuildContext context) {
-    return NavigationBar(
-      selectedIndex: currentIndex,
-      onDestinationSelected: (index) => _onItemTapped(context, index),
-      destinations: const [
-        NavigationDestination(
-          icon: Icon(Iconsax.home), 
-          label: 'Home',
+    final items = [
+      {'icon': Icons.home_filled, 'route': '/home'},
+      {'icon': Icons.bar_chart, 'route': '/stats'},
+      {'icon': Icons.chat_bubble_outline, 'route': '/chat'},
+      {'icon': Icons.calendar_today, 'route': '/calendar'},
+      {'icon': Icons.person_outline, 'route': '/profile'},
+    ];
+
+    final bottomInset = MediaQuery.of(context).viewPadding.bottom;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: 6 + bottomInset),
+      child: Container(
+        height: 80,
+        margin: const EdgeInsets.symmetric(horizontal: 24),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1D1D1F),
+          borderRadius: BorderRadius.circular(25),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.25),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
-        NavigationDestination(
-          icon: Icon(Iconsax.scanner), 
-          label: 'Scanner',
+        child: Row(
+          children: items.map((item) {
+            final route = item['route'] as String;
+            final isActive = currentLocation.startsWith(route);
+
+            return Expanded(
+              child: InkWell(
+                borderRadius: BorderRadius.circular(25),
+                onTap: () => context.go(route),
+                child: SizedBox(
+                  height: double.infinity,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 6,
+                        horizontal: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isActive ? const Color(0xFF4B504B) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            item['icon'] as IconData,
+                            color: isActive ? Colors.white : const Color(0xFF8E8E93),
+                            size: 24,
+                          ),
+                          if (isActive) ...[
+                            const SizedBox(height: 4),
+                            Container(
+                              width: 16,
+                              height: 2,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF34C759),
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
         ),
-        NavigationDestination(
-          icon: Icon(Iconsax.search_normal), 
-          label: 'Search',
-        ),
-      ],
+      ),
     );
   }
 }
