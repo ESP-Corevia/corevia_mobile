@@ -17,6 +17,7 @@ dependencies:
   go_router: ^13.2.0 # Pour la navigation
   iconsax: ^0.0.8
   flutter_riverpod: ^2.4.9 # Pour la gestion d'état avancée
+  lucide_icons_flutter: ^3.1.5
 
 dev_dependencies:
   flutter_test:

@@ -13,7 +13,7 @@ class BottomNavBar extends StatelessWidget {
       {'icon': Icons.bar_chart, 'route': '/stats'},
       {'icon': Icons.chat_bubble_outline, 'route': '/chat'},
       {'icon': Icons.calendar_today, 'route': '/calendar'},
-      {'icon': Icons.person_outline, 'route': '/profile'},
+      {'icon': Icons.person_outline, 'route': '/account'},
     ];
 
     final bottomInset = MediaQuery.of(context).viewPadding.bottom;

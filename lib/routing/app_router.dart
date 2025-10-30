@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:corevia_mobile/features/home/presentation/screens/home_screen.dart';
+import 'package:corevia_mobile/features/account/presentation/screens/account_screen.dart';
 
-enum AppRoute { home, scanner, search }
+enum AppRoute { home, scanner, search, account }
 
 class AppRouter {
   static final FlutterSecureStorage _storage = const FlutterSecureStorage();
@@ -11,6 +12,7 @@ class AppRouter {
   static const String home = '/';
   static const String scanner = '/scanner';
   static const String search = '/search';
+  static const String account = '/account';
 
   // Generate route based on settings
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -36,6 +38,8 @@ class AppRouter {
                 return const Scaffold(body: Center(child: Text('Scanner Screen')));
               case search:
                 return const Scaffold(body: Center(child: Text('Search Screen')));
+              case account:
+                return const AccountScreen();
               default:
                 return const HomeScreen();
             }
