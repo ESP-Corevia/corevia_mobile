@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 // Les écrans
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/account/presentation/screens/account_screen.dart';
+import '../../features/account/presentation/screens/edit_account_screen.dart';
 
 //  la navbar
 import '../../widgets/navigation_bar.dart';
@@ -31,6 +32,11 @@ final GoRouter router = GoRouter(
           builder: (context, state) => const AccountScreen(),
         )
       ],
+    ),
+    // Routes sans NavBar
+    GoRoute(
+      path: '/edit-account',
+      builder: (context, state) => const EditAccountScreen(), // Écran sans NavBar
     ),
   ],
   errorBuilder: (context, state) => Scaffold(

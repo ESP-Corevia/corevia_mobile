@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class HomeHeader extends StatelessWidget {
   final String title;
@@ -40,13 +41,20 @@ class HomeHeader extends StatelessWidget {
                   ),
                 ],
               ),
-              CircleAvatar(
-                radius: 24,
-                backgroundImage: NetworkImage(userAvatar),
-                child: userAvatar.isEmpty
+              InkWell(
+                onTap: () {
+                  context.go('/account');
+                },
+                child: CircleAvatar(
+                  radius: 24,
+                  backgroundImage:
+                    userAvatar.isNotEmpty ? NetworkImage(userAvatar) : null,
+                  child: userAvatar.isEmpty
                     ? const Icon(Icons.person, size: 24)
                     : null,
+                ),
               ),
+
             ],
           ),
           const SizedBox(height: 24),
