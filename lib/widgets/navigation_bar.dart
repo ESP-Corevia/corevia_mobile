@@ -42,7 +42,7 @@ class BottomNavBar extends StatelessWidget {
             return Expanded(
               child: InkWell(
                 borderRadius: BorderRadius.circular(25),
-                onTap: () => context.go(route),
+                onTap: () => context.push(route),
                 child: SizedBox(
                   height: double.infinity,
                   child: Center(
