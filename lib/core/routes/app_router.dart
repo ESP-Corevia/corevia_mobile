@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 // Les écrans
 import '../../features/home/presentation/screens/home_screen.dart';
+import '../../features/account/presentation/screens/account_screen.dart';
 
 //  la navbar
 import '../../widgets/navigation_bar.dart';
@@ -24,6 +25,11 @@ final GoRouter router = GoRouter(
           path: '/home',
           builder: (context, state) => const HomeScreen(),
         ),
+        // Ajoutez d'autres routes ici
+        GoRoute(
+          path: '/account',
+          builder: (context, state) => const AccountScreen(),
+        )
       ],
     ),
   ],
