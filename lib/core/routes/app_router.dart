@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 // Les écrans
+import '../../features/calendar/presentation/screens/calendar_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/account/presentation/screens/account_screen.dart';
 import '../../features/account/presentation/screens/edit_account_screen.dart';
@@ -30,7 +31,11 @@ final GoRouter router = GoRouter(
         GoRoute(
           path: '/account',
           builder: (context, state) => const AccountScreen(),
-        )
+        ),
+        GoRoute(
+          path: '/calendar',
+          builder: (context, state) => const CalendarScreen()
+        ),
       ],
     ),
     // Routes sans NavBar

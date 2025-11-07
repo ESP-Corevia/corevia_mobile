@@ -20,5 +20,5 @@ class AppColors {
   static const Color secondary = Color(0xFFFF0000); // Rouge
   static const Color background = Color(0xFFFFFFFF); // Blanc
   static const Color textPrimary = Color(0xFF000000); // Noir
-  static const Color textSecondary = Color(0xFF888888); // Gris
+  static const Color grey = Color(0xFF343934); // Gris
 }
