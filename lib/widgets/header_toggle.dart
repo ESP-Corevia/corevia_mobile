@@ -4,11 +4,11 @@ import '../assets/color/color.dart';
 
 // Widget personnalisé qui combine en-tête et gestion des couleurs
 class HeaderToggle extends StatelessWidget {
-  final Function onBackPressed;
+  final VoidCallback onBackPressed;
   final String pageTitle;
   final List<String>? toggleItems;
   final String? selectedTab; // Nouveau paramètre pour l'onglet sélectionné
-  final Function(String)? onToggleSelected;
+  final ValueChanged<String>? onToggleSelected;
 
   const HeaderToggle({
     required this.onBackPressed,
@@ -43,7 +43,7 @@ class HeaderToggle extends StatelessWidget {
               children: [
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(51),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: IconButton(

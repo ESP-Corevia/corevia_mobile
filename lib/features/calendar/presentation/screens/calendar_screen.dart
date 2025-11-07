@@ -1,10 +1,10 @@
-import 'package:corevia_mobile/widgets/headerToggle.dart';
+import 'package:corevia_mobile/widgets/header_toggle.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../assets/color/color.dart';
 
-// PAGE MY APPOINTMENTS
+// PAGE CALENDAR
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
 
