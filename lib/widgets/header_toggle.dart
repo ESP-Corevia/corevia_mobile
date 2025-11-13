@@ -1,6 +1,6 @@
+import 'package:corevia_mobile/assets/color/color.dart';
 import 'package:flutter/material.dart';
 
-import '../assets/color/color.dart';
 
 // Widget personnalisé qui combine en-tête et gestion des couleurs
 class HeaderToggle extends StatelessWidget {

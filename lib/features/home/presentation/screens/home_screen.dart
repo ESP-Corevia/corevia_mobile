@@ -94,9 +94,42 @@ class _HomeScreenState extends State<HomeScreen> {
                     //   color: const Color(0xFFFFD60A),
                     //   width: 3,
                     // ),
-                    image: const DecorationImage(
-                      image: NetworkImage('https://i.pravatar.cc/150?img=32'),
+                    image: DecorationImage(
+                      image: Image.network(
+                        'https://i.pravatar.cc/150?img=32',
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              shape: BoxShape.circle,
+                              image: DecorationImage(
+                                image: AssetImage('assets/images/default_avatar.png'),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          );
+                        },
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                value: loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                    : null,
+                              ),
+                            ),
+                          );
+                        },
+                      ).image,
                       fit: BoxFit.cover,
+                      onError: (exception, stackTrace) {
+                        // Gestion supplémentaire des erreurs si nécessaire
+                      },
                     ),
                   ),
                 ),
@@ -251,7 +284,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final daysOfWeek = getDaysOfWeek();
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 15), // Reduced horizontal padding
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -264,11 +297,10 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: List.generate(
-          daysOfWeek.length,
-          (index) => _buildDayCircle(daysOfWeek[index], index),
-        ),
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: daysOfWeek.map((day) => Expanded(
+          child: _buildDayCircle(day, daysOfWeek.indexOf(day)),
+        )).toList(),
       ),
     );
   }
@@ -291,7 +323,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _showSnackBar('${day['fullName']} ${day['date'].day}/${day['date'].month} sélectionné');
       },
       child: Container(
-        width: 44,
+        width: 36, // Reduced width
         height: 56,
         margin: const EdgeInsets.symmetric(horizontal: 2),
         decoration: BoxDecoration(

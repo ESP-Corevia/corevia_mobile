@@ -146,7 +146,7 @@ class _AccountScreenState extends State<AccountScreen> {
                               isNotificationsEnabled = value;
                             });
                           },
-                          activeThumbColor: AppColors.green,
+                          // activeThumbColor: AppColors.green,
                         ),
                       ),
                       _buildActionTile(
