@@ -473,7 +473,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
           borderSide: BorderSide(color: AppColors.green, width: 2), // Couleur de bordure quand sélectionné
         ),
       ),
-      initialValue: selectedGender,
+      // initialValue: selectedGender,
       items: <String>[
         'Male',
         'Female',

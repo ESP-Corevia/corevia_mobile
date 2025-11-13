@@ -6,6 +6,7 @@ import '../../features/calendar/presentation/screens/calendar_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/account/presentation/screens/account_screen.dart';
 import '../../features/account/presentation/screens/edit_account_screen.dart';
+import '../../features/statistics/presentation/screens/statistics_screen.dart';
 
 //  la navbar
 import '../../widgets/navigation_bar.dart';
@@ -34,7 +35,11 @@ final GoRouter router = GoRouter(
         ),
         GoRoute(
           path: '/calendar',
-          builder: (context, state) => const CalendarScreen()
+          builder: (context, state) => const CalendarScreen(),
+        ),
+        GoRoute(
+          path: '/stats',
+          builder: (context, state) => const StatisticsScreen(),
         ),
       ],
     ),
