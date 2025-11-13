@@ -1,4 +1,4 @@
-import 'package:corevia_mobile/assets/color/color.dart';
+import 'package:corevia_mobile/core/theme/colors.dart';
 import 'package:corevia_mobile/widgets/header_toggle.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
