@@ -1,51 +1,71 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:corevia_mobile/features/home/presentation/screens/home_screen.dart';
 import 'package:corevia_mobile/features/account/presentation/screens/account_screen.dart';
+import 'package:corevia_mobile/features/statistics/presentation/screens/statistics_screen.dart';
 
-enum AppRoute { home, scanner, search, account }
+enum AppRoute { home, scanner, search, stats, account }
 
 class AppRouter {
-  static final FlutterSecureStorage _storage = const FlutterSecureStorage();
-
-  // Route names
   static const String home = '/';
   static const String scanner = '/scanner';
   static const String search = '/search';
+  static const String stats = '/stats';
   static const String account = '/account';
 
-  // Generate route based on settings
-  static Route<dynamic> generateRoute(RouteSettings settings) {
-    return MaterialPageRoute(
-      builder: (context) {
-        return FutureBuilder<String?>(
-          future: _storage.read(key: 'jwt_token'),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
-            }
+  static final _storage = const FlutterSecureStorage();
+  static final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
-            final token = snapshot.data;
-            debugPrint("AppRouter token: $token");
-
-            // Handle routing based on route name
-            switch (settings.name) {
-              case home:
-                return const HomeScreen();
-              case scanner:
-                return const Scaffold(body: Center(child: Text('Scanner Screen')));
-              case search:
-                return const Scaffold(body: Center(child: Text('Search Screen')));
-              case account:
-                return const AccountScreen();
-              default:
-                return const HomeScreen();
-            }
-          },
-        );
-      },
-    );
-  }
+  // Configuration du routeur
+  static final router = GoRouter(
+    navigatorKey: _rootNavigatorKey,
+    initialLocation: home,
+    routes: [
+      // Route d'accueil
+      GoRoute(
+        path: home,
+        builder: (context, state) => const HomeScreen(),
+      ),
+      
+      // Route des statistiques
+      GoRoute(
+        path: stats,
+        builder: (context, state) => const StatisticsScreen(),
+      ),
+      
+      // Route du compte
+      GoRoute(
+        path: account,
+        builder: (context, state) => const AccountScreen(),
+      ),
+      
+      // Routes supplémentaires (à implémenter plus tard)
+      GoRoute(
+        path: scanner,
+        builder: (context, state) => const Scaffold(
+          body: Center(child: Text('Scanner Screen')),
+        ),
+      ),
+      GoRoute(
+        path: search,
+        builder: (context, state) => const Scaffold(
+          body: Center(child: Text('Search Screen')),
+        ),
+      ),
+    ],
+    redirect: (context, state) async {
+      // Vérification de l'authentification si nécessaire
+      final token = await _storage.read(key: 'jwt_token');
+      debugPrint("AppRouter token: $token");
+      
+      // Si l'utilisateur n'est pas connecté et essaie d'accéder à une page protégée
+      // Rediriger vers la page de connexion
+      // if (token == null && state.location != '/login') {
+      //   return '/login';
+      // }
+      
+      return null; // Pas de redirection nécessaire
+    },
+  );
 }

@@ -85,19 +85,36 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () {
                   _showSnackBar('Profil cliqué');
                 },
-                child: Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    // border: Border.all(
-                    //   color: const Color(0xFFFFD60A),
-                    //   width: 3,
-                    // ),
-                    image: const DecorationImage(
-                      image: NetworkImage('https://i.pravatar.cc/150?img=32'),
-                      fit: BoxFit.cover,
+                child: ClipOval(
+                  child: Image.network(
+                    'https://i.pravatar.cc/150?img=32',
+                    width: 60,
+                    height: 60,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      width: 60,
+                      height: 60,
+                      color: Colors.grey[200],
+                      child: const Icon(
+                        Icons.person,
+                        size: 30,
+                        color: Colors.grey,
+                      ),
                     ),
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        width: 60,
+                        height: 60,
+                        color: Colors.grey[200],
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
@@ -251,7 +268,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final daysOfWeek = getDaysOfWeek();
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -264,11 +281,13 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: List.generate(
-          daysOfWeek.length,
-          (index) => _buildDayCircle(daysOfWeek[index], index),
-        ),
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: daysOfWeek.map<Widget>((day) => Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            child: _buildDayCircle(day, daysOfWeek.indexOf(day)),
+          ),
+        )).toList(),
       ),
     );
   }
@@ -291,8 +310,8 @@ class _HomeScreenState extends State<HomeScreen> {
         _showSnackBar('${day['fullName']} ${day['date'].day}/${day['date'].month} sélectionné');
       },
       child: Container(
-        width: 44,
-        height: 56,
+        width: 36,
+        height: 52,
         margin: const EdgeInsets.symmetric(horizontal: 2),
         decoration: BoxDecoration(
           color: Colors.white,
