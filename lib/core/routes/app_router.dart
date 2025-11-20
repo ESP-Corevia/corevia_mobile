@@ -8,7 +8,7 @@ import '../../features/account/presentation/screens/account_screen.dart';
 import '../../features/account/presentation/screens/edit_account_screen.dart';
 import '../../features/statistics/presentation/screens/statistics_screen.dart';
 
-//  la navbar
+// La barre de navigation
 import '../../widgets/navigation_bar.dart';
 
 final GoRouter router = GoRouter(
@@ -17,9 +17,19 @@ final GoRouter router = GoRouter(
     ShellRoute(
       builder: (context, state, child) {
         return Scaffold(
-          body: child,
-          bottomNavigationBar: BottomNavBar(
-            currentLocation: state.uri.toString(),
+          backgroundColor: Colors.white,
+          body: Stack(
+            children: [
+              // Contenu principal
+              child,
+              // Barre de navigation positionnée en bas
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: BottomNavBar(currentLocation: state.uri.toString()),
+              ),
+            ],
           ),
         );
       },
@@ -28,18 +38,17 @@ final GoRouter router = GoRouter(
           path: '/home',
           builder: (context, state) => const HomeScreen(),
         ),
-        // Ajoutez d'autres routes ici
         GoRoute(
-          path: '/account',
-          builder: (context, state) => const AccountScreen(),
+          path: '/stats',
+          builder: (context, state) => const StatisticsScreen(),
         ),
         GoRoute(
           path: '/calendar',
           builder: (context, state) => const CalendarScreen(),
         ),
         GoRoute(
-          path: '/stats',
-          builder: (context, state) => const StatisticsScreen(),
+          path: '/account',
+          builder: (context, state) => const AccountScreen(),
         ),
       ],
     ),
