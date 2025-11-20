@@ -85,52 +85,36 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () {
                   _showSnackBar('Profil cliqué');
                 },
-                child: Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    // border: Border.all(
-                    //   color: const Color(0xFFFFD60A),
-                    //   width: 3,
-                    // ),
-                    image: DecorationImage(
-                      image: Image.network(
-                        'https://i.pravatar.cc/150?img=32',
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              shape: BoxShape.circle,
-                              image: DecorationImage(
-                                image: AssetImage('assets/images/default_avatar.png'),
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          );
-                        },
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                value: loadingProgress.expectedTotalBytes != null
-                                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                                    : null,
-                              ),
-                            ),
-                          );
-                        },
-                      ).image,
-                      fit: BoxFit.cover,
-                      onError: (exception, stackTrace) {
-                        // Gestion supplémentaire des erreurs si nécessaire
-                      },
+                child: ClipOval(
+                  child: Image.network(
+                    'https://i.pravatar.cc/150?img=32',
+                    width: 60,
+                    height: 60,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      width: 60,
+                      height: 60,
+                      color: Colors.grey[200],
+                      child: const Icon(
+                        Icons.person,
+                        size: 30,
+                        color: Colors.grey,
+                      ),
                     ),
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        width: 60,
+                        height: 60,
+                        color: Colors.grey[200],
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
@@ -284,7 +268,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final daysOfWeek = getDaysOfWeek();
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 15), // Reduced horizontal padding
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -298,8 +282,11 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: daysOfWeek.map((day) => Expanded(
-          child: _buildDayCircle(day, daysOfWeek.indexOf(day)),
+        children: daysOfWeek.map<Widget>((day) => Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            child: _buildDayCircle(day, daysOfWeek.indexOf(day)),
+          ),
         )).toList(),
       ),
     );
@@ -323,8 +310,8 @@ class _HomeScreenState extends State<HomeScreen> {
         _showSnackBar('${day['fullName']} ${day['date'].day}/${day['date'].month} sélectionné');
       },
       child: Container(
-        width: 36, // Reduced width
-        height: 56,
+        width: 36,
+        height: 52,
         margin: const EdgeInsets.symmetric(horizontal: 2),
         decoration: BoxDecoration(
           color: Colors.white,
