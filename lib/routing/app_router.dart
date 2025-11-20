@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:corevia_mobile/features/home/presentation/screens/home_screen.dart';
 import 'package:corevia_mobile/features/account/presentation/screens/account_screen.dart';
-import 'package:corevia_mobile/features/statistics/presentation/screens/statistics_screen.dart';
 
 enum AppRoute { home, scanner, search, stats, account }
 
@@ -29,10 +28,11 @@ class AppRouter {
       ),
       
       // Route des statistiques
+      /*
       GoRoute(
         path: stats,
         builder: (context, state) => const StatisticsScreen(),
-      ),
+      ),*/
       
       // Route du compte
       GoRoute(

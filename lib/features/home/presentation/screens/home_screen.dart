@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../../../../widgets/pill_shadow.dart';
+import '../../../../widgets/medication_detail_modal.dart';
 
 
 
@@ -12,7 +15,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   DateTime selectedDate = DateTime.now();
   DateTime currentWeekStart = DateTime.now();
-  
+
   @override
   void initState() {
     super.initState();
@@ -46,9 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     _buildWeeklyCalendar(),
                     const SizedBox(height: 40),
                     _buildMedicationSection(),
-                    const SizedBox(height: 40),
-                    _buildAppointmentsSection(),
-                    const SizedBox(height: 80),
+                    const SizedBox(height: 100),
                   ],
                 ),
               ),
@@ -391,218 +392,34 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildMedicationCard(
-    String name,
-    String dosage,
-    String frequency,
-    String time,
-    Color color, {
-    required bool isLiquid,
-  }) {
-    return GestureDetector(
-      onTap: () => _showMedicationDialog(name, dosage, frequency, time),
-      child: Container(
-        width: 180,
-        height: 200,
-        margin: const EdgeInsets.only(right: 12, bottom: 10, left: 4),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-              spreadRadius: 1,
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Ligne avec le nom du médicament et le dosage
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1D1D1F),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  '• $dosage',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-            
-            const SizedBox(height: 16),
-            
-            // Ligne avec l'image et la fréquence
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Image du comprimé et fréquence
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Image du comprimé - 50% de largeur
-                      Expanded(
-                        flex: 1,
-                        child: Center(
-                          child: Container(
-                            width: 60,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              color: color.withValues(alpha: 0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: isLiquid ? _buildLiquidMedicine(color) : _buildPillMedicine(color),
-                            ),
-                          ),
-                        ),
-                      ),
-                      
-                      // Fréquence - 50% de largeur
-                      Expanded(
-                        flex: 1,
-                        child: Text(
-                          frequency,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF1D1D1F),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  // Espacement avant l'heure
-                  const Spacer(),
-                  
-                  // Ligne avec l'heure et la cloche
-                  Row(
-                    children: [
-                      // Heure
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF34C759).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 6,
-                              height: 6,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF34C759),
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              time,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF1D1D1F),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      
-                      // Espacement
-                      const Spacer(),
-                      
-                      // Icône de cloche
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF34C759).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.notifications_none,
-                          color: Color(0xFF34C759),
-                          size: 20,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLiquidMedicine(Color color) {
-    return Stack(
-      children: [
-        Container(
-          width: 40,
-          height: 50,
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(20),
-              bottomRight: Radius.circular(20),
-            ),
-          ),
-        ),
-        Container(
-          width: 40,
-          height: 35,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(18),
-              bottomRight: Radius.circular(18),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPillMedicine(Color color) {
-    return Container(
-      width: 50,
-      height: 25,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildMedicationSection() {
+    final medications = [
+      {
+        'name': 'Ibuprofen',
+        'dosage': '200mg',
+        'frequency': '3 times a day',
+        'time': '08:00 AM',
+        'description':
+        'Anti-inflammatory medication used to reduce fever and treat pain or inflammation.',
+        'prescribedBy': 'Dr. Sarah Johnson',
+        'startDate': '15/11/2024',
+        'endDate': '30/11/2024',
+        'instructions':
+        'Take with food to avoid stomach upset. Do not exceed 6 tablets per day.'
+      },
+      {
+        'name': 'Doliprane',
+        'dosage': '500mg',
+        'frequency': '2 times a day',
+        'time': '09:00 AM',
+        'description': 'Pain relief and fever reduction medication.',
+        'prescribedBy': 'Dr. Paul Martin',
+        'startDate': '12/11/2024',
+        'endDate': '22/11/2024',
+        'instructions': 'Can be taken without food.'
+      },
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -618,121 +435,135 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.only(left: 16, right: 8, bottom: 8, top: 4),
-          child: Row(
-            children: [
-              _buildMedicationCard(
-                'Ibuprofen',
-                '200mg',
-                '3 times a day',
-                '08:00 AM',
-                const Color(0xFFFFF2E5),
-                isLiquid: false,
-              ),
-              const SizedBox(width: 12),
-              _buildMedicationCard(
-                'Amoxicillin',
-                '500mg',
-                '2 times a day',
-                '01:00 PM',
-                const Color(0xFFE8F5E9),
-                isLiquid: true,
-              ),
-              const SizedBox(width: 12),
-              _buildMedicationCard(
-                'Paracetamol',
-                '500mg',
-                '6h',
-                '10:00 AM',
-                const Color(0xFFE3F2FD),
-                isLiquid: false,
-              ),
-            ],
-          ),
-        ),
+
+        // 👉 On enlève le scroll + Row
+        Column(
+          children: medications.map((med) {
+            return _buildMedicationCardTest(context, med);
+          }).toList(),
+        )
       ],
     );
   }
 
-  Widget _buildAppointmentsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Next Appointments',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1D1D1F),
+  Widget _buildMedicationCardTest(BuildContext context, Map<String, String> med) {
+    return GestureDetector(
+      onTap: () {
+        showDialog(
+          context: context,
+          barrierDismissible: true,
+          builder: (_) => MedicationDetailModal(
+            medicationName: med['name']!,
+            dosage: med['dosage']!,
+            frequency: med['frequency']!,
+            time: med['time']!,
+            description: med['description']!,
+            prescribedBy: med['prescribedBy']!,
+            startDate: med['startDate']!,
+            endDate: med['endDate']!,
+            instructions: med['instructions']!,
           ),
-        ),
-        const SizedBox(height: 20),
-        GestureDetector(
-          onTap: () {
-            _showAppointmentsDialog();
-          },
-          child: Container(
-            padding: const EdgeInsets.all(25),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(right: 12, bottom: 8),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-            child: Row(
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        '3+',
-                        style: TextStyle(
-                          fontSize: 48,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1D1D1F),
-                        ),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start, // Changez selon vos besoins
+                  children: [
+                    Text(
+                      med['name']!,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
                       ),
-                      Text(
-                        'Upcomming Appointments',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Color(0xFF8E8E93),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    _showAddAppointmentDialog();
-                  },
-                  child: Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF34C759),
-                      borderRadius: BorderRadius.circular(15),
                     ),
-                    child: const Icon(
-                      Icons.add,
-                      color: Colors.white,
-                      size: 28,
+                    Text(
+                        '${med['time']} . ${med['dosage']}',
+                        style: TextStyle(color: Colors.black)
                     ),
-                  ),
+                  ],
                 ),
-              ],
+                PillShadow(assetPath: 'assets/pill2.png', widthValue: 50, heightValue: 50),
+
+              ]
             ),
-          ),
+
+            // Text(
+            //   med['dosage']!,
+            //   style: const TextStyle(color: Colors.grey),
+            // ),
+            // const SizedBox(height: 10),
+            // Row(
+            //   children: [
+            //     Icon(LucideIcons.clock3, size: 16, color: Colors.grey.shade600),
+            //     const SizedBox(width: 4),
+            //     Text(med['time']!,
+            //         style: TextStyle(color: Colors.grey.shade700)),
+            //   ],
+            // ),
+            // const SizedBox(height: 4),
+            // Row(
+            //   children: [
+            //     Icon(LucideIcons.repeat, size: 16, color: Colors.grey.shade600),
+            //     const SizedBox(width: 4),
+            //     Text(med['frequency']!,
+            //         style: TextStyle(color: Colors.grey.shade700)),
+            //   ],
+            // ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Container(
+                width: 40, // Définissez la largeur du cercle
+                height: 40, // Définissez la hauteur du cercle pour le rendre plus petit
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.lightGreen[100], // Fond vert léger
+                ),
+                padding: EdgeInsets.all(0), // Ajustez ce padding pour la taille du cercle
+                child: Center( // Centrer l'icône dans le cercle
+                  child: IconButton(
+                    icon: const Icon(
+                      LucideIcons.check,
+                      color: Colors.green,
+                      size: 20, // Ajustez la taille de l'icône
+                    ),
+                    padding: EdgeInsets.zero, // Aucune marge autour de l'icône
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('${med['name']} marked as taken!'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -781,155 +612,5 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showMedicationDialog(String name, String dosage, String frequency, String time) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: Text(name),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Dosage: $dosage'),
-            const SizedBox(height: 8),
-            Text('Fréquence: $frequency'),
-            const SizedBox(height: 8),
-            Text('Heure: $time'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Fermer'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _showSnackBar('Médicament pris ✓');
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF34C759),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: const Text('Marquer comme pris'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showAppointmentsDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: const Text('Rendez-vous à venir'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildAppointmentItem('Dr. Martin', '2 Nov, 14:00', Icons.medical_services),
-            const Divider(),
-            _buildAppointmentItem('Dr. Dupont', '5 Nov, 10:30', Icons.favorite),
-            const Divider(),
-            _buildAppointmentItem('Dr. Bernard', '8 Nov, 16:00', Icons.psychology),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Fermer'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAppointmentItem(String doctor, String datetime, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Icon(icon, color: const Color(0xFF34C759)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  doctor,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                Text(
-                  datetime,
-                  style: const TextStyle(
-                    color: Color(0xFF8E8E93),
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showAddAppointmentDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: const Text('Ajouter un rendez-vous'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: const [
-            TextField(
-              decoration: InputDecoration(
-                labelText: 'Nom du médecin',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 16),
-            TextField(
-              decoration: InputDecoration(
-                labelText: 'Date et heure',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Annuler'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _showSnackBar('Rendez-vous ajouté avec succès!');
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF34C759),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: const Text('Ajouter'),
-          ),
-        ],
-      ),
-    );
-  }
+  container({required Axis scrollDirection, required EdgeInsets padding, required Row child}) {}
 }
