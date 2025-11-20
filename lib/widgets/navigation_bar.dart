@@ -18,64 +18,69 @@ class BottomNavBar extends StatelessWidget {
 
     final bottomInset = MediaQuery.of(context).viewPadding.bottom;
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: 6 + bottomInset),
-      child: Container(
-        height: 80,
-        margin: const EdgeInsets.symmetric(horizontal: 24),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1D1D1F),
-          borderRadius: BorderRadius.circular(25),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.25),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
-            ),
-          ],
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x14000000),
+            blurRadius: 20,
+            offset: Offset(0, -4),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 8,
+        bottom: bottomInset > 0 ? bottomInset : 8,
+      ),
+      child: SizedBox(
+        height: 56,
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: items.map((item) {
-            final route = item['route'] as String;
-            final isActive = currentLocation.startsWith(route);
-
+            final isActive = currentLocation == item['route'];
             return Expanded(
-              child: InkWell(
-                borderRadius: BorderRadius.circular(25),
-                onTap: () => context.go(route),
-                child: SizedBox(
-                  height: double.infinity,
+              child: GestureDetector(
+                onTap: () => context.go(item['route'] as String),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    color: isActive 
+                        ? const Color(0xFF34C759).withOpacity(0.12)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 6,
-                        horizontal: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isActive ? const Color(0xFF4B504B) : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            item['icon'] as IconData,
-                            color: isActive ? Colors.white : const Color(0xFF8E8E93),
-                            size: 24,
-                          ),
-                          if (isActive) ...[
-                            const SizedBox(height: 4),
-                            Container(
-                              width: 16,
-                              height: 2,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF34C759),
-                                borderRadius: BorderRadius.circular(2),
-                              ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          item['icon'] as IconData,
+                          color: isActive 
+                              ? const Color(0xFF34C759)
+                              : const Color(0xFF8E8E93),
+                          size: 24,
+                        ),
+                        if (isActive) ...[
+                          const SizedBox(height: 4),
+                          Container(
+                            width: 4,
+                            height: 4,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF34C759),
+                              shape: BoxShape.circle,
                             ),
-                          ],
+                          ),
                         ],
-                      ),
+                      ],
                     ),
                   ),
                 ),
