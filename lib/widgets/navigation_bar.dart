@@ -11,7 +11,7 @@ class BottomNavBar extends StatelessWidget {
     final items = [
       {'icon': Icons.home_filled, 'route': '/home'},
       {'icon': Icons.bar_chart, 'route': '/stats'},
-      {'icon': Icons.chat_bubble_outline, 'route': '/chat'},
+      {'icon': Icons.chat_bubble_outline, 'route': '/chat/ai/new'},
       {'icon': Icons.calendar_today, 'route': '/calendar'},
       {'icon': Icons.person_outline, 'route': '/account'},
     ];
