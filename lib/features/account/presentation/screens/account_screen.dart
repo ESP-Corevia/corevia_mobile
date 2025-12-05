@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../widgets/header_toggle.dart';
 import '../../../../widgets/pro_member.dart';
 import 'package:corevia_mobile/core/theme/colors.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -25,176 +24,229 @@ class _AccountScreenState extends State<AccountScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
-      body: Column(
-        children: [
-          // Header avec toggle
-          HeaderToggle(
-            onBackPressed: () {
-              context.pop(); // Gestion du retour
-            },
-            pageTitle: 'My Account', // Titre de la page
-          ),
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            // Header personnalisé style HomeScreen
+            _buildTopHeader(),
 
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  // Profile Card
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Column(
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 30),
+
+                    // Profile Card avec nouveau style
+                    _buildProfileCard(),
+
+                    const SizedBox(height: 20),
+
+                    // Account Information
+                    _buildSection(
+                      title: 'Account Information',
                       children: [
-                        Stack(
-                          children: [
-                            const CircleAvatar(
-                              radius: 50,
-                              backgroundImage: NetworkImage(
-                                'https://via.placeholder.com/150',
-                              ),
-                            ),
-                            Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: GestureDetector(
-                                onTap: () {
-                                  context.push('/edit-account');
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: const BoxDecoration(
-                                    color: AppColors.green,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.edit,
-                                    color: Colors.white,
-                                    size: 16,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                        _buildInfoTile(
+                          icon: Icons.email_outlined,
+                          title: 'Email',
+                          value: 'georges@example.com',
                         ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Georges',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        _buildInfoTile(
+                          icon: Icons.phone_outlined,
+                          title: 'Phone',
+                          value: '+33 6 12 34 56 78',
                         ),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 4,
-                          ),
-                          child: ProMemberBadge()
+                        _buildInfoTile(
+                          icon: Icons.cake_outlined,
+                          title: 'Date of Birth',
+                          value: '15/03/1985',
+                        ),
+                        _buildActionTile(
+                          icon: LucideIcons.fileText,
+                          title: 'Documents',
                         ),
                       ],
                     ),
-                  ),
 
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                  // Account Information
-                  _buildSection(
-                    title: 'Account Information',
-                    children: [
-                      _buildInfoTile(
-                        icon: Icons.email_outlined,
-                        title: 'Email',
-                        value: 'georges@example.com',
-                      ),
-                      _buildInfoTile(
-                        icon: Icons.phone_outlined,
-                        title: 'Phone',
-                        value: '+33 6 12 34 56 78',
-                      ),
-                      _buildInfoTile(
-                        icon: Icons.cake_outlined,
-                        title: 'Date of Birth',
-                        value: '15/03/1985',
-                      ),
-                      _buildActionTile(
-                        icon: LucideIcons.fileText,
-                        title: 'Documents',
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Settings
-                  _buildSection(
-                    title: 'Settings',
-                    children: [
-                      _buildActionTile(
-                        icon: Icons.notifications_outlined,
-                        title: 'Notifications',
-                        trailing: Switch(
-                          value: isNotificationsEnabled,
-                          onChanged: (bool value) {
-                            setState(() {
-                              isNotificationsEnabled = value;
-                            });
-                          },
-                          // activeThumbColor: AppColors.green,
+                    // Settings
+                    _buildSection(
+                      title: 'Settings',
+                      children: [
+                        _buildActionTile(
+                          icon: Icons.notifications_outlined,
+                          title: 'Notifications',
+                          trailing: Switch(
+                            value: isNotificationsEnabled,
+                            onChanged: (bool value) {
+                              setState(() {
+                                isNotificationsEnabled = value;
+                              });
+                            },
+                            activeColor: AppColors.green,
+                          ),
                         ),
-                      ),
-                      _buildActionTile(
-                        icon: Icons.lock_outline,
-                        title: 'Privacy & Security',
-                      ),
-                      _buildActionTile(
-                        icon: Icons.language_outlined,
-                        title: 'Language',
-                        subtitle: 'English',
-                      ),
-                    ],
-                  ),
+                        _buildActionTile(
+                          icon: Icons.lock_outline,
+                          title: 'Privacy & Security',
+                        ),
+                        _buildActionTile(
+                          icon: Icons.language_outlined,
+                          title: 'Language',
+                          subtitle: 'English',
+                        ),
+                      ],
+                    ),
 
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                  // Actions
-                  _buildSection(
-                    title: 'Actions',
-                    children: [
-                      _buildActionTile(
-                        icon: Icons.help_outline,
-                        title: 'Help & Support',
-                      ),
-                      _buildActionTile(
-                        icon: Icons.info_outline,
-                        title: 'About',
-                      ),
-                      _buildActionTile(
-                        icon: Icons.logout,
-                        title: 'Logout',
-                        iconColor: Colors.red,
-                        titleColor: Colors.red,
-                      ),
-                    ],
-                  ),
+                    // Actions
+                    _buildSection(
+                      title: 'Actions',
+                      children: [
+                        _buildActionTile(
+                          icon: Icons.help_outline,
+                          title: 'Help & Support',
+                        ),
+                        _buildActionTile(
+                          icon: Icons.info_outline,
+                          title: 'About',
+                        ),
+                        _buildActionTile(
+                          icon: Icons.logout,
+                          title: 'Logout',
+                          iconColor: Colors.red,
+                          titleColor: Colors.red,
+                        ),
+                      ],
+                    ),
 
-                  const SizedBox(height: 100),
-                ],
+                    const SizedBox(height: 100),
+                  ],
+                ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopHeader() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(30),
+          bottomRight: Radius.circular(30),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
+        ],
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back, size: 24),
+            onPressed: () => context.pop(),
+            padding: EdgeInsets.zero,
+          ),
+          const SizedBox(width: 8),
+          const Text(
+            'My Account',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1D1D1F),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Stack(
+            children: [
+              ClipOval(
+                child: Image.network(
+                  'https://i.pravatar.cc/150?img=32',
+                  width: 100,
+                  height: 100,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    width: 100,
+                    height: 100,
+                    color: Colors.grey[200],
+                    child: const Icon(Icons.person, size: 50, color: Colors.grey),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: GestureDetector(
+                  onTap: () {
+                    context.push('/edit-account');
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: AppColors.green,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.edit,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Georges',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1D1D1F),
+            ),
+          ),
+          const SizedBox(height: 8),
+          const ProMemberBadge(),
         ],
       ),
     );
@@ -207,12 +259,12 @@ class _AccountScreenState extends State<AccountScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
-            offset: const Offset(0, 2),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -220,12 +272,14 @@ class _AccountScreenState extends State<AccountScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
             child: Text(
               title,
               style: const TextStyle(
                 fontSize: 18,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1D1D1F),
+                letterSpacing: -0.5,
               ),
             ),
           ),
@@ -240,29 +294,44 @@ class _AccountScreenState extends State<AccountScreen> {
     required String title,
     required String value,
   }) {
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: AppColors.green.shade50,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(icon, color: AppColors.green),
-      ),
-      title: Text(
-        title,
-        style: TextStyle(
-          fontSize: 14,
-          color: Colors.grey.shade600,
-        ),
-      ),
-      subtitle: Text(
-        value,
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-          color: Colors.black,
-        ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF5F5F7),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: AppColors.green, size: 22),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1D1D1F),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -275,38 +344,56 @@ class _AccountScreenState extends State<AccountScreen> {
     Color? iconColor,
     Color? titleColor,
   }) {
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: AppColors.green.shade50,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(icon, color: iconColor ?? AppColors.green),
-      ),
-      title: Text(
-        title,
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-          color: titleColor ?? Colors.black,
-        ),
-      ),
-      subtitle: subtitle != null
-          ? Text(
-        subtitle,
-        style: TextStyle(
-          fontSize: 14,
-          color: Colors.grey.shade600,
-        ),
-      )
-          : null,
-      trailing: trailing ??
-          Icon(
-            Icons.chevron_right,
-            color: Colors.grey.shade400,
-          ),
+    return InkWell(
       onTap: () {},
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F5F7),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: iconColor ?? AppColors.green, size: 22),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: titleColor ?? const Color(0xFF1D1D1F),
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            trailing ??
+                Icon(
+                  Icons.chevron_right,
+                  color: Colors.grey.shade400,
+                  size: 24,
+                ),
+          ],
+        ),
+      ),
     );
   }
 }

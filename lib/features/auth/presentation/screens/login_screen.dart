@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:corevia_mobile/features/auth/domain/models/login_model.dart';
 import 'package:corevia_mobile/features/auth/presentation/screens/register_screen.dart';
 import 'dart:math' as math;
+import 'package:go_router/go_router.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -561,7 +562,14 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
         ],
       ),
       child: ElevatedButton(
-        onPressed: _isLoading ? null : _login,
+          onPressed: _isLoading
+              ? null
+              : () async {
+              await _login();
+              if (mounted){
+              context.go('/home'); // 🔥 Redirection temporaire
+              }
+          },
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,

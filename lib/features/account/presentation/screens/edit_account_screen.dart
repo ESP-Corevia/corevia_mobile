@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:corevia_mobile/core/theme/colors.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-// PAGE DE MODIFICATION DE COMPTE
 class EditAccountScreen extends StatefulWidget {
   const EditAccountScreen({super.key});
 
@@ -14,7 +13,6 @@ class EditAccountScreen extends StatefulWidget {
 class _EditAccountScreenState extends State<EditAccountScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // Controllers pour les champs
   final TextEditingController _firstNameController = TextEditingController(text: 'Georges');
   final TextEditingController _lastNameController = TextEditingController(text: 'Georges');
   final TextEditingController _emailController = TextEditingController(text: 'georges@example.com');
@@ -23,7 +21,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
   final TextEditingController _addressController = TextEditingController(text: '123 Rue de Paris, Paris');
 
   bool _isLoading = false;
-  String? _selectedGender = 'Male'; // Variable d'état pour stocker le genre sélectionné
+  String? _selectedGender = 'Male';
 
   @override
   void dispose() {
@@ -42,7 +40,6 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
         _isLoading = true;
       });
 
-      // Simuler une sauvegarde
       await Future.delayed(const Duration(seconds: 2));
 
       setState(() {
@@ -51,12 +48,14 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
 
       if (!mounted) return;
 
-      // Afficher un message de succès
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profile updated successfully!'),
+        SnackBar(
+          content: const Text('Profile updated successfully!'),
           backgroundColor: AppColors.green,
           behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
     }
@@ -65,79 +64,29 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: Colors.white,
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: Icon(LucideIcons.arrowLeft),
-                    onPressed: () => context.pop(),
-                  ),
-                  const Text(
-                    'Edit Profile',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            // Header style HomeScreen
+            _buildTopHeader(),
 
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     children: [
+                      const SizedBox(height: 30),
+
                       // Photo de profil
-                      Stack(
-                        children: [
-                          const CircleAvatar(
-                            radius: 60,
-                            backgroundImage: NetworkImage(
-                              'https://via.placeholder.com/150',
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: GestureDetector(
-                              onTap: () {
-                                // Action pour changer la photo
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Change photo functionality'),
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: const BoxDecoration(
-                                  color: AppColors.green,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.camera_alt,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                      _buildProfilePhoto(),
 
                       const SizedBox(height: 30),
 
-                      // Champ Nom
+                      // Champs de formulaire avec nouveau style
                       _buildTextField(
                         controller: _firstNameController,
                         label: 'First Name',
@@ -152,7 +101,6 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
 
                       const SizedBox(height: 16),
 
-                      // Champ Nom
                       _buildTextField(
                         controller: _lastNameController,
                         label: 'Last Name',
@@ -167,7 +115,6 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
 
                       const SizedBox(height: 16),
 
-                      // Champ Email
                       _buildTextField(
                         controller: _emailController,
                         label: 'Email',
@@ -186,7 +133,6 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
 
                       const SizedBox(height: 16),
 
-                      // Champ Téléphone
                       _buildTextField(
                         controller: _phoneController,
                         label: 'Phone',
@@ -202,19 +148,17 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
 
                       const SizedBox(height: 16),
 
-                      // Champ Genre
                       _buildGenderDropdown(
                         selectedGender: _selectedGender,
                         onChanged: (String? newValue) {
                           setState(() {
-                            _selectedGender = newValue; // Mise à jour de la sélection
+                            _selectedGender = newValue;
                           });
                         },
                       ),
 
                       const SizedBox(height: 16),
 
-                      // Champ Date de naissance
                       _buildTextField(
                         controller: _dobController,
                         label: 'Date of Birth',
@@ -246,7 +190,6 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
 
                       const SizedBox(height: 16),
 
-                      // Champ Adresse
                       _buildTextField(
                         controller: _addressController,
                         label: 'Address',
@@ -256,130 +199,15 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
 
                       const SizedBox(height: 30),
 
-                      // Section Sécurité
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Security',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            ListTile(
-                              contentPadding: EdgeInsets.zero,
-                              leading: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: AppColors.green.shade50,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Icon(
-                                  LucideIcons.lockKeyhole,
-                                  color: AppColors.green,
-                                ),
-                              ),
-                              title: const Text(
-                                'Change Password',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              trailing: const Icon(Icons.chevron_right),
-                              onTap: () {
-                                // Navigation vers page de changement de mot de passe
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Change password page'),
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
+                      // Section Sécurité avec nouveau style
+                      _buildSecuritySection(),
 
                       const SizedBox(height: 30),
 
-                      // Boutons Annuler et Sauvegarder
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: _isLoading
-                                  ? null
-                                  : () => Navigator.pop(context),
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                side: const BorderSide(color: AppColors.green),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: const Text(
-                                'Cancel',
-                                style: TextStyle(
-                                  color: AppColors.green,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: _isLoading ? null : _saveChanges,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.green,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: _isLoading
-                                  ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor:
-                                  AlwaysStoppedAnimation<Color>(
-                                    Colors.white,
-                                  ),
-                                ),
-                              )
-                                  : const Text(
-                                'Save Changes',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                      // Boutons avec nouveau style
+                      _buildActionButtons(),
 
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 100),
                     ],
                   ),
                 ),
@@ -388,6 +216,101 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildTopHeader() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(30),
+          bottomRight: Radius.circular(30),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back, size: 24),
+            onPressed: () => context.pop(),
+            padding: EdgeInsets.zero,
+          ),
+          const SizedBox(width: 8),
+          const Text(
+            'Edit Profile',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1D1D1F),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfilePhoto() {
+    return Stack(
+      children: [
+        ClipOval(
+          child: Image.network(
+            'https://i.pravatar.cc/150?img=32',
+            width: 120,
+            height: 120,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => Container(
+              width: 120,
+              height: 120,
+              color: Colors.grey[200],
+              child: const Icon(Icons.person, size: 60, color: Colors.grey),
+            ),
+          ),
+        ),
+        Positioned(
+          bottom: 0,
+          right: 0,
+          child: GestureDetector(
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Change photo functionality'),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: const BoxDecoration(
+                color: AppColors.green,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 6,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.camera_alt,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -403,6 +326,15 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: TextFormField(
         controller: controller,
@@ -411,34 +343,51 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
         readOnly: readOnly,
         onTap: onTap,
         maxLines: maxLines,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: Color(0xFF1D1D1F),
+        ),
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: TextStyle(
+            color: Colors.grey.shade600,
+            fontSize: 15,
+          ),
           prefixIcon: Container(
-            margin: const EdgeInsets.all(8),
-            padding: const EdgeInsets.all(8),
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.green.shade50,
-              borderRadius: BorderRadius.circular(10),
+              color: const Color(0xFFF5F5F7),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: AppColors.green, size: 20),
+            child: Icon(icon, color: AppColors.green, size: 22),
           ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(width: 16.0, color: AppColors.green),
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide.none,
           ),
           filled: true,
           fillColor: Colors.white,
           contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
+            horizontal: 20,
+            vertical: 18,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: Colors.transparent, width: 1), // Couleur de bordure par défaut
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: AppColors.green, width: 2), // Couleur de bordure quand sélectionné
+            borderRadius: BorderRadius.circular(20),
+            borderSide: const BorderSide(color: AppColors.green, width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: const BorderSide(color: Colors.red, width: 1),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: const BorderSide(color: Colors.red, width: 2),
           ),
         ),
       ),
@@ -449,48 +398,215 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     required String? selectedGender,
     required Function(String?) onChanged,
   }) {
-    return DropdownButtonFormField<String>(
-      decoration: InputDecoration(
-        labelText: 'Gender',
-        prefixIcon: Container(
-          margin: const EdgeInsets.all(8),
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: AppColors.green.shade50,
-            borderRadius: BorderRadius.circular(10),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-          child: Icon(LucideIcons.venusAndMars, color: AppColors.green, size: 20),
-        ),
-        border: OutlineInputBorder(),
-        filled: true,
-        fillColor: Colors.white,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.transparent, width: 1), // Couleur de bordure par défaut
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: AppColors.green, width: 2), // Couleur de bordure quand sélectionné
-        ),
+        ],
       ),
-      // initialValue: selectedGender,
-      items: <String>[
-        'Male',
-        'Female',
-        'Other',
-      ].map<DropdownMenuItem<String>>((String value) {
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(value),
-        );
-      }).toList(),
-      onChanged: onChanged, // Fonction de changement passée en paramètre
-      validator: (value) {
-        if (value == null) {
-          return 'Please select your gender'; // Message d'erreur si aucune sélection
-        }
-        return null;
-      },
+      child: DropdownButtonFormField<String>(
+        value: selectedGender,
+        decoration: InputDecoration(
+          labelText: 'Gender',
+          labelStyle: TextStyle(
+            color: Colors.grey.shade600,
+            fontSize: 15,
+          ),
+          prefixIcon: Container(
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF5F5F7),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(LucideIcons.venusAndMars, color: AppColors.green, size: 22),
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 18,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: const BorderSide(color: AppColors.green, width: 2),
+          ),
+        ),
+        items: <String>['Male', 'Female', 'Other'].map<DropdownMenuItem<String>>((String value) {
+          return DropdownMenuItem<String>(
+            value: value,
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF1D1D1F),
+              ),
+            ),
+          );
+        }).toList(),
+        onChanged: onChanged,
+        validator: (value) {
+          if (value == null) {
+            return 'Please select your gender';
+          }
+          return null;
+        },
+      ),
+    );
+  }
+
+  Widget _buildSecuritySection() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Security',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1D1D1F),
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 16),
+          InkWell(
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Change password page'),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              );
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      LucideIcons.lockKeyhole,
+                      color: AppColors.green,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  const Expanded(
+                    child: Text(
+                      'Change Password',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: Color(0xFF1D1D1F),
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.chevron_right,
+                    color: Colors.grey.shade400,
+                    size: 24,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton(
+            onPressed: _isLoading ? null : () => context.pop(),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              side: const BorderSide(color: AppColors.green, width: 2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(
+                color: AppColors.green,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: _isLoading ? null : _saveChanges,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.green,
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              elevation: 0,
+            ),
+            child: _isLoading
+                ? const SizedBox(
+                    height: 22,
+                    width: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Text(
+                    'Save Changes',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+          ),
+        ),
+      ],
     );
   }
 }
