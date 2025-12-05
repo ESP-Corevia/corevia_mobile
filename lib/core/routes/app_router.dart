@@ -7,6 +7,8 @@ import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/account/presentation/screens/account_screen.dart';
 import '../../features/account/presentation/screens/edit_account_screen.dart';
 import '../../features/statistics/presentation/screens/statistics_screen.dart';
+import '../../features/chat/presentation/screens/chat_screen_ai.dart' as ai_chat;
+import '../../features/chat/presentation/screens/conversations_list_screen.dart';
 
 // La barre de navigation
 import '../../widgets/navigation_bar.dart';
@@ -14,6 +16,19 @@ import '../../widgets/navigation_bar.dart';
 final GoRouter router = GoRouter(
   initialLocation: '/home',
   routes: [
+    // Route pour la liste des conversations
+    GoRoute(
+      path: '/conversations',
+      builder: (context, state) => const ConversationsListScreen(),
+    ),
+    // Route pour une conversation spécifique
+    GoRoute(
+      path: '/chat/ai/:conversationId',
+      builder: (context, state) => ai_chat.ChatScreen(
+        conversationId: state.pathParameters['conversationId'] ?? 'new',
+      ),
+    ),
+    // ShellRoute pour les écrans avec BottomNavigationBar
     ShellRoute(
       builder: (context, state, child) {
         return Scaffold(
@@ -41,6 +56,16 @@ final GoRouter router = GoRouter(
         GoRoute(
           path: '/stats',
           builder: (context, state) => const StatisticsScreen(),
+        ),
+        GoRoute(
+          path: '/chat/ai/new',
+          builder: (context, state) => const ai_chat.ChatScreen(conversationId: 'new'),
+        ),
+        GoRoute(
+          path: '/chat/ai/:conversationId',
+          builder: (context, state) => ai_chat.ChatScreen(
+            conversationId: state.pathParameters['conversationId']!,
+          ),
         ),
         GoRoute(
           path: '/calendar',
