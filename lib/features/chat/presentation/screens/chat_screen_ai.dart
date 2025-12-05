@@ -874,25 +874,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  chat_core.Message _buildDoctorCardMessage() {
-    final now = DateTime.now();
-    return chat_core.Message.custom(
-      id: now.millisecondsSinceEpoch.toString(),
-      authorId: _assistant.id,
-      createdAt: now,
-      metadata: {
-        'type': 'doctor_card',
-        'doctor': {
-          'name': 'Dr. Ahmed Badaoui',
-          'specialty': 'Lung Specialist',
-          'rating': 5.0,
-          'distance': '2km',
-          'image': 'doctor_avatar',
-        },
-      },
-    );
-  }
-
   chat_core.Message _buildTextMessage({
     required chat_core.User author,
     required String text,
@@ -1099,39 +1080,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           ),
         ],
       ),
-    );
-  }
-
-  // Méthode utilitaire pour les éléments de la barre de navigation
-  Widget _buildNavItem(IconData icon, String label, int index, {bool isActive = false}) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          color: isActive ? _currentAI.primaryColor : Colors.grey.withOpacity(0.7),
-          size: 24,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: isActive ? _currentAI.primaryColor : Colors.grey.withOpacity(0.7),
-            fontSize: 10,
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-          ),
-        ),
-        if (isActive)
-          Container(
-            margin: const EdgeInsets.only(top: 4),
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(
-              color: _currentAI.primaryColor,
-              shape: BoxShape.circle,
-            ),
-          ),
-      ],
     );
   }
 

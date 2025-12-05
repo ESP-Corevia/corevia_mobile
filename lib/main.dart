@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'core/routes/app_router.dart';
 import 'shared/theme/app_theme.dart';
 import 'features/home/presentation/providers/home_provider.dart';
 import 'features/home/data/repositories/home_repository_impl.dart';
 
-void main() {
+void main() async {
+  // Assurez-vous que Flutter est initialisé avant de charger le fichier .env
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Chargez le fichier .env
+  await dotenv.load(fileName: ".env");
+
   runApp(
     MultiProvider(
       providers: [
