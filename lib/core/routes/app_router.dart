@@ -7,6 +7,7 @@ import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/account/presentation/screens/account_screen.dart';
 import '../../features/account/presentation/screens/edit_account_screen.dart';
 import '../../features/statistics/presentation/screens/statistics_screen.dart';
+import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/chat/presentation/screens/chat_screen_ai.dart' as ai_chat;
 import '../../features/chat/presentation/screens/conversations_list_screen.dart';
 
@@ -14,8 +15,14 @@ import '../../features/chat/presentation/screens/conversations_list_screen.dart'
 import '../../widgets/navigation_bar.dart';
 
 final GoRouter router = GoRouter(
-  initialLocation: '/home',
+  initialLocation: '/login',
   routes: [
+    // Route pour la page de connexion
+    GoRoute(
+      path: '/login',
+      builder: (context, state) => const LoginScreen(),
+    ),
+    // ShellRoute pour les routes protégées (accessibles après connexion)
     // Route pour la liste des conversations
     GoRoute(
       path: '/conversations',
