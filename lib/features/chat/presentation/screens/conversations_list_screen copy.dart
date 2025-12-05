@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:go_router/go_router.dart';
 import 'chat_screen_ai.dart';
 import '../../../../../widgets/navigation_bar.dart';
 
