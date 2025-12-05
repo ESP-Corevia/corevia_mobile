@@ -53,7 +53,7 @@ class BottomNavBar extends StatelessWidget {
                   margin: const EdgeInsets.symmetric(horizontal: 4),
                   decoration: BoxDecoration(
                     color: isActive 
-                        ? const Color(0xFF34C759).withOpacity(0.12)
+                        ? const Color(0xFF34C759).withAlpha((0.12 * 255).toInt())
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(16),
                   ),
