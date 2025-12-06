@@ -1,3 +1,4 @@
+[![Flutter Analyze](https://github.com/ESP-Corevia/corevia_mobile/actions/workflows/flutter_analyze.yml/badge.svg)](https://github.com/ESP-Corevia/corevia_mobile/actions/workflows/flutter_analyze.yml)
 # corevia_mobile
 
 A new Flutter project.
