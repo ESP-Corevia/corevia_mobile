@@ -392,66 +392,69 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
   }
 
   Widget _buildOnboardingPage(Map<String, dynamic> data) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 32),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          AnimatedBuilder(
-            animation: _floatingAnimation,
-            builder: (context, child) {
-              return Transform.translate(
-                offset: Offset(0, _floatingAnimation.value),
-                child: Container(
-                  width: 140,
-                  height: 140,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: data['gradient'],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: data['color'].withValues(alpha: 0.4),
-                        blurRadius: 30,
-                        offset: Offset(0, 15),
+    return SingleChildScrollView(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedBuilder(
+              animation: _floatingAnimation,
+              builder: (context, child) {
+                return Transform.translate(
+                  offset: Offset(0, _floatingAnimation.value),
+                  child: Container(
+                    width: 140,
+                    height: 140,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: data['gradient'],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                    ],
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: data['color'].withValues(alpha: 0.4),
+                          blurRadius: 30,
+                          offset: Offset(0, 15),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      data['icon'],
+                      size: 70,
+                      color: Colors.white,
+                    ),
                   ),
-                  child: Icon(
-                    data['icon'],
-                    size: 70,
-                    color: Colors.white,
-                  ),
-                ),
-              );
-            },
-          ),
-          SizedBox(height: 40),
-          Text(
-            data['title'],
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF1D1D1F),
-              letterSpacing: -1,
+                );
+              },
             ),
-          ),
-          SizedBox(height: 16),
-          Text(
-            data['subtitle'],
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-              height: 1.5,
+            SizedBox(height: 40),
+            Text(
+              data['title'],
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF1D1D1F),
+                letterSpacing: -1,
+              ),
             ),
-          ),
-        ],
+            SizedBox(height: 16),
+            Text(
+              data['subtitle'],
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
