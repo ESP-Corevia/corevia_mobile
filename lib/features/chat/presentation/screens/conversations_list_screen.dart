@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'chat_screen_doc.dart';
+import 'chat_screen_ai.dart';
 import '../../../../../widgets/navigation_bar.dart';
 
 class ConversationsListScreen extends StatefulWidget {
