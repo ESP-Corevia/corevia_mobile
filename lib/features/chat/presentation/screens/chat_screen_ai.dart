@@ -579,7 +579,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   );
                 }
               },
-            )).toList(),
+            )),
 
             const Divider(height: 32),
             

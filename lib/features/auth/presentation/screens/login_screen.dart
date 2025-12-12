@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:corevia_mobile/features/auth/domain/models/login_model.dart';
 import 'package:corevia_mobile/features/auth/presentation/screens/register_screen.dart';
-import 'dart:math' as math;
 import 'package:go_router/go_router.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -18,35 +17,9 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
   final PageController _pageController = PageController();
   bool _obscurePassword = true;
   bool _isLoading = false;
-  int _currentPage = 0;
   
   late AnimationController _floatingController;
   late AnimationController _rotationController;
-  late Animation<double> _floatingAnimation;
-
-  final List<Map<String, dynamic>> _onboardingData = [
-    {
-      'title': 'Suivez vos médicaments',
-      'subtitle': 'Ne manquez plus jamais une dose',
-      'icon': Icons.medication_rounded,
-      'color': Color(0xFF34C759),
-      'gradient': [Color(0xFF34C759), Color(0xFF30D158)],
-    },
-    {
-      'title': 'Rappels intelligents',
-      'subtitle': 'Notifications personnalisées pour vous',
-      'icon': Icons.notifications_active_rounded,
-      'color': Color(0xFF5856D6),
-      'gradient': [Color(0xFF5856D6), Color(0xFF7B79FF)],
-    },
-    {
-      'title': 'DocAI à votre service',
-      'subtitle': 'Assistant médical intelligent 24/7',
-      'icon': Icons.psychology_rounded,
-      'color': Color(0xFFFF9500),
-      'gradient': [Color(0xFFFF9500), Color(0xFFFFB340)],
-    },
-  ];
 
   @override
   void initState() {
@@ -60,10 +33,7 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
       duration: const Duration(seconds: 20),
       vsync: this,
     )..repeat();
-    
-    _floatingAnimation = Tween<double>(begin: -10, end: 10).animate(
-      CurvedAnimation(parent: _floatingController, curve: Curves.easeInOut),
-    );
+
   }
 
   @override
@@ -142,36 +112,6 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
         child: SafeArea(
           child: Column(
             children: [
-              Expanded(
-                flex: 5,
-                child: Stack(
-                  children: [
-                    // Animated background shapes
-                    _buildBackgroundShapes(),
-                    
-                    // Carousel
-                    Column(
-                      children: [
-                        Expanded(
-                          child: PageView.builder(
-                            controller: _pageController,
-                            onPageChanged: (index) {
-                              setState(() => _currentPage = index);
-                            },
-                            itemCount: _onboardingData.length,
-                            itemBuilder: (context, index) {
-                              return _buildOnboardingPage(_onboardingData[index]);
-                            },
-                          ),
-                        ),
-                        _buildPageIndicator(),
-                        SizedBox(height: 20),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              
               // Form section
               Expanded(
                 flex: 6,
@@ -331,146 +271,6 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBackgroundShapes() {
-    return Stack(
-      children: [
-        AnimatedBuilder(
-          animation: _rotationController,
-          builder: (context, child) {
-            return Positioned(
-              top: -50,
-              right: -50,
-              child: Transform.rotate(
-                angle: _rotationController.value * 2 * math.pi,
-                child: Container(
-                  width: 200,
-                  height: 200,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        Color(0xFF34C759).withValues(alpha: 0.3),
-                        Color(0xFF34C759).withValues(alpha: 0.0),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-        AnimatedBuilder(
-          animation: _floatingAnimation,
-          builder: (context, child) {
-            return Positioned(
-              bottom: 50 + _floatingAnimation.value,
-              left: -30,
-              child: Container(
-                width: 150,
-                height: 150,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      Color(0xFF5856D6).withValues(alpha: 0.2),
-                      Color(0xFF5856D6).withValues(alpha: 0.0),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildOnboardingPage(Map<String, dynamic> data) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 32),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          AnimatedBuilder(
-            animation: _floatingAnimation,
-            builder: (context, child) {
-              return Transform.translate(
-                offset: Offset(0, _floatingAnimation.value),
-                child: Container(
-                  width: 140,
-                  height: 140,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: data['gradient'],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: data['color'].withValues(alpha: 0.4),
-                        blurRadius: 30,
-                        offset: Offset(0, 15),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    data['icon'],
-                    size: 70,
-                    color: Colors.white,
-                  ),
-                ),
-              );
-            },
-          ),
-          SizedBox(height: 40),
-          Text(
-            data['title'],
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF1D1D1F),
-              letterSpacing: -1,
-            ),
-          ),
-          SizedBox(height: 16),
-          Text(
-            data['subtitle'],
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-              height: 1.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPageIndicator() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(
-        _onboardingData.length,
-        (index) => AnimatedContainer(
-          duration: Duration(milliseconds: 300),
-          margin: EdgeInsets.symmetric(horizontal: 4),
-          width: _currentPage == index ? 32 : 8,
-          height: 8,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(4),
-            color: _currentPage == index
-                ? _onboardingData[index]['color']
-                : Colors.grey[300],
           ),
         ),
       ),
