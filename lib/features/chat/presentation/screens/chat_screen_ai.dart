@@ -89,7 +89,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     id: 'user',
     name: 'Georges',
   );
-  late final chat_core.InMemoryChatController _chatController;
+  chat_core.InMemoryChatController? _chatController;
   bool _isTyping = false;
   final TextEditingController _messageController = TextEditingController();
   final FocusNode _messageFocusNode = FocusNode();
@@ -136,7 +136,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       name: _currentAI.name,
     );
     
-    _chatController = chat_core.InMemoryChatController();
+    _initChatController();
     _typingAnimationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
@@ -157,20 +157,26 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     });
   }
   
+  void _initChatController() {
+    _chatController = chat_core.InMemoryChatController();
+  }
+    
   void _loadConversation(String conversationId) {
-    _addSystemMessage(
-      'Reprise de la conversation. Comment puis-je vous aider aujourd\'hui ?'
-    );
+    if (_chatController != null) {
+      _addSystemMessage(
+        'Reprise de la conversation. Comment puis-je vous aider aujourd\'hui ?'
+      );
+    }
   }
 
   void _addSystemMessage(String text) {
-    final message = _buildTextMessage(author: _assistant, text: text);
-    _chatController.insertMessage(message, index: 0);
+    if (_chatController != null) {
+      final message = _buildTextMessage(author: _assistant, text: text);
+      _chatController?.insertMessage(message, index: 0);
+    }
   }
 
   void _showAISelectionDialog() {
-    AIDoctor selectedAI = _currentAI;  // Garder une référence locale de l'IA sélectionnée
-    
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -247,14 +253,14 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                           duration: const Duration(milliseconds: 200),
                           margin: const EdgeInsets.only(bottom: 8),
                           decoration: BoxDecoration(
-                            color: selectedAI.id == ai.id 
+                            color: _currentAI.id == ai.id 
                                 ? ai.primaryColor.withOpacity(0.1) 
                                 : Colors.grey.withOpacity(0.05),
                             borderRadius: BorderRadius.circular(16),
-                            border: selectedAI.id == ai.id
+                            border: _currentAI.id == ai.id
                                 ? Border.all(color: ai.primaryColor, width: 1.5)
                                 : null,
-                            boxShadow: selectedAI.id == ai.id ? [
+                            boxShadow: _currentAI.id == ai.id ? [
                               BoxShadow(
                                 color: ai.primaryColor.withOpacity(0.1),
                                 blurRadius: 8,
@@ -265,14 +271,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                           child: Material(
                             color: Colors.transparent,
                             child: InkWell(
-                              onTap: () {
-                                // Mettre à jour la sélection visuelle immédiatement
-                                setDialogState(() {
-                                  selectedAI = ai;
-                                });
-
-                                // Détruire l'ancien contrôleur s'il existe
-                                _chatController.dispose();
+                              onTap: () async {
+                                // Fermer la boîte de dialogue immédiatement
+                                Navigator.of(context).pop();
                                 
                                 // Mettre à jour l'état principal
                                 setState(() {
@@ -281,22 +282,20 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                     id: _currentAI.id,
                                     name: _currentAI.name,
                                   );
-                                  _chatController = chat_core.InMemoryChatController();
                                   _isTyping = false;
-                                  
-                                  // Ajouter le message de bienvenue
-                                  _addSystemMessage(
-                                    'Bonjour Georges ! Je suis ${ai.name}, spécialiste en ${ai.specialty}. ' 
-                                    'Comment puis-je vous aider aujourd\'hui ?'
-                                  );
                                 });
+
+                                // Détruire l'ancien contrôleur
+                                _chatController?.dispose();
                                 
-                                // Fermer la boîte de dialogue après un court délai pour un meilleur retour visuel
-                                Future.delayed(const Duration(milliseconds: 200), () {
-                                  if (mounted) {
-                                    Navigator.of(context).pop();
-                                  }
-                                });
+                                // Mettre à jour le contrôleur de chat
+                                _initChatController();
+                                
+                                // Ajouter le message de bienvenue
+                                _addSystemMessage(
+                                  'Bonjour Georges ! Je suis ${ai.name}, spécialiste en ${ai.specialty}. ' 
+                                  'Comment puis-je vous aider aujourd\'hui ?'
+                                );
                               },
                               borderRadius: BorderRadius.circular(16),
                               child: Padding(
@@ -579,7 +578,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   );
                 }
               },
-            )).toList(),
+            )),
 
             const Divider(height: 32),
             
@@ -805,7 +804,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       author: _currentUser,
       text: text,
     );
-    _chatController.insertMessage(message, index: 0);
+    if (_chatController != null) {
+      _chatController?.insertMessage(message, index: 0);
+    }
     
     // Effacer le champ de texte et donner le focus
     _messageController.clear();
@@ -828,7 +829,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       
       setState(() {
         _isTyping = false;
-        _addSystemMessage(response);
+        if (_chatController != null) {
+          _addSystemMessage(response);
+        }
         
         // Si la réponse contient une carte médecin, l'ajouter
         if (userMessage.toLowerCase().contains('trouv') || 
@@ -867,11 +870,30 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    _chatController.dispose();
-    _typingAnimationController.dispose();
     _messageController.dispose();
     _messageFocusNode.dispose();
+    _typingAnimationController.dispose();
+    _chatController?.dispose();
     super.dispose();
+  }
+
+  chat_core.Message _buildDoctorCardMessage() {
+    final now = DateTime.now();
+    return chat_core.Message.custom(
+      id: now.millisecondsSinceEpoch.toString(),
+      authorId: _assistant.id,
+      createdAt: now,
+      metadata: {
+        'type': 'doctor_card',
+        'doctor': {
+          'name': 'Dr. Ahmed Badaoui',
+          'specialty': 'Lung Specialist',
+          'rating': 5.0,
+          'distance': '2km',
+          'image': 'doctor_avatar',
+        },
+      },
+    );
   }
 
   chat_core.Message _buildTextMessage({
@@ -1083,6 +1105,39 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     );
   }
 
+  // Méthode utilitaire pour les éléments de la barre de navigation
+  Widget _buildNavItem(IconData icon, String label, int index, {bool isActive = false}) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          icon,
+          color: isActive ? _currentAI.primaryColor : Colors.grey.withOpacity(0.7),
+          size: 24,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            color: isActive ? _currentAI.primaryColor : Colors.grey.withOpacity(0.7),
+            fontSize: 10,
+            fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+          ),
+        ),
+        if (isActive)
+          Container(
+            margin: const EdgeInsets.only(top: 4),
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: _currentAI.primaryColor,
+              shape: BoxShape.circle,
+            ),
+          ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1252,7 +1307,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                           ),
                           onTap: () {
                             setState(() {
-                              _chatController.dispose();
+                              _chatController?.dispose();
                               _chatController = chat_core.InMemoryChatController();
                             });
                             Navigator.pop(context);
@@ -1278,7 +1333,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 // Messages list
                 Expanded(
                   child: StreamBuilder<List<chat_core.Message>>(
-                    stream: Stream.value(_chatController.messages),
+                    stream: Stream.value(_chatController?.messages ?? []),
+                    initialData: _chatController?.messages ?? [],
                     builder: (context, snapshot) {
                       final messages = snapshot.data ?? [];
                       
