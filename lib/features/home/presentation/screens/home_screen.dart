@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../widgets/pill_shadow.dart';
 import '../../../../widgets/medication_detail_modal.dart';
+import '../../../../widgets/navigation_bar.dart';
 
 
 
@@ -33,6 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      bottomNavigationBar: const BottomNavBar(currentLocation: '/home'),
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(

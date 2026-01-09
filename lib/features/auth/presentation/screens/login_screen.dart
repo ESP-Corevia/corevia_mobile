@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:corevia_mobile/features/auth/domain/models/login_model.dart';
 import 'package:corevia_mobile/features/auth/presentation/screens/register_screen.dart';
-import 'package:go_router/go_router.dart';
+import 'package:corevia_mobile/features/auth/presentation/screens/reset_password_screen.dart';
+import 'package:corevia_mobile/features/home/presentation/screens/home_screen.dart';
+// Navigation standard de Flutter utilisée
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -203,8 +205,28 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
                           Align(
                             alignment: Alignment.centerRight,
                             child: TextButton(
-                              onPressed: () {},
-                              child: Text(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  PageRouteBuilder(
+                                    pageBuilder: (context, animation, secondaryAnimation) => const ResetPasswordScreen(),
+                                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                      return SlideTransition(
+                                        position: Tween<Offset>(
+                                          begin: const Offset(1.0, 0.0),
+                                          end: Offset.zero,
+                                        ).animate(CurvedAnimation(
+                                          parent: animation,
+                                          curve: Curves.easeOutCubic,
+                                        )),
+                                        child: child,
+                                      );
+                                    },
+                                    transitionDuration: const Duration(milliseconds: 400),
+                                  ),
+                                );
+                              },
+                              child: const Text(
                                 'Mot de passe oublié?',
                                 style: TextStyle(
                                   color: Color(0xFF34C759),
@@ -367,7 +389,12 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
               : () async {
               await _login();
               if (mounted){
-              context.go('/home'); // 🔥 Redirection temporaire
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const HomeScreen(),
+                ),
+              );
               }
           },
         style: ElevatedButton.styleFrom(
