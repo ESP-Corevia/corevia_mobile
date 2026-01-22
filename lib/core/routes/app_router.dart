@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 // Les écrans
 import '../../features/calendar/presentation/screens/calendar_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
+import '../../features/booking/presentation/screens/booking_screen.dart';
+import '../../features/booking/presentation/screens/booking_confirmation_screen.dart';
+import '../../features/booking/presentation/screens/appointments_screen.dart';
 import '../../features/account/presentation/screens/account_screen.dart';
 import '../../features/account/presentation/screens/edit_account_screen.dart';
 import '../../features/statistics/presentation/screens/statistics_screen.dart';
@@ -111,6 +114,38 @@ GoRouter createRouter(ValueNotifier<bool> onboardingNotifier) {
       GoRoute(
         path: '/edit-account',
         builder: (context, state) => const EditAccountScreen(),
+      ),
+      GoRoute(
+        path: '/appointments',
+        builder: (context, state) => const AppointmentsScreen(),
+      ),
+      GoRoute(
+        path: '/calendar/booking',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          return BookingScreen(
+            doctorId: extra['doctorId'] as String? ?? '',
+            doctorName: extra['doctorName'] as String? ?? 'Médecin',
+            specialty: extra['specialty'] as String? ?? '',
+            imageUrl: extra['imageUrl'] as String? ?? '',
+            address: extra['address'] as String? ?? 'Adresse non renseignée',
+          );
+        },
+      ),
+      GoRoute(
+        path: '/calendar/booking/confirmation',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          return BookingConfirmationScreen(
+            doctorId: extra['doctorId'] as String? ?? '',
+            doctorName: extra['doctorName'] as String? ?? 'Médecin',
+            specialty: extra['specialty'] as String? ?? '',
+            imageUrl: extra['imageUrl'] as String? ?? '',
+            address: extra['address'] as String? ?? 'Adresse non renseignée',
+            date: extra['date'] as DateTime? ?? DateTime.now(),
+            timeSlot: extra['timeSlot'] as String? ?? '',
+          );
+        },
       ),
     ],
 
