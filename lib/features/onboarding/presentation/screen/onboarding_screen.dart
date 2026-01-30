@@ -83,7 +83,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     if (!mounted) return;
 
     // 🔥 Met à jour le notifier que GoRouter écoute
-    context.read<ValueNotifier<bool>>().value = false;
+    final onboardingNotifier = Provider.of<ValueNotifier<bool>>(context, listen: false);
+    onboardingNotifier.value = false; 
 
     // Déplace l'utilisateur vers le login
     context.go('/login');
