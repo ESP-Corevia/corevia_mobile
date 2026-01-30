@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../../../widgets/pro_member.dart';
 import 'package:corevia_mobile/core/theme/colors.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -19,6 +20,12 @@ class _AccountScreenState extends State<AccountScreen> {
   @override
   void initState() {
     super.initState();
+  }
+
+  void _logout() {
+    final authNotifier = Provider.of<ValueNotifier<bool>>(context, listen: false);
+    authNotifier.value = false;
+    context.go('/login');
   }
 
   @override
@@ -120,6 +127,7 @@ class _AccountScreenState extends State<AccountScreen> {
                           title: 'Logout',
                           iconColor: Colors.red,
                           titleColor: Colors.red,
+                          onTap: () => _logout(),
                         ),
                       ],
                     ),
@@ -343,9 +351,10 @@ class _AccountScreenState extends State<AccountScreen> {
     Widget? trailing,
     Color? iconColor,
     Color? titleColor,
+    VoidCallback? onTap,
   }) {
     return InkWell(
-      onTap: () {},
+      onTap: onTap ?? () {},
       borderRadius: BorderRadius.circular(16),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
