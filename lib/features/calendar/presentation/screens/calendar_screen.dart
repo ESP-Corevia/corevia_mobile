@@ -739,16 +739,31 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF34C759),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  LucideIcons.phone,
-                  size: 18,
-                  color: Colors.white,
+              GestureDetector(
+                onTap: () {
+                  // Navigation vers l'écran de réservation avec le médecin sélectionné
+                  context.push(
+                    '/calendar/booking',
+                    extra: {
+                      'doctorId': 'default_doctor_id', // You should replace this with the actual doctor ID
+                      'doctorName': doctorName,
+                      'specialty': specialty,
+                      'imageUrl': 'https://via.placeholder.com/150', // Default placeholder image
+                      'price': '50', // Default price
+                    },
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF34C759),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    LucideIcons.calendar,
+                    size: 18,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ],
