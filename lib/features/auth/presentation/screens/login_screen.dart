@@ -1,7 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
-import 'package:corevia_mobile/features/auth/domain/models/login_model.dart';
-import 'package:corevia_mobile/features/auth/presentation/screens/register_screen.dart';
 import 'package:go_router/go_router.dart';
+import 'package:corevia_mobile/features/auth/presentation/screens/register_screen.dart';
+import 'package:corevia_mobile/features/auth/presentation/screens/reset_password_screen.dart';
+import 'package:provider/provider.dart';
+import '../controllers/login_controller.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,6 +15,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin {
+  late final LoginController _controller;
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -20,6 +25,7 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
   
   late AnimationController _floatingController;
   late AnimationController _rotationController;
+  late Animation<double> _floatingAnimation;
 
   @override
   void initState() {
@@ -34,6 +40,7 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
       vsync: this,
     )..repeat();
 
+    _controller = LoginController();
   }
 
   @override
@@ -53,30 +60,28 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
     setState(() => _isLoading = true);
 
     try {
-      final loginData = LoginModel(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
+      final success = await _controller.login(
+        _emailController.text.trim(),
+        _passwordController.text,
       );
-      
-      debugPrint('Logging in user: ${loginData.email}');
-      await Future.delayed(const Duration(seconds: 2));
-      
+
       if (mounted) {
+        if (success) {
+          // 🔹 1️⃣ Met à jour authNotifier
+          final authNotifier = Provider.of<ValueNotifier<bool>>(context, listen: false);
+          authNotifier.value = true; 
+
+          // 🔹 2️⃣ Navigue vers /home
+          context.go('/home');
+        } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 12),
-                Text('Connexion réussie!', style: TextStyle(fontWeight: FontWeight.w600)),
-              ],
-            ),
-            backgroundColor: Color(0xFF34C759),
+          const SnackBar(
+            content: Text('Email ou mot de passe incorrect'),
+            backgroundColor: Color(0xFFFF3B30),
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            margin: EdgeInsets.all(16),
           ),
         );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -85,12 +90,13 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
             content: Text('Erreur: ${e.toString()}'),
             backgroundColor: Color(0xFFFF3B30),
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
         );
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -193,8 +199,8 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
                               if (value == null || value.isEmpty) {
                                 return 'Veuillez entrer votre mot de passe';
                               }
-                              if (value.length < 6) {
-                                return 'Minimum 6 caractères';
+                              if (value.length < 8) {
+                                return 'Minimum 8 caractères';
                               }
                               return null;
                             },
@@ -203,8 +209,28 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
                           Align(
                             alignment: Alignment.centerRight,
                             child: TextButton(
-                              onPressed: () {},
-                              child: Text(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  PageRouteBuilder(
+                                    pageBuilder: (context, animation, secondaryAnimation) => const ResetPasswordScreen(),
+                                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                      return SlideTransition(
+                                        position: Tween<Offset>(
+                                          begin: const Offset(1.0, 0.0),
+                                          end: Offset.zero,
+                                        ).animate(CurvedAnimation(
+                                          parent: animation,
+                                          curve: Curves.easeOutCubic,
+                                        )),
+                                        child: child,
+                                      );
+                                    },
+                                    transitionDuration: const Duration(milliseconds: 400),
+                                  ),
+                                );
+                              },
+                              child: const Text(
                                 'Mot de passe oublié?',
                                 style: TextStyle(
                                   color: Color(0xFF34C759),
@@ -272,6 +298,128 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBackgroundShapes() {
+    return Stack(
+      children: [
+        AnimatedBuilder(
+          animation: _rotationController,
+          builder: (context, child) {
+            return Positioned(
+              top: -50,
+              right: -50,
+              child: Transform.rotate(
+                angle: _rotationController.value * 2 * math.pi,
+                child: Container(
+                  width: 200,
+                  height: 200,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        Color(0xFF34C759).withValues(alpha: 0.3),
+                        Color(0xFF34C759).withValues(alpha: 0.0),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+        AnimatedBuilder(
+          animation: _floatingAnimation,
+          builder: (context, child) {
+            return Positioned(
+              bottom: 50 + _floatingAnimation.value,
+              left: -30,
+              child: Container(
+                width: 150,
+                height: 150,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      Color(0xFF5856D6).withValues(alpha: 0.2),
+                      Color(0xFF5856D6).withValues(alpha: 0.0),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOnboardingPage(Map<String, dynamic> data) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedBuilder(
+              animation: _floatingAnimation,
+              builder: (context, child) {
+                return Transform.translate(
+                  offset: Offset(0, _floatingAnimation.value),
+                  child: Container(
+                    width: 140,
+                    height: 140,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: data['gradient'],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: data['color'].withValues(alpha: 0.4),
+                          blurRadius: 30,
+                          offset: Offset(0, 15),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      data['icon'],
+                      size: 70,
+                      color: Colors.white,
+                    ),
+                  ),
+                );
+              },
+            ),
+            SizedBox(height: 40),
+            Text(
+              data['title'],
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF1D1D1F),
+                letterSpacing: -1,
+              ),
+            ),
+            SizedBox(height: 16),
+            Text(
+              data['subtitle'],
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+                height: 1.5,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -366,9 +514,6 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
               ? null
               : () async {
               await _login();
-              if (mounted){
-              context.go('/home'); // 🔥 Redirection temporaire
-              }
           },
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,

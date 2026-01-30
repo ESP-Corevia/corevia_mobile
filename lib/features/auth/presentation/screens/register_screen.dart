@@ -1,6 +1,10 @@
-import 'package:flutter/material.dart';
 import 'package:corevia_mobile/features/auth/domain/models/register_model.dart';
+import 'package:flutter/material.dart';
 import 'package:corevia_mobile/features/auth/presentation/screens/login_screen.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../controllers/register_controller.dart';
+
 import 'dart:math' as math;
 
 class RegisterScreen extends StatefulWidget {
@@ -11,6 +15,7 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStateMixin {
+  late final RegisterController _controller;
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -44,6 +49,8 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
     _pulseAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
+
+    _controller = RegisterController();
   }
 
   @override
@@ -80,70 +87,57 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
   }
 
   Future<void> _register() async {
-    if (!_formKey.currentState!.validate()) return;
-    FocusScope.of(context).unfocus();
+  if (!_formKey.currentState!.validate()) return;
+  FocusScope.of(context).unfocus();
 
-    setState(() => _isLoading = true);
+  setState(() => _isLoading = true);
 
-    try {
-      final registerData = RegisterModel(
-        firstName: _firstNameController.text.trim(),
-        lastName: _lastNameController.text.trim(),
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-        confirmPassword: _confirmPasswordController.text,
-      );
+  try {
+    final registerData = RegisterModel(
+      firstName: _firstNameController.text.trim(),
+      lastName: _lastNameController.text.trim(),
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+      confirmPassword: _confirmPasswordController.text,
+    );
 
-      await Future.delayed(const Duration(seconds: 1));
+    final success = await _controller.register(registerData);
 
-      debugPrint('Registering user: ${registerData.email}');
+    if (mounted) {
+      if (success) {
+        // 🔹 1️⃣ Met à jour authNotifier
+        final authNotifier = Provider.of<ValueNotifier<bool>>(context, listen: false);
+        authNotifier.value = true; 
 
-      if (mounted) {
+        // 🔹 2️⃣ Navigue vers /home
+        context.go('/home');
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 12),
-                Text('Inscription réussie!', style: TextStyle(fontWeight: FontWeight.w600)),
-              ],
-            ),
-            backgroundColor: Color(0xFF34C759),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            margin: EdgeInsets.all(16),
-          ),
-        );
-        
-        // Navigate to login after successful registration
-        Future.delayed(Duration(seconds: 1), () {
-          if (mounted) {
-            Navigator.pushReplacement(
-              context,
-              PageRouteBuilder(
-                pageBuilder: (context, animation1, animation2) => LoginScreen(),
-                transitionDuration: Duration.zero,
-                reverseTransitionDuration: Duration.zero,
-              ),
-            );
-          }
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur: ${e.toString()}'),
+          const SnackBar(
+            content: Text('Échec de l’inscription. Veuillez réessayer.'),
             backgroundColor: Color(0xFFFF3B30),
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
         );
       }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    }
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur: ${e.toString()}'),
+          backgroundColor: Color(0xFFFF3B30),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  } finally {
+    if (mounted) {
+      setState(() => _isLoading = false);
     }
   }
+}
+
 
   void _nextStep() {
     if (_currentStep == 0) {
