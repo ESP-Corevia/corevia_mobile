@@ -199,8 +199,8 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
                               if (value == null || value.isEmpty) {
                                 return 'Veuillez entrer votre mot de passe';
                               }
-                              if (value.length < 6) {
-                                return 'Minimum 6 caractères';
+                              if (value.length < 8) {
+                                return 'Minimum 8 caractères';
                               }
                               return null;
                             },
