@@ -14,7 +14,9 @@ void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     ValueNotifier<bool> onboardingNotifier = ValueNotifier<bool>(false);
-    await tester.pumpWidget(MyApp(onboardingNotifier: onboardingNotifier));
+    // Notifier d'intégration
+    ValueNotifier<bool> authNotifier = ValueNotifier<bool>(true); // Remplacez par votre type
+    await tester.pumpWidget(MyApp(onboardingNotifier: onboardingNotifier, authNotifier: authNotifier, initialRoute: '/login',));
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:corevia_mobile/features/auth/domain/models/login_model.dart';
-import 'package:corevia_mobile/features/auth/presentation/screens/register_screen.dart';
 import 'package:go_router/go_router.dart';
+import 'package:corevia_mobile/features/auth/presentation/screens/register_screen.dart';
+import 'package:provider/provider.dart';
+import '../controllers/login_controller.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,6 +12,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin {
+  late final LoginController _controller;
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -34,6 +36,7 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
       vsync: this,
     )..repeat();
 
+    _controller = LoginController();
   }
 
   @override
@@ -53,30 +56,28 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
     setState(() => _isLoading = true);
 
     try {
-      final loginData = LoginModel(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
+      final success = await _controller.login(
+        _emailController.text.trim(),
+        _passwordController.text,
       );
-      
-      debugPrint('Logging in user: ${loginData.email}');
-      await Future.delayed(const Duration(seconds: 2));
-      
+
       if (mounted) {
+        if (success) {
+          // 🔹 1️⃣ Met à jour authNotifier
+          final authNotifier = Provider.of<ValueNotifier<bool>>(context, listen: false);
+          authNotifier.value = true; 
+
+          // 🔹 2️⃣ Navigue vers /home
+          context.go('/home');
+        } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 12),
-                Text('Connexion réussie!', style: TextStyle(fontWeight: FontWeight.w600)),
-              ],
-            ),
-            backgroundColor: Color(0xFF34C759),
+          const SnackBar(
+            content: Text('Email ou mot de passe incorrect'),
+            backgroundColor: Color(0xFFFF3B30),
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            margin: EdgeInsets.all(16),
           ),
         );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -85,12 +86,13 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
             content: Text('Erreur: ${e.toString()}'),
             backgroundColor: Color(0xFFFF3B30),
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
         );
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -366,9 +368,6 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
               ? null
               : () async {
               await _login();
-              if (mounted){
-              context.go('/home'); // 🔥 Redirection temporaire
-              }
           },
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
