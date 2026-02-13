@@ -1,4 +1,5 @@
 import 'package:corevia_mobile/core/providers/notifiers.dart';
+import 'package:corevia_mobile/core/utils/validators.dart';
 import 'package:corevia_mobile/features/auth/domain/models/register_model.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -67,93 +68,113 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
   }
 
   String? _validateEmail(String? value) {
-    if (value == null || value.isEmpty) return 'Email requis';
-    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-      return 'Email invalide';
-    }
-    return null;
+    return Validators.validateEmail(value);
   }
 
   String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty) return 'Mot de passe requis';
-    if (value.length < 8) return 'Minimum 8 caractères';
-    return null;
+    return Validators.validatePassword(value, requireStrongRules: true);
   }
 
   String? _validateConfirmPassword(String? value) {
     if (value == null || value.isEmpty) return 'Confirmation requise';
-    if (value != _passwordController.text) return 'Mots de passe différents';
+    if (value != _passwordController.text) return 'Mots de passe differents';
     return null;
   }
 
   Future<void> _register() async {
-  if (!_formKey.currentState!.validate()) return;
-  FocusScope.of(context).unfocus();
+    final firstNameError =
+        Validators.validateUsername(_firstNameController.text, fieldName: 'Prenom');
+    if (firstNameError != null) {
+      _showValidationError(firstNameError);
+      return;
+    }
 
-  setState(() => _isLoading = true);
+    final lastNameError =
+        Validators.validateUsername(_lastNameController.text, fieldName: 'Nom');
+    if (lastNameError != null) {
+      _showValidationError(lastNameError);
+      return;
+    }
 
-  try {
-    final registerData = RegisterModel(
-      firstName: _firstNameController.text.trim(),
-      lastName: _lastNameController.text.trim(),
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-      confirmPassword: _confirmPasswordController.text,
-    );
+    final emailError = _validateEmail(_emailController.text);
+    if (emailError != null) {
+      _showValidationError(emailError);
+      return;
+    }
 
-    final success = await _controller.register(registerData);
+    if (!_formKey.currentState!.validate()) return;
+    FocusScope.of(context).unfocus();
 
-    if (mounted) {
-      if (success) {
-        // 🔹 1️⃣ Met à jour authNotifier
-        final authNotifier = Provider.of<AuthNotifier>(context, listen: false);
-        authNotifier.value = true; 
+    setState(() => _isLoading = true);
 
-        // 🔹 2️⃣ Navigue vers /home
-        context.go('/home');
-      } else {
+    try {
+      final registerData = RegisterModel(
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        confirmPassword: _confirmPasswordController.text,
+      );
+
+      final success = await _controller.register(registerData);
+
+      if (mounted) {
+        if (success) {
+          final authNotifier = Provider.of<AuthNotifier>(context, listen: false);
+          authNotifier.value = true;
+          context.go('/home');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Echec de l\'inscription. Veuillez reessayer.'),
+              backgroundColor: Color(0xFFFF3B30),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Échec de l’inscription. Veuillez réessayer.'),
+          SnackBar(
+            content: Text('Erreur: ${e.toString()}'),
             backgroundColor: Color(0xFFFF3B30),
             behavior: SnackBarBehavior.floating,
           ),
         );
       }
-    }
-  } catch (e) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erreur: ${e.toString()}'),
-          backgroundColor: Color(0xFFFF3B30),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
-  } finally {
-    if (mounted) {
-      setState(() => _isLoading = false);
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
-}
-
 
   void _nextStep() {
     if (_currentStep == 0) {
-      if (_firstNameController.text.isEmpty || _lastNameController.text.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Veuillez remplir tous les champs'),
-            backgroundColor: Color(0xFFFF9500),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          ),
-        );
+      final firstNameError =
+          Validators.validateUsername(_firstNameController.text, fieldName: 'Prenom');
+      if (firstNameError != null) {
+        _showValidationError(firstNameError);
+        return;
+      }
+
+      final lastNameError =
+          Validators.validateUsername(_lastNameController.text, fieldName: 'Nom');
+      if (lastNameError != null) {
+        _showValidationError(lastNameError);
         return;
       }
     }
-    
+
+    if (_currentStep == 1) {
+      final emailError = _validateEmail(_emailController.text);
+      if (emailError != null) {
+        _showValidationError(emailError);
+        return;
+      }
+    }
+
     if (_currentStep < 2) {
       setState(() => _currentStep++);
       _pageController.animateToPage(
@@ -162,6 +183,17 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
         curve: Curves.easeOutCubic,
       );
     }
+  }
+
+  void _showValidationError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: const Color(0xFFFF9500),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+    );
   }
 
   void _previousStep() {
@@ -752,3 +784,4 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
     );
   }
 }
+
