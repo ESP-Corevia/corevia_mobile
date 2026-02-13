@@ -13,7 +13,7 @@ class AppointmentsScreen extends StatefulWidget {
 
 class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  String _selectedFilter = 'Tous';
+
 
   @override
   void initState() {

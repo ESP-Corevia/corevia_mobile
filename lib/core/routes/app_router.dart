@@ -20,41 +20,40 @@ import '../../widgets/navigation_bar.dart';
 GoRouter createRouter(ValueNotifier<bool> onboardingNotifier, ValueNotifier<bool> authNotifier) {
   return GoRouter(
     // 👇 Ici : si onboarding pas encore vu → on commence par /onboarding
-    initialLocation: '/onboarding',
+    
     refreshListenable: Listenable.merge([onboardingNotifier, authNotifier]),
 
     redirect: (context, state) {
       final onboardingNeeded = onboardingNotifier.value;
       final isLoggedIn = authNotifier.value;
 
-      final location = state.uri.toString();
-      final goingOnboarding = location == '/onboarding';
-      final goingLogin = location == '/login';
+      final location = state.uri.path;
 
-      // 1️⃣ Onboarding pas terminé
-      if (onboardingNeeded && !goingOnboarding) return '/onboarding';
-      if (!onboardingNeeded && goingOnboarding) return '/login';
+      if (onboardingNeeded && location != '/onboarding') {
+        return '/onboarding';
+      }
 
-      // 2️⃣ Routes protégées
-      final protectedPaths = [
-        '/home',
-        '/stats',
-        '/calendar',
-        '/account',
-        '/edit-account',
-        '/chat/ai',
-      ];
+      if (!onboardingNeeded && location == '/onboarding') {
+        return '/login';
+      }
 
-      final isProtected = protectedPaths.any((path) => location.startsWith(path));
+      if (!isLoggedIn && location != '/login' && location != '/onboarding') {
+        return '/login';
+      }
 
-      if (!isLoggedIn && isProtected) return '/login';
-      if (isLoggedIn && goingLogin) return '/home';
+      if (isLoggedIn && location == '/login') {
+        return '/home';
+      }
 
       return null;
     },
 
     routes: [
       // 👇 Nouvelle route pour ton onboarding
+      GoRoute(
+        path: '/',
+        redirect: (context, state) => '/onboarding',
+      ),
       GoRoute(
         path: '/onboarding',
         builder: (context, state) => const OnboardingScreen(),
