@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_better_auth/flutter_better_auth.dart';
 import '../../../../widgets/pro_member.dart';
 import 'package:corevia_mobile/core/theme/colors.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -22,10 +23,13 @@ class _AccountScreenState extends State<AccountScreen> {
     super.initState();
   }
 
-  void _logout() {
-    final authNotifier = Provider.of<ValueNotifier<bool>>(context, listen: false);
-    authNotifier.value = false;
-    context.go('/login');
+  Future<void> _logout() async {
+    await FlutterBetterAuth.client.signOut();
+    if (mounted) {
+      final authNotifier = Provider.of<ValueNotifier<bool>>(context, listen: false);
+      authNotifier.value = false;
+      context.go('/login');
+    }
   }
 
   @override
