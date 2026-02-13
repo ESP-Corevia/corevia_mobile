@@ -50,9 +50,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   void initState() {
     super.initState();
 
-    // 🔥 Maintenant tu récupères le BON notifier
-    final onboardingNotifier = Provider.of<OnboardingNotifier>(context, listen: false);
-    print('onboardingNotifier value at init: ${onboardingNotifier.value}');
     // Animation
     _animationController =
     AnimationController(vsync: this, duration: const Duration(seconds: 2))
@@ -80,12 +77,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
     // 🔥 Met à jour le notifier spécifique
     final onboardingNotifier = Provider.of<OnboardingNotifier>(context, listen: false);
-    print('Finishing onboarding...');
-    print('onboardingNeeded before: ${onboardingNotifier.value}');
-    onboardingNotifier.value = false; // Plus besoin de l'onboarding
-    print('onboardingNeeded after: ${onboardingNotifier.value}');
-
-    // La redirection vers /login se fera automatiquement grâce au router
+    onboardingNotifier.value = false; 
   }
 
   @override

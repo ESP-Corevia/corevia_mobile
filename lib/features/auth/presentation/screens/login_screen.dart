@@ -1,3 +1,4 @@
+import 'package:corevia_mobile/core/providers/notifiers.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:corevia_mobile/features/auth/presentation/screens/register_screen.dart';
@@ -64,8 +65,7 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
 
       if (mounted) {
         if (success) {
-          // 🔹 1️⃣ Met à jour authNotifier
-          final authNotifier = Provider.of<ValueNotifier<bool>>(context, listen: false);
+          final authNotifier = Provider.of<AuthNotifier>(context, listen: false);
           authNotifier.value = true; 
 
           // 🔹 2️⃣ Navigue vers /home
