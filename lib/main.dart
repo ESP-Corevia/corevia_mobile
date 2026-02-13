@@ -9,6 +9,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_better_auth/flutter_better_auth.dart';
 
+import 'core/providers/notifiers.dart'; // ⬅️ Ajoute cet import
+
 void main() async {
   // Assurez-vous que Flutter est initialisé avant de charger le fichier .env
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,12 +23,23 @@ void main() async {
   );
 
   // Onboarding
+  // Onboarding
   final prefs = await SharedPreferences.getInstance();
-  final onboardingDone = prefs.getBool('onboarding_done') ?? false;
-  final onboardingNotifier = ValueNotifier<bool>(!onboardingDone);
+  bool? hasCompletedOnboarding = prefs.getBool('onboarding_done');
+  
+  // 🔥 true = onboarding nécessaire, false = déjà fait
+  bool onboardingNeeded = (hasCompletedOnboarding == null || hasCompletedOnboarding == false);
+  
+  print('hasCompletedOnboarding: $hasCompletedOnboarding');
+  print('onboardingNeeded: $onboardingNeeded');
+  
+  final onboardingNotifier = OnboardingNotifier(onboardingNeeded); // ⬅️ Utilise la classe spécifique
 
   // Auth state
-  final authNotifier = ValueNotifier<bool>(false);
+  final authNotifier = AuthNotifier(false); // ⬅️ Utilise la classe spécifique
+
+  print('onboardingNotifier main: $onboardingNotifier');
+
 
   // 🔹 Vérifie la session persistée dès le lancement
   final result = await FlutterBetterAuth.client.getSession();
@@ -41,17 +54,16 @@ void main() async {
           create: (context) => HomeProvider(HomeRepositoryImpl()),
         ),
         // Ajoutez d'autres providers ici au besoin
-        ChangeNotifierProvider<ValueNotifier<bool>>.value(
+        ChangeNotifierProvider<OnboardingNotifier>.value(
           value: onboardingNotifier,
         ),
-        ChangeNotifierProvider<ValueNotifier<bool>>.value(
+        ChangeNotifierProvider<AuthNotifier>.value(
           value: authNotifier,
         ),
       ],
       child: MyApp(
         onboardingNotifier: onboardingNotifier,
         authNotifier: authNotifier,
-        initialRoute: '/onboarding',
       ),
     ),
   );
@@ -64,16 +76,14 @@ void main() async {
 // }
 
 class MyApp extends StatelessWidget {
-  final ValueNotifier<bool> onboardingNotifier;
-  final ValueNotifier<bool> authNotifier;
-  final String initialRoute;
+  final OnboardingNotifier onboardingNotifier;
+  final AuthNotifier authNotifier;
   late final GoRouter _router;
 
   MyApp({
     super.key,
     required this.onboardingNotifier,
     required this.authNotifier,
-    required this.initialRoute,
   }) : _router = createRouter(onboardingNotifier, authNotifier);
 
   @override

@@ -1,6 +1,6 @@
+import 'package:corevia_mobile/core/providers/notifiers.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -69,25 +69,15 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   /// Quand l'utilisateur termine l'onboarding
   Future<void> _finishOnboarding() async {
+    // 💾 Sauvegarde que l'onboarding est terminé
     final prefs = await SharedPreferences.getInstance();
-    final success = await prefs.setBool('onboarding_done', true);
-
-    if (!success) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erreur : impossible de sauvegarder.')),
-      );
-      return;
-    }
+    await prefs.setBool('onboarding_done', true);
 
     if (!mounted) return;
 
-    // 🔥 Met à jour le notifier que GoRouter écoute
-    final onboardingNotifier = Provider.of<ValueNotifier<bool>>(context, listen: false);
+    // 🔥 Met à jour le notifier spécifique
+    final onboardingNotifier = Provider.of<OnboardingNotifier>(context, listen: false);
     onboardingNotifier.value = false; 
-
-    // Déplace l'utilisateur vers le login
-    context.go('/login');
   }
 
   @override
