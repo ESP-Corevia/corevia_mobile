@@ -12,11 +12,37 @@ class RegisterModel {
     required this.password,
     required this.confirmPassword,
   }) {
-    if (firstName.isEmpty) throw ArgumentError('Le prénom ne peut pas être vide');
-    if (lastName.isEmpty) throw ArgumentError('Le nom ne peut pas être vide');
-    if (!_isValidEmail(email)) throw ArgumentError('Email invalide');
-    if (password.length < 8) throw ArgumentError('Le mot de passe doit contenir au moins 8 caractères');
-    if (password != confirmPassword) throw ArgumentError('Les mots de passe ne correspondent pas');
+    final normalizedFirstName = firstName.trim();
+    final normalizedLastName = lastName.trim();
+
+    if (normalizedFirstName.length < 2 || normalizedFirstName.length > 100) {
+      throw ArgumentError('Le prenom doit contenir entre 2 et 100 caracteres');
+    }
+
+    if (normalizedLastName.length < 2 || normalizedLastName.length > 100) {
+      throw ArgumentError('Le nom doit contenir entre 2 et 100 caracteres');
+    }
+
+    if (!_isValidEmail(email)) {
+      throw ArgumentError('Email invalide');
+    }
+
+    if (password.length < 8 || password.length > 100) {
+      throw ArgumentError('Le mot de passe doit contenir entre 8 et 100 caracteres');
+    }
+
+    if (!_hasLowercase(password) ||
+        !_hasUppercase(password) ||
+        !_hasDigit(password) ||
+        !_hasSpecialChar(password)) {
+      throw ArgumentError(
+        'Le mot de passe doit contenir minuscule, majuscule, chiffre et caractere special',
+      );
+    }
+
+    if (password != confirmPassword) {
+      throw ArgumentError('Les mots de passe ne correspondent pas');
+    }
   }
 
   factory RegisterModel.fromJson(Map<String, dynamic> json) {
@@ -60,4 +86,13 @@ class RegisterModel {
   static bool _isValidEmail(String email) {
     return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
   }
+
+  static bool _hasLowercase(String value) => RegExp(r'[a-z]').hasMatch(value);
+
+  static bool _hasUppercase(String value) => RegExp(r'[A-Z]').hasMatch(value);
+
+  static bool _hasDigit(String value) => RegExp(r'\d').hasMatch(value);
+
+  static bool _hasSpecialChar(String value) =>
+      RegExp(r'[!@#$%^&*(),.?":{}|<>_\-\\/\[\]`~+=;]').hasMatch(value);
 }

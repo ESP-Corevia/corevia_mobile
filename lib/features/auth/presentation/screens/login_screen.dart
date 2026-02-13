@@ -1,4 +1,5 @@
 import 'package:corevia_mobile/core/providers/notifiers.dart';
+import 'package:corevia_mobile/core/utils/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:corevia_mobile/features/auth/presentation/screens/register_screen.dart';
@@ -165,15 +166,7 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
                             label: 'Email',
                             icon: Icons.email_outlined,
                             keyboardType: TextInputType.emailAddress,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Veuillez entrer votre email';
-                              }
-                              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                                return 'Email invalide';
-                              }
-                              return null;
-                            },
+                            validator: Validators.validateEmail,
                           ),
                           
                           SizedBox(height: 20),
@@ -192,15 +185,11 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
                                 setState(() => _obscurePassword = !_obscurePassword);
                               },
                             ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Veuillez entrer votre mot de passe';
-                              }
-                              if (value.length < 8) {
-                                return 'Minimum 8 caractères';
-                              }
-                              return null;
-                            },
+                            validator: (value) =>
+                                Validators.validateRequired(
+                              value,
+                              fieldName: 'Le mot de passe',
+                            ),
                           ),
                           
                           Align(
