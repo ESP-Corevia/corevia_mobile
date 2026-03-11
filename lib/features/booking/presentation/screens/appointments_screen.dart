@@ -134,7 +134,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTick
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha:0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -196,7 +196,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTick
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha:0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -291,7 +291,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTick
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha:0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -311,7 +311,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTick
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
+                        color: statusColor.withValues(alpha:0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -686,7 +686,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTick
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF34C759).withOpacity(0.3),
+                      color: const Color(0xFF34C759).withValues(alpha:0.3),
                       blurRadius: 15,
                       offset: const Offset(0, 8),
                     ),

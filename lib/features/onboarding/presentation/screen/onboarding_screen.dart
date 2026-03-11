@@ -178,7 +178,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: (data['color'] as Color).withOpacity(0.4),
+                        color: (data['color'] as Color).withValues(alpha: 0.4),
                         blurRadius: 30,
                         offset: const Offset(0, 15),
                       ),
