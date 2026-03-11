@@ -6,6 +6,7 @@ import 'shared/theme/app_theme.dart';
 import 'features/home/presentation/providers/home_provider.dart';
 import 'features/home/data/repositories/home_repository_impl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'core/providers/notifiers.dart';
 import 'networking/api_service.dart';
@@ -34,7 +35,8 @@ void main() async {
   final authNotifier = AuthNotifier(false); // ⬅️ Utilise la classe spécifique
 
   // 🔹 Vérifie la session avec le serveur dès le lancement
-  final token = prefs.getString('auth_token');
+  const secureStorage = FlutterSecureStorage();
+  final token = await secureStorage.read(key: 'auth_token');
   if (token != null && token.isNotEmpty) {
     // Optimistic: assume logged in, then verify with server
     authNotifier.value = true;
@@ -43,12 +45,17 @@ void main() async {
       final valid = session != null && session['session'] != null;
       if (!valid) {
         // Server explicitly says session is invalid → clear token
-        await prefs.remove('auth_token');
+        await secureStorage.delete(key: 'auth_token');
         authNotifier.value = false;
       }
-    } catch (_) {
-      // Network error or server unreachable → keep token, stay logged in
-      // The next protected API call will fail with 401 if token is truly invalid
+    } catch (e) {
+      final msg = e.toString();
+      if (msg.contains('401') || msg.contains('403')) {
+        // Token rejected by server → clear it
+        await secureStorage.delete(key: 'auth_token');
+        authNotifier.value = false;
+      }
+      // Other errors (network, timeout) → keep token, stay logged in
     }
   }
 

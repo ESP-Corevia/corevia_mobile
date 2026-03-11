@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:corevia_mobile/core/providers/notifiers.dart';
@@ -42,12 +43,17 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   Future<void> _logout() async {
-    await ApiService.signOut();
-    if (mounted) {
-      final authNotifier = Provider.of<AuthNotifier>(context, listen: false);
-      authNotifier.value = false;
-      context.go('/login');
-    }
+    // Clear local session immediately so the app feels instant
+    const storage = FlutterSecureStorage();
+    await storage.delete(key: 'auth_token');
+
+    if (!mounted) return;
+    final authNotifier = Provider.of<AuthNotifier>(context, listen: false);
+    authNotifier.value = false;
+    context.go('/login');
+
+    // Best-effort server logout (fire-and-forget)
+    ApiService.signOut().ignore();
   }
 
   String get _name => _user?['name'] as String? ?? '—';
@@ -352,52 +358,67 @@ class _AccountScreenState extends State<AccountScreen> {
     Color? titleColor,
     VoidCallback? onTap,
   }) {
-    return InkWell(
-      onTap: onTap ?? () {},
-      borderRadius: BorderRadius.circular(16),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF5F5F7),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: iconColor ?? AppColors.green, size: 22),
+    final enabled = onTap != null || trailing != null;
+    final effectiveIconColor = enabled
+        ? (iconColor ?? AppColors.green)
+        : Colors.grey.shade400;
+    final effectiveTitleColor = enabled
+        ? (titleColor ?? const Color(0xFF1D1D1F))
+        : Colors.grey.shade500;
+
+    final content = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF5F5F7),
+              borderRadius: BorderRadius.circular(12),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            child: Icon(icon, color: effectiveIconColor, size: 22),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: effectiveTitleColor,
+                  ),
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 2),
                   Text(
-                    title,
+                    subtitle,
                     style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: titleColor ?? const Color(0xFF1D1D1F),
+                      fontSize: 13,
+                      color: Colors.grey.shade600,
                     ),
                   ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                  ],
                 ],
-              ),
+              ],
             ),
-            trailing ??
-                Icon(Icons.chevron_right, color: Colors.grey.shade400, size: 24),
-          ],
-        ),
+          ),
+          if (trailing != null)
+            trailing
+          else if (enabled)
+            Icon(Icons.chevron_right, color: Colors.grey.shade400, size: 24),
+        ],
       ),
     );
+
+    if (onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: content,
+      );
+    }
+    return content;
   }
 }

@@ -1,10 +1,12 @@
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:corevia_mobile/features/auth/domain/models/register_model.dart';
 import 'package:corevia_mobile/networking/api_service.dart';
 import 'package:corevia_mobile/networking/routes/auth_routes.dart';
 
 class RegisterController {
+  static const _storage = FlutterSecureStorage();
+
   Future<bool> register(RegisterModel data) async {
     try {
       final res = await ApiService.post(
@@ -18,9 +20,8 @@ class RegisterController {
 
       final token = res['token'] as String?;
       if (token != null && token.isNotEmpty) {
-        debugPrint("Token reçu : $token");
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('auth_token', token);
+        debugPrint("Token stocké");
+        await _storage.write(key: 'auth_token', value: token);
         return true;
       } else {
         debugPrint("Erreur register : token absent");

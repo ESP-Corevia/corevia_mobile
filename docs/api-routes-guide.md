@@ -141,7 +141,12 @@ class _AppointmentsState extends State<AppointmentsScreen> {
 
 Configured via `.env`:
 
+```dotenv
+# Android emulator
+API_BASE_URL=http://10.0.2.2:3000
 ```
-API_BASE_URL=http://10.0.2.2:3000   # Android emulator → localhost
-API_BASE_URL=http://localhost:3000   # iOS simulator / web
+
+```dotenv
+# iOS simulator / web
+API_BASE_URL=http://localhost:3000
 ```
