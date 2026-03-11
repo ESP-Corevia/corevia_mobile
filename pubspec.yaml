@@ -24,7 +24,6 @@ dependencies:
   flutter_dotenv: ^6.0.0
   flutter_chat_core: ^2.8.0
   shared_preferences: ^2.5.4
-  flutter_better_auth: ^0.1.3
   dio: ^5.9.1
 
 dev_dependencies:

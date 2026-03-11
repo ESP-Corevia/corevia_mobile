@@ -7,9 +7,9 @@ import 'features/home/presentation/providers/home_provider.dart';
 import 'features/home/data/repositories/home_repository_impl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_better_auth/flutter_better_auth.dart';
-
-import 'core/providers/notifiers.dart'; // ⬅️ Ajoute cet import
+import 'core/providers/notifiers.dart';
+import 'networking/api_service.dart';
+import 'networking/routes/auth_routes.dart';
 
 void main() async {
   // Assurez-vous que Flutter est initialisé avant de charger le fichier .env
@@ -17,12 +17,7 @@ void main() async {
 
   // Chargez le fichier .env
   await dotenv.load(fileName: ".env");
-  
-  await FlutterBetterAuth.initialize(
-    url: '${dotenv.env['API_BASE_URL'] ?? 'http://10.0.2.2:3000'}/api/auth',
-  );
 
-  // Onboarding
   // Onboarding
   final prefs = await SharedPreferences.getInstance();
   bool? hasCompletedOnboarding = prefs.getBool('onboarding_done');
@@ -30,22 +25,32 @@ void main() async {
   // 🔥 true = onboarding nécessaire, false = déjà fait
   bool onboardingNeeded = (hasCompletedOnboarding == null || hasCompletedOnboarding == false);
   
-  print('hasCompletedOnboarding: $hasCompletedOnboarding');
-  print('onboardingNeeded: $onboardingNeeded');
+  debugPrint('hasCompletedOnboarding: $hasCompletedOnboarding');
+  debugPrint('onboardingNeeded: $onboardingNeeded');
   
   final onboardingNotifier = OnboardingNotifier(onboardingNeeded); // ⬅️ Utilise la classe spécifique
 
   // Auth state
   final authNotifier = AuthNotifier(false); // ⬅️ Utilise la classe spécifique
 
-  print('onboardingNotifier main: $onboardingNotifier');
-
-
-  // 🔹 Vérifie la session persistée dès le lancement
-  final result = await FlutterBetterAuth.client.getSession();
-  authNotifier.value = result.data != null; // true si connecté, false sinon
-
-  // await checkAuth(authNotifier);
+  // 🔹 Vérifie la session avec le serveur dès le lancement
+  final token = prefs.getString('auth_token');
+  if (token != null && token.isNotEmpty) {
+    // Optimistic: assume logged in, then verify with server
+    authNotifier.value = true;
+    try {
+      final session = await ApiService.authGet(AuthRoutes.getSession());
+      final valid = session != null && session['session'] != null;
+      if (!valid) {
+        // Server explicitly says session is invalid → clear token
+        await prefs.remove('auth_token');
+        authNotifier.value = false;
+      }
+    } catch (_) {
+      // Network error or server unreachable → keep token, stay logged in
+      // The next protected API call will fail with 401 if token is truly invalid
+    }
+  }
 
   runApp(
     MultiProvider(
@@ -69,11 +74,6 @@ void main() async {
   );
 }
 
-// // Vérifie la session BetterAuth
-// Future<void> checkAuth(ValueNotifier<bool> authNotifier) async {
-//   final result = await FlutterBetterAuth.client.getSession();
-//   authNotifier.value = result.data != null;
-// }
 
 class MyApp extends StatelessWidget {
   final OnboardingNotifier onboardingNotifier;
@@ -88,13 +88,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BetterAuthProvider(
-      child: MaterialApp.router(
-        debugShowCheckedModeBanner: false,
-        title: 'CoreVia Mobile',
-        theme: AppTheme.lightTheme,
-        routerConfig: _router,
-      ),
+    return MaterialApp.router(
+      debugShowCheckedModeBanner: false,
+      title: 'CoreVia Mobile',
+      theme: AppTheme.lightTheme,
+      routerConfig: _router,
     );
   }
 }

@@ -29,6 +29,11 @@ GoRouter createRouter(ValueNotifier<bool> onboardingNotifier, ValueNotifier<bool
 
       final location = state.uri.path;
 
+      // Logged-in users skip onboarding and login entirely
+      if (isLoggedIn && (location == '/login' || location == '/onboarding' || location == '/')) {
+        return '/home';
+      }
+
       if (onboardingNeeded && location != '/onboarding') {
         return '/onboarding';
       }
@@ -39,10 +44,6 @@ GoRouter createRouter(ValueNotifier<bool> onboardingNotifier, ValueNotifier<bool
 
       if (!isLoggedIn && location != '/login' && location != '/onboarding') {
         return '/login';
-      }
-
-      if (isLoggedIn && location == '/login') {
-        return '/home';
       }
 
       return null;
