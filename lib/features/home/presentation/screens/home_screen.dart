@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../../../../networking/api_service.dart';
+import '../../../../networking/routes/user_routes.dart';
+import '../../../../widgets/initials_avatar.dart';
 import '../../../../widgets/pill_shadow.dart';
 import '../../../../widgets/medication_detail_modal.dart';
 import '../../../../widgets/navigation_bar.dart';
@@ -16,12 +20,28 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   DateTime selectedDate = DateTime.now();
   DateTime currentWeekStart = DateTime.now();
+  Map<String, dynamic>? _user;
+
+  String get _name => _user?['name'] as String? ?? '';
+  String? get _imageUrl => _user?['image'] as String?;
 
   @override
   void initState() {
     super.initState();
     currentWeekStart = _getStartOfWeek(DateTime.now());
     selectedDate = DateTime.now();
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    try {
+      final res = await ApiService.authGet(UserRoutes.me());
+      if (mounted) {
+        setState(() {
+          _user = res['user'] as Map<String, dynamic>?;
+        });
+      }
+    } catch (_) {}
   }
 
   DateTime _getStartOfWeek(DateTime date) {
@@ -86,40 +106,11 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               // Photo de profil à gauche
               GestureDetector(
-                onTap: () {
-                  _showSnackBar('Profil cliqué');
-                },
-                child: ClipOval(
-                  child: Image.network(
-                    'https://i.pravatar.cc/150?img=32',
-                    width: 60,
-                    height: 60,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      width: 60,
-                      height: 60,
-                      color: Colors.grey[200],
-                      child: const Icon(
-                        Icons.person,
-                        size: 30,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Container(
-                        width: 60,
-                        height: 60,
-                        color: Colors.grey[200],
-                        child: const Center(
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                onTap: () => context.push('/account'),
+                child: InitialsAvatar(
+                  name: _name,
+                  imageUrl: _imageUrl,
+                  size: 60,
                 ),
               ),
               const SizedBox(width: 15),
@@ -128,9 +119,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Hello, Georges',
-                      style: TextStyle(
+                    Text(
+                      _name.isNotEmpty ? 'Hello, $_name' : 'Hello',
+                      style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF1D1D1F),

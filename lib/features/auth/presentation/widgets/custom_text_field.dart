@@ -19,7 +19,7 @@ class CustomTextField extends StatelessWidget {
   final TextCapitalization textCapitalization;
 
   const CustomTextField({
-    Key? key,
+    super.key,
     this.controller,
     required this.label,
     this.hint = '',
@@ -36,7 +36,7 @@ class CustomTextField extends StatelessWidget {
     this.onFieldSubmitted,
     this.focusNode,
     this.textCapitalization = TextCapitalization.none,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
