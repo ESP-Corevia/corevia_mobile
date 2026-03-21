@@ -1,8 +1,10 @@
 import 'package:corevia_mobile/features/auth/domain/models/register_model.dart';
 import 'package:flutter_better_auth/flutter_better_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class RegisterController {
-  Future<bool> register(RegisterModel data) async {
+  /// Retourne un Map avec les donnees user si register reussi, null sinon
+  Future<Map<String, dynamic>?> register(RegisterModel data) async {
     try {
       final result = await FlutterBetterAuth.client.signUp.email(
         name: "${data.firstName} ${data.lastName}",
@@ -10,10 +12,25 @@ class RegisterController {
         password: data.password,
       );
 
-      return result.data != null; // token ou session gérés automatiquement
+      if (result.data != null) {
+        final token = result.data!.token;
+        if (token != null) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('auth_token', token);
+        }
+
+        final user = result.data!.user;
+        return {
+          'id': user.id,
+          'name': user.name,
+          'email': user.email,
+          'image': user.image,
+          'phoneNumber': user.phoneNumber,
+        };
+      }
+      return null;
     } catch (_) {
-      return false;
+      return null;
     }
   }
 }
-

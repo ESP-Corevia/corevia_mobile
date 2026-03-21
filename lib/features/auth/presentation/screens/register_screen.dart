@@ -1,6 +1,7 @@
 import 'package:corevia_mobile/core/providers/notifiers.dart';
 import 'package:corevia_mobile/core/utils/validators.dart';
 import 'package:corevia_mobile/features/auth/domain/models/register_model.dart';
+import 'package:corevia_mobile/features/account/presentation/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -116,12 +117,15 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
         confirmPassword: _confirmPasswordController.text,
       );
 
-      final success = await _controller.register(registerData);
+      final userData = await _controller.register(registerData);
 
       if (mounted) {
-        if (success) {
+        if (userData != null) {
           final authNotifier = Provider.of<AuthNotifier>(context, listen: false);
           authNotifier.value = true;
+          final userProvider = context.read<UserProvider>();
+          await userProvider.setUserFromLoginData(userData);
+          if (!mounted) return;
           context.go('/home');
         } else {
           ScaffoldMessenger.of(context).showSnackBar(

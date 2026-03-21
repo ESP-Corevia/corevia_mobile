@@ -5,6 +5,7 @@ import 'package:flutter_better_auth/flutter_better_auth.dart';
 import '../../../../widgets/pro_member.dart';
 import 'package:corevia_mobile/core/theme/colors.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../providers/user_provider.dart';
 
 // PAGE DE CONSULTATION DE COMPTE
 class AccountScreen extends StatefulWidget {
@@ -26,6 +27,7 @@ class _AccountScreenState extends State<AccountScreen> {
   Future<void> _logout() async {
     await FlutterBetterAuth.client.signOut();
     if (mounted) {
+      context.read<UserProvider>().clear();
       final authNotifier = Provider.of<ValueNotifier<bool>>(context, listen: false);
       authNotifier.value = false;
       context.go('/login');
@@ -56,29 +58,34 @@ class _AccountScreenState extends State<AccountScreen> {
                     const SizedBox(height: 20),
 
                     // Account Information
-                    _buildSection(
-                      title: 'Account Information',
-                      children: [
-                        _buildInfoTile(
-                          icon: Icons.email_outlined,
-                          title: 'Email',
-                          value: 'georges@example.com',
-                        ),
-                        _buildInfoTile(
-                          icon: Icons.phone_outlined,
-                          title: 'Phone',
-                          value: '+33 6 12 34 56 78',
-                        ),
-                        _buildInfoTile(
-                          icon: Icons.cake_outlined,
-                          title: 'Date of Birth',
-                          value: '15/03/1985',
-                        ),
-                        _buildActionTile(
-                          icon: LucideIcons.fileText,
-                          title: 'Documents',
-                        ),
-                      ],
+                    Builder(
+                      builder: (context) {
+                        final user = context.watch<UserProvider>().user;
+                        return _buildSection(
+                          title: 'Account Information',
+                          children: [
+                            _buildInfoTile(
+                              icon: Icons.email_outlined,
+                              title: 'Email',
+                              value: user?.email ?? '-',
+                            ),
+                            _buildInfoTile(
+                              icon: Icons.phone_outlined,
+                              title: 'Phone',
+                              value: user?.phone ?? '-',
+                            ),
+                            _buildInfoTile(
+                              icon: Icons.cake_outlined,
+                              title: 'Date of Birth',
+                              value: user?.dateOfBirth ?? '-',
+                            ),
+                            _buildActionTile(
+                              icon: LucideIcons.fileText,
+                              title: 'Documents',
+                            ),
+                          ],
+                        );
+                      },
                     ),
 
                     const SizedBox(height: 20),
@@ -186,6 +193,11 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   Widget _buildProfileCard() {
+    final userProvider = context.watch<UserProvider>();
+    final user = userProvider.user;
+    final userName = user?.name ?? 'Utilisateur';
+    final userImage = user?.image;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -205,18 +217,25 @@ class _AccountScreenState extends State<AccountScreen> {
           Stack(
             children: [
               ClipOval(
-                child: Image.network(
-                  'https://i.pravatar.cc/150?img=32',
-                  width: 100,
-                  height: 100,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    width: 100,
-                    height: 100,
-                    color: Colors.grey[200],
-                    child: const Icon(Icons.person, size: 50, color: Colors.grey),
-                  ),
-                ),
+                child: userImage != null && userImage.isNotEmpty
+                    ? Image.network(
+                        userImage,
+                        width: 100,
+                        height: 100,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          width: 100,
+                          height: 100,
+                          color: Colors.grey[200],
+                          child: const Icon(Icons.person, size: 50, color: Colors.grey),
+                        ),
+                      )
+                    : Container(
+                        width: 100,
+                        height: 100,
+                        color: Colors.grey[200],
+                        child: const Icon(Icons.person, size: 50, color: Colors.grey),
+                      ),
               ),
               Positioned(
                 bottom: 0,
@@ -249,9 +268,9 @@ class _AccountScreenState extends State<AccountScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Georges',
-            style: TextStyle(
+          Text(
+            userName,
+            style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
               color: Color(0xFF1D1D1F),

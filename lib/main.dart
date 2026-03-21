@@ -5,6 +5,8 @@ import 'core/routes/app_router.dart';
 import 'shared/theme/app_theme.dart';
 import 'features/home/presentation/providers/home_provider.dart';
 import 'features/home/data/repositories/home_repository_impl.dart';
+import 'features/account/presentation/providers/user_provider.dart';
+import 'features/account/data/repositories/user_repository_impl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_better_auth/flutter_better_auth.dart';
@@ -41,11 +43,15 @@ void main() async {
   print('onboardingNotifier main: $onboardingNotifier');
 
 
-  // 🔹 Vérifie la session persistée dès le lancement
+  // Vérifie la session persistée dès le lancement
   final result = await FlutterBetterAuth.client.getSession();
-  authNotifier.value = result.data != null; // true si connecté, false sinon
+  final isAuthenticated = result.data != null;
+  authNotifier.value = isAuthenticated;
 
-  // await checkAuth(authNotifier);
+  final userProvider = UserProvider(UserRepositoryImpl());
+
+  // Charger les donnees utilisateur depuis le cache
+  await userProvider.loadUser();
 
   runApp(
     MultiProvider(
@@ -53,7 +59,9 @@ void main() async {
         ChangeNotifierProvider(
           create: (context) => HomeProvider(HomeRepositoryImpl()),
         ),
-        // Ajoutez d'autres providers ici au besoin
+        ChangeNotifierProvider<UserProvider>.value(
+          value: userProvider,
+        ),
         ChangeNotifierProvider<OnboardingNotifier>.value(
           value: onboardingNotifier,
         ),

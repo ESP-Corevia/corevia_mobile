@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:corevia_mobile/core/theme/colors.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../providers/user_provider.dart';
 
 class EditAccountScreen extends StatefulWidget {
   const EditAccountScreen({super.key});
@@ -13,15 +15,28 @@ class EditAccountScreen extends StatefulWidget {
 class _EditAccountScreenState extends State<EditAccountScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController _firstNameController = TextEditingController(text: 'Georges');
-  final TextEditingController _lastNameController = TextEditingController(text: 'Georges');
-  final TextEditingController _emailController = TextEditingController(text: 'georges@example.com');
-  final TextEditingController _phoneController = TextEditingController(text: '+33 6 12 34 56 78');
-  final TextEditingController _dobController = TextEditingController(text: '15/03/1985');
-  final TextEditingController _addressController = TextEditingController(text: '123 Rue de Paris, Paris');
+  late final TextEditingController _firstNameController;
+  late final TextEditingController _lastNameController;
+  late final TextEditingController _emailController;
+  late final TextEditingController _phoneController;
+  late final TextEditingController _dobController;
+  late final TextEditingController _addressController;
 
   bool _isLoading = false;
-  String? _selectedGender = 'Male';
+  String? _selectedGender;
+
+  @override
+  void initState() {
+    super.initState();
+    final user = context.read<UserProvider>().user;
+    _firstNameController = TextEditingController(text: user?.firstName ?? '');
+    _lastNameController = TextEditingController(text: user?.lastName ?? '');
+    _emailController = TextEditingController(text: user?.email ?? '');
+    _phoneController = TextEditingController(text: user?.phone ?? '');
+    _dobController = TextEditingController(text: user?.dateOfBirth ?? '');
+    _addressController = TextEditingController(text: user?.address ?? '');
+    _selectedGender = user?.gender;
+  }
 
   @override
   void dispose() {
@@ -40,24 +55,41 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
         _isLoading = true;
       });
 
-      await Future.delayed(const Duration(seconds: 2));
+      final fullName = '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}'.trim();
+
+      final data = {
+        'name': fullName,
+        'email': _emailController.text.trim(),
+        'phone': _phoneController.text.trim(),
+        'gender': _selectedGender,
+        'dateOfBirth': _dobController.text.trim(),
+        'address': _addressController.text.trim(),
+      };
+
+      final success = await context.read<UserProvider>().updateUser(data);
+
+      if (!mounted) return;
 
       setState(() {
         _isLoading = false;
       });
 
-      if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Profile updated successfully!'),
-          backgroundColor: AppColors.green,
+          content: Text(success
+              ? 'Profile updated successfully!'
+              : 'Failed to update profile'),
+          backgroundColor: success ? AppColors.green : Colors.red,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
       );
+
+      if (success) {
+        context.pop();
+      }
     }
   }
 
@@ -199,7 +231,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
 
                       const SizedBox(height: 30),
 
-                      // Section Sécurité avec nouveau style
+                      // Section Securite avec nouveau style
                       _buildSecuritySection(),
 
                       const SizedBox(height: 30),
@@ -258,21 +290,30 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
   }
 
   Widget _buildProfilePhoto() {
+    final userImage = context.watch<UserProvider>().user?.image;
+
     return Stack(
       children: [
         ClipOval(
-          child: Image.network(
-            'https://i.pravatar.cc/150?img=32',
-            width: 120,
-            height: 120,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => Container(
-              width: 120,
-              height: 120,
-              color: Colors.grey[200],
-              child: const Icon(Icons.person, size: 60, color: Colors.grey),
-            ),
-          ),
+          child: userImage != null && userImage.isNotEmpty
+              ? Image.network(
+                  userImage,
+                  width: 120,
+                  height: 120,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    width: 120,
+                    height: 120,
+                    color: Colors.grey[200],
+                    child: const Icon(Icons.person, size: 60, color: Colors.grey),
+                  ),
+                )
+              : Container(
+                  width: 120,
+                  height: 120,
+                  color: Colors.grey[200],
+                  child: const Icon(Icons.person, size: 60, color: Colors.grey),
+                ),
         ),
         Positioned(
           bottom: 0,

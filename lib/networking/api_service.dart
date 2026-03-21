@@ -63,4 +63,34 @@ class ApiService {
         throw Exception("Erreur réseau POST : $e");
      }
   }
+
+  static Future<dynamic> put(
+    String path,
+    Map<String, dynamic> body,
+    {Map<String, String>? headers}
+  ) async {
+     try {
+        final res = await http.put(
+          Uri.parse("$baseUrl$path"),
+          headers: {
+            "Content-Type": "application/json",
+            ...?headers,
+          },
+          body: jsonEncode(body),
+        ).timeout(
+          const Duration(seconds: 30),
+          onTimeout: () {
+            throw Exception('La requête PUT a expiré. Vérifie ta connexion !');
+          },
+        );
+
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          return jsonDecode(res.body);
+        } else {
+          throw Exception("Erreur PUT : ${res.statusCode} ${res.body}");
+        }
+     } catch (e) {
+        throw Exception("Erreur réseau PUT : $e");
+     }
+  }
 }

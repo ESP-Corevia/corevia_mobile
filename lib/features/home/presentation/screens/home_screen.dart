@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:provider/provider.dart';
 import '../../../../widgets/pill_shadow.dart';
 import '../../../../widgets/medication_detail_modal.dart';
 import '../../../../widgets/navigation_bar.dart';
-
+import '../providers/home_provider.dart';
+import '../../../account/presentation/providers/user_provider.dart';
 
 
 class HomeScreen extends StatefulWidget {
@@ -22,6 +24,13 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     currentWeekStart = _getStartOfWeek(DateTime.now());
     selectedDate = DateTime.now();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<HomeProvider>().loadHomeData();
+      final userProvider = context.read<UserProvider>();
+      if (userProvider.user == null) {
+        userProvider.loadUser();
+      }
+    });
   }
 
   DateTime _getStartOfWeek(DateTime date) {
@@ -63,6 +72,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildTopCard() {
+    final userProvider = context.watch<UserProvider>();
+    final userName = userProvider.user?.name ?? 'Utilisateur';
+    final userImage = userProvider.user?.image;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -90,36 +103,47 @@ class _HomeScreenState extends State<HomeScreen> {
                   _showSnackBar('Profil cliqué');
                 },
                 child: ClipOval(
-                  child: Image.network(
-                    'https://i.pravatar.cc/150?img=32',
-                    width: 60,
-                    height: 60,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      width: 60,
-                      height: 60,
-                      color: Colors.grey[200],
-                      child: const Icon(
-                        Icons.person,
-                        size: 30,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Container(
-                        width: 60,
-                        height: 60,
-                        color: Colors.grey[200],
-                        child: const Center(
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                  child: userImage != null && userImage.isNotEmpty
+                      ? Image.network(
+                          userImage,
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            width: 60,
+                            height: 60,
+                            color: Colors.grey[200],
+                            child: const Icon(
+                              Icons.person,
+                              size: 30,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              width: 60,
+                              height: 60,
+                              color: Colors.grey[200],
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                                ),
+                              ),
+                            );
+                          },
+                        )
+                      : Container(
+                          width: 60,
+                          height: 60,
+                          color: Colors.grey[200],
+                          child: const Icon(
+                            Icons.person,
+                            size: 30,
+                            color: Colors.grey,
                           ),
                         ),
-                      );
-                    },
-                  ),
                 ),
               ),
               const SizedBox(width: 15),
@@ -128,8 +152,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Hello, Georges',
+                    Text(
+                      'Hello, $userName',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
