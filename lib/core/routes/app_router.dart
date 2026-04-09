@@ -11,16 +11,22 @@ import '../../features/account/presentation/screens/account_screen.dart';
 import '../../features/account/presentation/screens/edit_account_screen.dart';
 import '../../features/statistics/presentation/screens/statistics_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
-import '../../features/chat/presentation/screens/chat_screen_ai.dart' as ai_chat;
+import '../../features/chat/presentation/screens/chat_screen_ai.dart'
+    as ai_chat;
 import '../../features/onboarding/presentation/screen/onboarding_screen.dart';
+import '../../features/pillbox/presentation/screens/add_medication_screen.dart';
+import '../../features/pillbox/presentation/screens/intake_history_screen.dart';
+import '../../features/pillbox/presentation/screens/medication_detail_screen.dart';
+import '../../features/pillbox/presentation/screens/pillbox_screen.dart';
 
 // La barre de navigation
 import '../../widgets/navigation_bar.dart';
 
-GoRouter createRouter(ValueNotifier<bool> onboardingNotifier, ValueNotifier<bool> authNotifier) {
+GoRouter createRouter(
+    ValueNotifier<bool> onboardingNotifier, ValueNotifier<bool> authNotifier) {
   return GoRouter(
     // 👇 Ici : si onboarding pas encore vu → on commence par /onboarding
-    
+
     refreshListenable: Listenable.merge([onboardingNotifier, authNotifier]),
 
     redirect: (context, state) {
@@ -30,7 +36,11 @@ GoRouter createRouter(ValueNotifier<bool> onboardingNotifier, ValueNotifier<bool
       final location = state.uri.path;
 
       // Logged-in users skip login; only skip onboarding if it's completed
-      if (isLoggedIn && !onboardingNeeded && (location == '/login' || location == '/onboarding' || location == '/')) {
+      if (isLoggedIn &&
+          !onboardingNeeded &&
+          (location == '/login' ||
+              location == '/onboarding' ||
+              location == '/')) {
         return '/home';
       }
 
@@ -103,7 +113,8 @@ GoRouter createRouter(ValueNotifier<bool> onboardingNotifier, ValueNotifier<bool
           ),
           GoRoute(
             path: '/chat/ai/new',
-            builder: (context, state) => const ai_chat.ChatScreen(conversationId: 'new'),
+            builder: (context, state) =>
+                const ai_chat.ChatScreen(conversationId: 'new'),
           ),
           GoRoute(
             path: '/chat/ai/:conversationId',
@@ -158,6 +169,24 @@ GoRouter createRouter(ValueNotifier<bool> onboardingNotifier, ValueNotifier<bool
             timeSlot: extra['timeSlot'] as String? ?? '',
           );
         },
+      ),
+      GoRoute(
+        path: '/pillbox',
+        builder: (context, state) => const PillboxScreen(),
+      ),
+      GoRoute(
+        path: '/pillbox/history',
+        builder: (context, state) => const IntakeHistoryScreen(),
+      ),
+      GoRoute(
+        path: '/pillbox/add',
+        builder: (context, state) => const AddMedicationScreen(),
+      ),
+      GoRoute(
+        path: '/pillbox/:id',
+        builder: (context, state) => MedicationDetailScreen(
+          medicationId: state.pathParameters['id'] ?? '',
+        ),
       ),
     ],
 

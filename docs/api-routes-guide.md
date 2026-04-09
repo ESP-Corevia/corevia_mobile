@@ -142,11 +142,13 @@ class _AppointmentsState extends State<AppointmentsScreen> {
 Configured via `.env`:
 
 ```dotenv
-# Android emulator
-API_BASE_URL=http://10.0.2.2:3000
-```
+# Default (iOS simulator / web / physical devices with DNS access)
+API_BASE_URL=https://api.corevia.local
 
-```dotenv
-# iOS simulator / web
-API_BASE_URL=http://localhost:3000
+# Optional Android emulator override
+# api.corevia.local is not resolved by default inside Android emulator.
+# Use Android host alias (10.0.2.2 -> localhost of host machine).
+API_BASE_URL_ANDROID=https://10.0.2.2
+# Route to the correct nginx virtual host when calling by IP.
+API_HOST_HEADER_ANDROID=api.corevia.local
 ```

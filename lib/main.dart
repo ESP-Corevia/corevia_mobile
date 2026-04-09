@@ -5,6 +5,9 @@ import 'core/routes/app_router.dart';
 import 'shared/theme/app_theme.dart';
 import 'features/home/presentation/providers/home_provider.dart';
 import 'features/home/data/repositories/home_repository_impl.dart';
+import 'features/pillbox/data/repositories/pillbox_repository_impl.dart';
+import 'features/pillbox/presentation/providers/medication_search_provider.dart';
+import 'features/pillbox/presentation/providers/pillbox_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
@@ -22,14 +25,16 @@ void main() async {
   // Onboarding
   final prefs = await SharedPreferences.getInstance();
   bool? hasCompletedOnboarding = prefs.getBool('onboarding_done');
-  
+
   // 🔥 true = onboarding nécessaire, false = déjà fait
-  bool onboardingNeeded = (hasCompletedOnboarding == null || hasCompletedOnboarding == false);
-  
+  bool onboardingNeeded =
+      (hasCompletedOnboarding == null || hasCompletedOnboarding == false);
+
   debugPrint('hasCompletedOnboarding: $hasCompletedOnboarding');
   debugPrint('onboardingNeeded: $onboardingNeeded');
-  
-  final onboardingNotifier = OnboardingNotifier(onboardingNeeded); // ⬅️ Utilise la classe spécifique
+
+  final onboardingNotifier =
+      OnboardingNotifier(onboardingNeeded); // ⬅️ Utilise la classe spécifique
 
   // Auth state
   final authNotifier = AuthNotifier(false); // ⬅️ Utilise la classe spécifique
@@ -65,7 +70,13 @@ void main() async {
         ChangeNotifierProvider(
           create: (context) => HomeProvider(HomeRepositoryImpl()),
         ),
-        // Ajoutez d'autres providers ici au besoin
+        ChangeNotifierProvider(
+          create: (context) => PillboxProvider(PillboxRepositoryImpl()),
+        ),
+        ChangeNotifierProvider(
+          create: (context) =>
+              MedicationSearchProvider(PillboxRepositoryImpl()),
+        ),
         ChangeNotifierProvider<OnboardingNotifier>.value(
           value: onboardingNotifier,
         ),
@@ -80,7 +91,6 @@ void main() async {
     ),
   );
 }
-
 
 class MyApp extends StatelessWidget {
   final OnboardingNotifier onboardingNotifier;
