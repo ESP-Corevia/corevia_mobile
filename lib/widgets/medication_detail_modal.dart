@@ -12,6 +12,10 @@ class MedicationDetailModal extends StatelessWidget {
   final String startDate;
   final String endDate;
   final String instructions;
+  final String? intakeId;
+  final String? intakeStatus;
+  final VoidCallback? onTaken;
+  final VoidCallback? onSkipped;
 
   const MedicationDetailModal({
     super.key,
@@ -24,7 +28,14 @@ class MedicationDetailModal extends StatelessWidget {
     required this.startDate,
     required this.endDate,
     required this.instructions,
+    this.intakeId,
+    this.intakeStatus,
+    this.onTaken,
+    this.onSkipped,
   });
+
+  bool get _isTaken => intakeStatus?.toUpperCase() == 'TAKEN';
+  bool get _isSkipped => intakeStatus?.toUpperCase() == 'SKIPPED';
 
   @override
   Widget build(BuildContext context) {
@@ -60,15 +71,14 @@ class MedicationDetailModal extends StatelessWidget {
                           children: [
                             Text(
                               medicationName,
-                              style: const TextStyle(fontSize: 35, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                  fontSize: 35, fontWeight: FontWeight.bold),
                             ),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text(
-                                    '$dosage . $time',
-                                    style: TextStyle(color: Colors.black)
-                                ),
+                                Text('$dosage . $time',
+                                    style: TextStyle(color: Colors.black)),
                               ],
                             )
                           ],
@@ -96,7 +106,8 @@ class MedicationDetailModal extends StatelessWidget {
                           color: Colors.grey.shade800,
                           fontSize: 16)),
                   const SizedBox(height: 6),
-                  Text(description, style: TextStyle(color: Colors.grey.shade700)),
+                  Text(description,
+                      style: TextStyle(color: Colors.grey.shade700)),
 
                   const SizedBox(height: 16),
                   Text('Instructions',
@@ -105,9 +116,21 @@ class MedicationDetailModal extends StatelessWidget {
                           color: Colors.grey.shade800,
                           fontSize: 16)),
                   const SizedBox(height: 6),
-                  Text(instructions, style: TextStyle(color: Colors.grey.shade700)),
+                  Text(instructions,
+                      style: TextStyle(color: Colors.grey.shade700)),
 
                   const SizedBox(height: 24),
+                  if (_isTaken || _isSkipped)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Text(
+                        _isTaken ? 'Prise déjà effectuée' : 'Prise ignorée',
+                        style: TextStyle(
+                          color: _isTaken ? Colors.green : Colors.red,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
@@ -127,6 +150,10 @@ class MedicationDetailModal extends StatelessWidget {
                       ),
                       onPressed: () {
                         Navigator.pop(context);
+                        if (onTaken != null) {
+                          onTaken!();
+                          return;
+                        }
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text('$medicationName marked as taken!'),
@@ -134,6 +161,33 @@ class MedicationDetailModal extends StatelessWidget {
                           ),
                         );
                       },
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        if (onSkipped != null) {
+                          onSkipped!();
+                          return;
+                        }
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('$medicationName skipped'),
+                            backgroundColor: Colors.orange,
+                          ),
+                        );
+                      },
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: const BorderSide(color: Color(0xFFE0E0E0)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Skip'),
                     ),
                   ),
                 ],
@@ -177,7 +231,8 @@ class MedicationDetailModal extends StatelessWidget {
             Text(label,
                 style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
             Text(value,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                style:
+                    const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
           ],
         ),
       ],

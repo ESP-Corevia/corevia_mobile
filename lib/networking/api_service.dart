@@ -3,10 +3,40 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'http_client_factory.dart';
 import 'routes/auth_routes.dart';
 
 class ApiService {
-  static final String baseUrl = dotenv.env['API_BASE_URL'] ?? 'http://10.0.2.2:3000';
+  static final String baseUrl = _resolveBaseUrl();
+  static final http.Client _client = createHttpClient();
+  static final String? hostHeader = _resolveHostHeader();
+
+  static String _resolveBaseUrl() {
+    final defaultUrl = dotenv.env['API_BASE_URL'] ?? 'https://api.corevia.local';
+    final androidOverride = dotenv.env['API_BASE_URL_ANDROID'];
+
+    if (!kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.android &&
+        androidOverride != null &&
+        androidOverride.isNotEmpty) {
+      return androidOverride;
+    }
+    return defaultUrl;
+  }
+
+  static String? _resolveHostHeader() {
+    final defaultHost = dotenv.env['API_HOST_HEADER'];
+    final androidHost = dotenv.env['API_HOST_HEADER_ANDROID'];
+
+    if (!kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.android &&
+        androidHost != null &&
+        androidHost.isNotEmpty) {
+      return androidHost;
+    }
+
+    return (defaultHost != null && defaultHost.isNotEmpty) ? defaultHost : null;
+  }
 
   static const _sensitiveKeys = {
     'password', 'token', 'authorization', 'id_token', 'access_token',
@@ -40,11 +70,13 @@ class ApiService {
   static Map<String, String> _jsonHeaders([Map<String, String>? extra]) => {
     'Content-Type': 'application/json',
     'Origin': baseUrl,
+    if (hostHeader != null) 'Host': hostHeader!,
     ...?extra,
   };
 
   static Map<String, String> _getHeaders([Map<String, String>? extra]) => {
     'Origin': baseUrl,
+    if (hostHeader != null) 'Host': hostHeader!,
     ...?extra,
   };
 
@@ -58,7 +90,7 @@ class ApiService {
     final uri = Uri.parse("$baseUrl$path").replace(queryParameters: params);
     _log('GET', uri.toString());
     try {
-      final res = await http.get(uri, headers: _getHeaders(headers)).timeout(
+      final res = await _client.get(uri, headers: _getHeaders(headers)).timeout(
         const Duration(seconds: 30),
         onTimeout: () => throw Exception('Requête GET expirée'),
       );
@@ -78,7 +110,7 @@ class ApiService {
     final url = "$baseUrl$path";
     _log('POST', url, body: jsonEncode(body));
     try {
-      final res = await http.post(
+      final res = await _client.post(
         Uri.parse(url),
         headers: _jsonHeaders(headers),
         body: jsonEncode(body),
@@ -102,7 +134,7 @@ class ApiService {
     final url = "$baseUrl$path";
     _log('PUT', url, body: jsonEncode(body));
     try {
-      final res = await http.put(
+      final res = await _client.put(
         Uri.parse(url),
         headers: _jsonHeaders(headers),
         body: jsonEncode(body),
@@ -126,7 +158,7 @@ class ApiService {
     final url = "$baseUrl$path";
     _log('PATCH', url, body: jsonEncode(body));
     try {
-      final res = await http.patch(
+      final res = await _client.patch(
         Uri.parse(url),
         headers: _jsonHeaders(headers),
         body: jsonEncode(body),
@@ -149,7 +181,7 @@ class ApiService {
     final url = "$baseUrl$path";
     _log('DELETE', url);
     try {
-      final res = await http.delete(
+      final res = await _client.delete(
         Uri.parse(url),
         headers: _jsonHeaders(headers),
       ).timeout(
