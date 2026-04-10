@@ -183,7 +183,7 @@ class ApiService {
     try {
       final res = await _client.delete(
         Uri.parse(url),
-        headers: _jsonHeaders(headers),
+        headers: _getHeaders(headers),
       ).timeout(
         const Duration(seconds: 30),
         onTimeout: () => throw Exception('Requête DELETE expirée'),

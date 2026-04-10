@@ -31,6 +31,8 @@ class _HomeScreenState extends State<HomeScreen> {
       final provider = context.read<PillboxProvider>();
       await provider.loadTodayIntakes();
       await provider.loadMedications();
+      // Load intakes for the whole week so calendar badges are accurate
+      _loadWeekIntakes(provider);
     });
   }
 
@@ -174,6 +176,17 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _loadWeekIntakes(PillboxProvider provider) {
+    final now = DateTime.now();
+    final start = now.subtract(Duration(days: now.weekday - 1));
+    for (int i = 0; i < 7; i++) {
+      final date = start.add(Duration(days: i));
+      if (date.isBefore(DateTime(now.year, now.month, now.day + 1))) {
+        provider.loadIntakesForDate(date);
+      }
+    }
+  }
+
   // ── Weekly calendar ────────────────────────────────────────────────────────
 
   Widget _buildWeeklyCalendar() {
@@ -203,7 +216,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   (date) => Expanded(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 2),
-                      child: _buildDayCircle(date, provider.intakes),
+                      child: _buildDayCircle(date, provider),
                     ),
                   ),
                 )
@@ -214,27 +227,32 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildDayCircle(DateTime date, List<Intake> todayIntakes) {
+  Widget _buildDayCircle(DateTime date, PillboxProvider provider) {
     final now = DateTime.now();
     final isToday =
         date.year == now.year && date.month == now.month && date.day == now.day;
+    final isFuture = date.isAfter(DateTime(now.year, now.month, now.day));
     final label = _weekdayLetter(date.weekday);
 
-    // Compute status for today only
+    // Get intakes for this specific day from cache
     _DayStatus? status;
-    if (isToday && todayIntakes.isNotEmpty) {
-      final takenCount =
-          todayIntakes.where((i) => i.status.toUpperCase() == 'TAKEN').length;
-      final skippedCount =
-          todayIntakes.where((i) => i.status.toUpperCase() == 'SKIPPED').length;
-      final total = todayIntakes.length;
+    if (!isFuture) {
+      final cached = provider.getIntakesForCachedDate(date);
+      final dayIntakes = isToday ? provider.intakes : (cached?.intakes ?? []);
+      if (dayIntakes.isNotEmpty) {
+        final takenCount =
+            dayIntakes.where((i) => i.status.toUpperCase() == 'TAKEN').length;
+        final skippedCount =
+            dayIntakes.where((i) => i.status.toUpperCase() == 'SKIPPED').length;
+        final total = dayIntakes.length;
+        final isPastDay = !isToday;
 
-      if (takenCount == total) {
-        status = _DayStatus.allTaken;
-      } else if (skippedCount > 0) {
-        status = _DayStatus.hasSkipped;
-      } else if (takenCount > 0) {
-        status = _DayStatus.partial;
+        if (takenCount == total) {
+          status = _DayStatus.allTaken;
+        } else if (skippedCount > 0 || isPastDay) {
+          // Not all taken → red X
+          status = _DayStatus.hasSkipped;
+        }
       }
     }
 
