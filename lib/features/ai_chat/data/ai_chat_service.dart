@@ -129,36 +129,37 @@ class AiChatService {
     }
   }
 
+  /// Parse a single line from the SSE stream.
+  ///
+  /// The backend sends Server-Sent Events with JSON payloads:
+  ///   data: {"type":"text-delta","id":"0","delta":"Hello"}
+  ///   data: {"type":"error","message":"..."}
+  ///   data: {"type":"finish-step",...}
   void _parseLine(
     String line, {
     required void Function(String delta) onDelta,
     required void Function(String error) onError,
   }) {
-    if (line.length < 2 || line[1] != ':') return;
+    if (!line.startsWith('data: ')) return;
 
-    final typeCode = line[0];
-    final payload = line.substring(2);
+    final jsonStr = line.substring(6); // strip "data: "
 
-    switch (typeCode) {
-      case '0':
-        try {
-          final text = jsonDecode(payload) as String;
-          onDelta(text);
-        } catch (_) {
-          onDelta(payload);
-        }
-        break;
-      case 'e':
-        try {
-          final decoded = jsonDecode(payload);
-          final msg = decoded is Map ? (decoded['message'] ?? decoded.toString()) : payload;
-          onError(msg.toString());
-        } catch (_) {
-          onError(payload);
-        }
-        break;
-      case 'd':
-        break;
+    try {
+      final data = jsonDecode(jsonStr);
+      if (data is! Map<String, dynamic>) return;
+
+      switch (data['type']) {
+        case 'text-delta':
+          final delta = data['delta'] as String?;
+          if (delta != null) onDelta(delta);
+          break;
+        case 'error':
+          final msg = data['message'] as String? ?? data.toString();
+          onError(msg);
+          break;
+      }
+    } catch (_) {
+      // Skip unparseable lines
     }
   }
 

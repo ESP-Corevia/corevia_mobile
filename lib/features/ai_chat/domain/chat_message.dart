@@ -13,9 +13,13 @@ class ChatMessage {
     this.isError = false,
   }) : timestamp = timestamp ?? DateTime.now();
 
-  /// Convert to AI SDK UIMessage format for sending to backend
+  /// Convert to AI SDK UIMessage format for sending to backend.
+  /// Matches the UIMessage shape expected by convertToModelMessages().
   Map<String, dynamic> toApiMessage() => {
+    'id': 'msg_${timestamp.millisecondsSinceEpoch}',
     'role': role == ChatRole.user ? 'user' : 'assistant',
-    'content': content,
+    'parts': [
+      {'type': 'text', 'text': content},
+    ],
   };
 }
