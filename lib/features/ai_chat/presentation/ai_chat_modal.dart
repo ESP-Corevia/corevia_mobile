@@ -105,22 +105,37 @@ class _AiChatModalState extends State<AiChatModal> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(64),
-        child: SafeArea(
-          bottom: false,
-          child: _buildHeader(),
-        ),
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      body: Column(
-        children: [
-          const Divider(height: 1, color: Color(0xFFE5E7EB)),
-          Expanded(child: _buildMessageList()),
-          const Divider(height: 1, color: Color(0xFFE5E7EB)),
-          _buildInputBar(),
-        ],
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.85,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            // Drag handle
+            Center(
+              child: Container(
+                margin: const EdgeInsets.only(top: 10),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            _buildHeader(),
+            const Divider(height: 1, color: Color(0xFFE5E7EB)),
+            Expanded(child: _buildMessageList()),
+            const Divider(height: 1, color: Color(0xFFE5E7EB)),
+            _buildInputBar(),
+          ],
+        ),
       ),
     );
   }
@@ -265,13 +280,14 @@ class _AiChatModalState extends State<AiChatModal> {
   }
 }
 
-/// Opens the AI chat as a full-screen modal page.
+/// Opens the AI chat as a bottom sheet modal.
 /// Uses rootNavigator to escape the ShellRoute's BottomNavBar overlay.
 void showAiChatModal(BuildContext context) {
-  Navigator.of(context, rootNavigator: true).push(
-    MaterialPageRoute(
-      fullscreenDialog: true,
-      builder: (_) => const AiChatModal(),
-    ),
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    useRootNavigator: true,
+    builder: (_) => const AiChatModal(),
   );
 }
