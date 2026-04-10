@@ -256,6 +256,7 @@ class _AiChatModalState extends State<AiChatModal> {
 
   Widget _buildSendButton() {
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: _sendMessage,
       child: Container(
         width: 44,
@@ -275,6 +276,7 @@ class _AiChatModalState extends State<AiChatModal> {
 
   Widget _buildStopButton() {
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: _stopStreaming,
       child: Container(
         width: 44,
