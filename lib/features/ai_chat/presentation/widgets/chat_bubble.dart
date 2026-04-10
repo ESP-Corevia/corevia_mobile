@@ -93,12 +93,6 @@ class _AssistantContent extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
         ),
         codeblockPadding: const EdgeInsets.all(12),
-        codeblockTextStyle: const TextStyle(
-          fontSize: 13,
-          color: Colors.white,
-          fontFamily: 'monospace',
-          height: 1.4,
-        ),
         listBullet: TextStyle(fontSize: 15, color: textColor),
         blockquoteDecoration: BoxDecoration(
           border: Border(

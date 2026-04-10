@@ -8,6 +8,7 @@ import '../../../../networking/api_service.dart';
 import '../../../../networking/routes/user_routes.dart';
 import '../../../../widgets/initials_avatar.dart';
 import '../../../../widgets/navigation_bar.dart';
+import '../../../ai_chat/presentation/ai_chat_modal.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -49,6 +50,16 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       bottomNavigationBar: const BottomNavBar(currentLocation: '/home'),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 80),
+        child: FloatingActionButton(
+          onPressed: () => showAiChatModal(context),
+          backgroundColor: const Color(0xFF34C759),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: const Icon(Icons.smart_toy_rounded, color: Colors.white),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
@@ -150,7 +161,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 20),
           GestureDetector(
-            onTap: _showDocAIDialog,
+            onTap: () => showAiChatModal(context),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
               decoration: BoxDecoration(
@@ -537,46 +548,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
-  }
-
-  void _showDocAIDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('DocAI Chat'),
-        content: const Text(
-            'Bienvenue dans DocAI!\nComment puis-je vous aider aujourd\'hui?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Fermer'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _showSnackBar('Démarrage du chat...');
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF34C759),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
-            child: const Text('Démarrer'),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 enum _DayStatus { allTaken, hasSkipped, partial }
