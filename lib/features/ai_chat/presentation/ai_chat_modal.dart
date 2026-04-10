@@ -105,26 +105,28 @@ class _AiChatModalState extends State<AiChatModal> {
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        children: [
-          _buildHeader(),
-          const Divider(height: 1, color: Color(0xFFE5E7EB)),
-          Expanded(child: _buildMessageList()),
-          const Divider(height: 1, color: Color(0xFFE5E7EB)),
-          Padding(
-            padding: EdgeInsets.only(bottom: bottomInset > 0 ? 8 : 8),
-            child: _buildInputBar(),
+    return DraggableScrollableSheet(
+      initialChildSize: 0.85,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
-        ],
-      ),
+          child: Column(
+            children: [
+              _buildHeader(),
+              const Divider(height: 1, color: Color(0xFFE5E7EB)),
+              Expanded(child: _buildMessageList()),
+              const Divider(height: 1, color: Color(0xFFE5E7EB)),
+              _buildInputBar(),
+            ],
+          ),
+        );
+      },
     );
   }
 
