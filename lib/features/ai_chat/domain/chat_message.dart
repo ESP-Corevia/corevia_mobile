@@ -85,7 +85,6 @@ class ChatMessage {
         part['approval'] = {
           'id': tc.approvalId,
           'approved': true,
-          'reason': null,
         };
       } else if (tc.state == ToolCallState.rejected) {
         part['approval'] = {
