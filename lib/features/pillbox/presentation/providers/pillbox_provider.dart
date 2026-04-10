@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../../../../core/notification/pillbox_notification.dart';
 import '../../domain/entities/intake.dart';
 import '../../domain/entities/patient_medication.dart';
 import '../../domain/entities/today_intakes.dart';
@@ -49,6 +50,7 @@ class PillboxProvider with ChangeNotifier {
 
     try {
       _todayIntakes = await _repository.getTodayIntakes();
+      schedulePillboxReminders(_todayIntakes!.intakes);
     } catch (e) {
       _error = 'Erreur lors du chargement du pilulier du jour';
       if (kDebugMode) debugPrint('Pillbox loadTodayIntakes error: $e');
@@ -114,6 +116,7 @@ class PillboxProvider with ChangeNotifier {
     try {
       await _repository.markIntakeTaken(intakeId, notes: notes);
       _updateLocalIntakeStatus(intakeId, status: 'TAKEN');
+      cancelPillboxReminder(intakeId);
     } catch (e) {
       _error = 'Impossible de marquer la prise comme effectuée';
       if (kDebugMode) debugPrint('Pillbox markIntakeTaken error: $e');
@@ -130,6 +133,7 @@ class PillboxProvider with ChangeNotifier {
     try {
       await _repository.markIntakeSkipped(intakeId, notes: notes);
       _updateLocalIntakeStatus(intakeId, status: 'SKIPPED');
+      cancelPillboxReminder(intakeId);
     } catch (e) {
       _error = 'Impossible de marquer la prise comme ignorée';
       if (kDebugMode) debugPrint('Pillbox markIntakeSkipped error: $e');
@@ -150,6 +154,7 @@ class PillboxProvider with ChangeNotifier {
       // Rafraichir les intakes du jour pour afficher le nouveau medicament
       try {
         _todayIntakes = await _repository.getTodayIntakes();
+        schedulePillboxReminders(_todayIntakes!.intakes);
       } catch (_) {}
     } catch (e) {
       _error = 'Impossible de créer le médicament';

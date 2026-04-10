@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:timezone/data/latest_all.dart' as tz_data;
+import 'core/notification/pillbox_notification.dart';
 import 'package:provider/provider.dart';
 import 'core/routes/app_router.dart';
 import 'shared/theme/app_theme.dart';
@@ -21,6 +23,10 @@ void main() async {
 
   // Chargez le fichier .env
   await dotenv.load(fileName: ".env");
+
+  // Initialize timezones and local notifications
+  tz_data.initializeTimeZones();
+  await initializePillboxNotifications();
 
   // Onboarding
   final prefs = await SharedPreferences.getInstance();
