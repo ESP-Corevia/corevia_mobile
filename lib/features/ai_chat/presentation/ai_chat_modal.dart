@@ -105,17 +105,18 @@ class _AiChatModalState extends State<AiChatModal> {
 
   @override
   Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.85,
-      minChildSize: 0.5,
-      maxChildSize: 0.95,
-      expand: false,
-      builder: (context, scrollController) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.85,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          top: false,
           child: Column(
             children: [
               _buildHeader(),
@@ -125,8 +126,8 @@ class _AiChatModalState extends State<AiChatModal> {
               _buildInputBar(),
             ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -215,41 +216,38 @@ class _AiChatModalState extends State<AiChatModal> {
   }
 
   Widget _buildInputBar() {
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        child: Row(
-          children: [
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF5F5F7),
-                  borderRadius: BorderRadius.circular(24),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F5F7),
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: TextField(
+                controller: _inputController,
+                enabled: !_isStreaming,
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) => _sendMessage(),
+                maxLines: 4,
+                minLines: 1,
+                decoration: const InputDecoration(
+                  hintText: 'Votre message...',
+                  hintStyle: TextStyle(color: Color(0xFF9CA3AF)),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 ),
-                child: TextField(
-                  controller: _inputController,
-                  enabled: !_isStreaming,
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: (_) => _sendMessage(),
-                  maxLines: 4,
-                  minLines: 1,
-                  decoration: const InputDecoration(
-                    hintText: 'Votre message...',
-                    hintStyle: TextStyle(color: Color(0xFF9CA3AF)),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  ),
-                  style: const TextStyle(fontSize: 15, color: Color(0xFF1D1D1F)),
-                ),
+                style: const TextStyle(fontSize: 15, color: Color(0xFF1D1D1F)),
               ),
             ),
-            const SizedBox(width: 8),
-            _isStreaming
-                ? _buildStopButton()
-                : _buildSendButton(),
-          ],
-        ),
+          ),
+          const SizedBox(width: 8),
+          _isStreaming
+              ? _buildStopButton()
+              : _buildSendButton(),
+        ],
       ),
     );
   }
