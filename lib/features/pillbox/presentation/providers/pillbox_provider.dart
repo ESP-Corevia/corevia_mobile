@@ -200,6 +200,10 @@ class PillboxProvider with ChangeNotifier {
       _medications =
           _medications.where((medication) => medication.id != id).toList();
       if (_total > 0) _total -= 1;
+      // Refresh today's intakes to remove deleted medication's entries
+      try {
+        _todayIntakes = await _repository.getTodayIntakes();
+      } catch (_) {}
     } catch (e) {
       _error = 'Impossible de supprimer le médicament';
       if (kDebugMode) debugPrint('Pillbox deleteMedication error: $e');

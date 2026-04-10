@@ -132,7 +132,7 @@ class IntakeCard extends StatelessWidget {
             if (_done)
               _statusBadge('Pris', const Color(0xFF34C759), const Color(0xFFE8FFF0))
             else if (_skipped)
-              _statusBadge('Ignore', const Color(0xFFEF4444), const Color(0xFFFEE2E2))
+              _statusBadge('Non pris', const Color(0xFFEF4444), const Color(0xFFFEE2E2))
             else
               Row(
                 mainAxisSize: MainAxisSize.min,
