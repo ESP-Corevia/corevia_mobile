@@ -5,27 +5,19 @@ enum ToolCallState { pending, approved, rejected }
 class ToolCallInfo {
   final String toolCallId;
   final String toolName;
+  final String approvalId;
   final Map<String, dynamic> args;
   ToolCallState state;
-  Map<String, dynamic>? result;
 
   ToolCallInfo({
     required this.toolCallId,
     required this.toolName,
+    required this.approvalId,
     required this.args,
     this.state = ToolCallState.pending,
-    this.result,
   });
 
   String get displayName => _toolLabels[toolName] ?? toolName;
-
-  bool get needsApproval => _mutationTools.contains(toolName);
-
-  static const _mutationTools = {
-    'create_appointment',
-    'mark_intake_taken',
-    'mark_intake_skipped',
-  };
 
   static const _toolLabels = {
     'create_appointment': 'Prendre un rendez-vous',
@@ -68,8 +60,14 @@ class ChatMessage {
       toolCalls.any((tc) => tc.state == ToolCallState.pending);
 
   /// Convert to AI SDK UIMessage format for sending to backend.
+  /// Matches the UIMessage shape expected by convertToModelMessages().
   Map<String, dynamic> toApiMessage() {
     final parts = <Map<String, dynamic>>[];
+
+    // Add step-start marker if this message has tool calls
+    if (toolCalls.isNotEmpty) {
+      parts.add({'type': 'step-start'});
+    }
 
     if (content.isNotEmpty) {
       parts.add({'type': 'text', 'text': content});
@@ -77,23 +75,32 @@ class ChatMessage {
 
     for (final tc in toolCalls) {
       final part = <String, dynamic>{
-        'type': 'tool-invocation',
+        'type': 'tool-${tc.toolName}',
         'toolCallId': tc.toolCallId,
-        'toolName': tc.toolName,
-        'args': tc.args,
+        'state': _stateString(tc.state),
+        'input': tc.args,
       };
 
       if (tc.state == ToolCallState.approved) {
-        part['state'] = 'result';
-        part['result'] = tc.result ?? {'approved': true};
+        part['approval'] = {
+          'id': tc.approvalId,
+          'approved': true,
+          'reason': null,
+        };
       } else if (tc.state == ToolCallState.rejected) {
-        part['state'] = 'result';
-        part['result'] = {'error': 'User rejected this action'};
-      } else {
-        part['state'] = 'call';
+        part['approval'] = {
+          'id': tc.approvalId,
+          'approved': false,
+          'reason': 'User denied the action',
+        };
       }
 
       parts.add(part);
+    }
+
+    // If no parts at all (empty message), add empty text
+    if (parts.isEmpty) {
+      parts.add({'type': 'text', 'text': ''});
     }
 
     return {
@@ -101,5 +108,15 @@ class ChatMessage {
       'role': role == ChatRole.user ? 'user' : 'assistant',
       'parts': parts,
     };
+  }
+
+  static String _stateString(ToolCallState state) {
+    switch (state) {
+      case ToolCallState.pending:
+        return 'approval-requested';
+      case ToolCallState.approved:
+      case ToolCallState.rejected:
+        return 'approval-responded';
+    }
   }
 }

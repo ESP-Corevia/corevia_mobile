@@ -118,7 +118,6 @@ class _AiChatModalState extends State<AiChatModal> {
   void _approveToolCall(ToolCallInfo toolCall) {
     setState(() {
       toolCall.state = ToolCallState.approved;
-      toolCall.result = {'approved': true};
     });
 
     // Refresh providers for mutation tools
