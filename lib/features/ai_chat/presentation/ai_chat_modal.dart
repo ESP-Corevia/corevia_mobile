@@ -266,8 +266,9 @@ class _AiChatModalState extends State<AiChatModal> {
 }
 
 /// Opens the AI chat as a full-screen modal page.
+/// Uses rootNavigator to escape the ShellRoute's BottomNavBar overlay.
 void showAiChatModal(BuildContext context) {
-  Navigator.of(context).push(
+  Navigator.of(context, rootNavigator: true).push(
     MaterialPageRoute(
       fullscreenDialog: true,
       builder: (_) => const AiChatModal(),
