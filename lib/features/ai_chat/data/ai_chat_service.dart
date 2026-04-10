@@ -1,0 +1,168 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import '../../../networking/api_service.dart';
+import '../domain/chat_message.dart';
+
+class AiChatService {
+  static const _storage = FlutterSecureStorage();
+
+  late final Dio _dio;
+
+  AiChatService() {
+    _dio = Dio(BaseOptions(
+      baseUrl: ApiService.baseUrl,
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: Duration.zero,
+      headers: {
+        'Content-Type': 'application/json',
+        'Origin': ApiService.baseUrl,
+        if (ApiService.hostHeader != null) 'Host': ApiService.hostHeader!,
+      },
+    ));
+
+    if (kDebugMode) {
+      (_dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+        final client = HttpClient();
+        client.badCertificateCallback = (cert, host, port) {
+          return host == '10.0.2.2' || host.endsWith('.corevia.local');
+        };
+        return client;
+      };
+    }
+  }
+
+  CancelToken streamChat({
+    required List<ChatMessage> messages,
+    required void Function(String delta) onDelta,
+    required void Function(String error) onError,
+    required void Function() onDone,
+  }) {
+    final cancelToken = CancelToken();
+
+    _doStream(
+      messages: messages,
+      onDelta: onDelta,
+      onError: onError,
+      onDone: onDone,
+      cancelToken: cancelToken,
+    );
+
+    return cancelToken;
+  }
+
+  Future<void> _doStream({
+    required List<ChatMessage> messages,
+    required void Function(String delta) onDelta,
+    required void Function(String error) onError,
+    required void Function() onDone,
+    required CancelToken cancelToken,
+  }) async {
+    try {
+      final token = await _storage.read(key: 'auth_token') ?? '';
+
+      final response = await _dio.post<ResponseBody>(
+        '/chat',
+        data: {
+          'messages': messages
+              .where((m) => !m.isError)
+              .map((m) => m.toApiMessage())
+              .toList(),
+        },
+        options: Options(
+          responseType: ResponseType.stream,
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+        cancelToken: cancelToken,
+      );
+
+      final stream = response.data?.stream;
+      if (stream == null) {
+        onError('Empty response from server');
+        onDone();
+        return;
+      }
+
+      String buffer = '';
+
+      await for (final chunk in stream) {
+        if (cancelToken.isCancelled) break;
+
+        buffer += utf8.decode(chunk, allowMalformed: true);
+
+        while (buffer.contains('\n')) {
+          final newlineIndex = buffer.indexOf('\n');
+          final line = buffer.substring(0, newlineIndex).trim();
+          buffer = buffer.substring(newlineIndex + 1);
+
+          if (line.isEmpty) continue;
+
+          _parseLine(line, onDelta: onDelta, onError: onError);
+        }
+      }
+
+      if (buffer.trim().isNotEmpty) {
+        _parseLine(buffer.trim(), onDelta: onDelta, onError: onError);
+      }
+
+      onDone();
+    } on DioException catch (e) {
+      if (CancelToken.isCancel(e)) {
+        onDone();
+        return;
+      }
+      if (e.response?.statusCode == 401) {
+        onError('Session expirée. Veuillez vous reconnecter.');
+      } else {
+        onError('Erreur réseau : ${e.message ?? "connexion impossible"}');
+      }
+      onDone();
+    } catch (e) {
+      onError('Erreur inattendue : $e');
+      onDone();
+    }
+  }
+
+  void _parseLine(
+    String line, {
+    required void Function(String delta) onDelta,
+    required void Function(String error) onError,
+  }) {
+    if (line.length < 2 || line[1] != ':') return;
+
+    final typeCode = line[0];
+    final payload = line.substring(2);
+
+    switch (typeCode) {
+      case '0':
+        try {
+          final text = jsonDecode(payload) as String;
+          onDelta(text);
+        } catch (_) {
+          onDelta(payload);
+        }
+        break;
+      case 'e':
+        try {
+          final decoded = jsonDecode(payload);
+          final msg = decoded is Map ? (decoded['message'] ?? decoded.toString()) : payload;
+          onError(msg.toString());
+        } catch (_) {
+          onError(payload);
+        }
+        break;
+      case 'd':
+        break;
+    }
+  }
+
+  void dispose() {
+    _dio.close();
+  }
+}
