@@ -120,11 +120,8 @@ class _AiChatModalState extends State<AiChatModal> {
       toolCall.state = ToolCallState.approved;
     });
 
-    // Refresh providers for mutation tools
     _refreshProviders(toolCall.toolName);
-
-    // Re-send conversation so the backend executes the tool and continues
-    _streamResponse();
+    _resendIfAllResponded();
   }
 
   void _rejectToolCall(ToolCallInfo toolCall) {
@@ -132,8 +129,42 @@ class _AiChatModalState extends State<AiChatModal> {
       toolCall.state = ToolCallState.rejected;
     });
 
-    // Re-send so the AI knows the tool was rejected
-    _streamResponse();
+    _resendIfAllResponded();
+  }
+
+  void _approveAllToolCalls() {
+    setState(() {
+      for (final msg in _messages) {
+        for (final tc in msg.toolCalls) {
+          if (tc.state == ToolCallState.pending) {
+            tc.state = ToolCallState.approved;
+            _refreshProviders(tc.toolName);
+          }
+        }
+      }
+    });
+    _resendIfAllResponded();
+  }
+
+  void _rejectAllToolCalls() {
+    setState(() {
+      for (final msg in _messages) {
+        for (final tc in msg.toolCalls) {
+          if (tc.state == ToolCallState.pending) {
+            tc.state = ToolCallState.rejected;
+          }
+        }
+      }
+    });
+    _resendIfAllResponded();
+  }
+
+  /// Only re-send when ALL pending tool calls have been responded to.
+  void _resendIfAllResponded() {
+    final hasPending = _messages.any((m) => m.hasPendingToolCalls);
+    if (!hasPending) {
+      _streamResponse();
+    }
   }
 
   void _refreshProviders(String toolName) {
@@ -272,15 +303,80 @@ class _AiChatModalState extends State<AiChatModal> {
       );
     }
 
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      itemCount: _messages.length,
-      itemBuilder: (context, index) => ChatBubble(
-        message: _messages[index],
-        onApprove: _isStreaming ? null : _approveToolCall,
-        onReject: _isStreaming ? null : _rejectToolCall,
-      ),
+    final pendingCount = _messages.fold<int>(
+      0, (sum, m) => sum + m.toolCalls.where((tc) => tc.state == ToolCallState.pending).length,
+    );
+
+    return Column(
+      children: [
+        Expanded(
+          child: ListView.builder(
+            controller: _scrollController,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            itemCount: _messages.length,
+            itemBuilder: (context, index) => ChatBubble(
+              message: _messages[index],
+              onApprove: _isStreaming ? null : _approveToolCall,
+              onReject: _isStreaming ? null : _rejectToolCall,
+            ),
+          ),
+        ),
+        if (pendingCount > 1 && !_isStreaming)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _approveAllToolCalls,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF34C759),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Tout approuver ($pendingCount)',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _rejectAllToolCalls,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF4444),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'Tout refuser',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 

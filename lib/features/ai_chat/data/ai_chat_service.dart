@@ -83,14 +83,17 @@ class AiChatService {
     try {
       final token = await _storage.read(key: 'auth_token') ?? '';
 
+      final payload = {
+        'messages': messages
+            .where((m) => !m.isError)
+            .map((m) => m.toApiMessage())
+            .toList(),
+      };
+      debugPrint('[AiChat] Sending: ${jsonEncode(payload)}');
+
       final response = await _dio.post<ResponseBody>(
         '/chat',
-        data: {
-          'messages': messages
-              .where((m) => !m.isError)
-              .map((m) => m.toApiMessage())
-              .toList(),
-        },
+        data: payload,
         options: Options(
           responseType: ResponseType.stream,
           headers: {'Authorization': 'Bearer $token'},
