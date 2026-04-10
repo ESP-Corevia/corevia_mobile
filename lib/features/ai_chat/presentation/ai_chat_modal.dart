@@ -105,35 +105,29 @@ class _AiChatModalState extends State<AiChatModal> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: Container(
-        height: MediaQuery.of(context).size.height * 0.85,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(64),
         child: SafeArea(
-          top: false,
-          child: Column(
-            children: [
-              _buildHeader(),
-              const Divider(height: 1, color: Color(0xFFE5E7EB)),
-              Expanded(child: _buildMessageList()),
-              const Divider(height: 1, color: Color(0xFFE5E7EB)),
-              _buildInputBar(),
-            ],
-          ),
+          bottom: false,
+          child: _buildHeader(),
         ),
+      ),
+      body: Column(
+        children: [
+          const Divider(height: 1, color: Color(0xFFE5E7EB)),
+          Expanded(child: _buildMessageList()),
+          const Divider(height: 1, color: Color(0xFFE5E7EB)),
+          _buildInputBar(),
+        ],
       ),
     );
   }
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
           Container(
@@ -153,6 +147,7 @@ class _AiChatModalState extends State<AiChatModal> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Text(
                   'DocAI Assistant',
@@ -216,89 +211,66 @@ class _AiChatModalState extends State<AiChatModal> {
   }
 
   Widget _buildInputBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFF5F5F7),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: TextField(
-                controller: _inputController,
-                enabled: !_isStreaming,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _sendMessage(),
-                maxLines: 4,
-                minLines: 1,
-                decoration: const InputDecoration(
-                  hintText: 'Votre message...',
-                  hintStyle: TextStyle(color: Color(0xFF9CA3AF)),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          children: [
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F5F7),
+                  borderRadius: BorderRadius.circular(24),
                 ),
-                style: const TextStyle(fontSize: 15, color: Color(0xFF1D1D1F)),
+                child: TextField(
+                  controller: _inputController,
+                  enabled: !_isStreaming,
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (_) => _sendMessage(),
+                  maxLines: 4,
+                  minLines: 1,
+                  decoration: const InputDecoration(
+                    hintText: 'Votre message...',
+                    hintStyle: TextStyle(color: Color(0xFF9CA3AF)),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  ),
+                  style: const TextStyle(fontSize: 15, color: Color(0xFF1D1D1F)),
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-          _isStreaming
-              ? _buildStopButton()
-              : _buildSendButton(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSendButton() {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: _sendMessage,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: const Color(0xFF34C759),
-          borderRadius: BorderRadius.circular(22),
-        ),
-        child: const Icon(
-          Icons.arrow_upward_rounded,
-          color: Colors.white,
-          size: 22,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStopButton() {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: _stopStreaming,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: const Color(0xFFEF4444),
-          borderRadius: BorderRadius.circular(22),
-        ),
-        child: const Icon(
-          Icons.stop_rounded,
-          color: Colors.white,
-          size: 22,
+            const SizedBox(width: 8),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _isStreaming ? _stopStreaming : _sendMessage,
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: _isStreaming ? const Color(0xFFEF4444) : const Color(0xFF34C759),
+                  borderRadius: BorderRadius.circular(22),
+                ),
+                child: Icon(
+                  _isStreaming ? Icons.stop_rounded : Icons.arrow_upward_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-/// Opens the AI chat modal from any context.
+/// Opens the AI chat as a full-screen modal page.
 void showAiChatModal(BuildContext context) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (_) => const AiChatModal(),
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      fullscreenDialog: true,
+      builder: (_) => const AiChatModal(),
+    ),
   );
 }
