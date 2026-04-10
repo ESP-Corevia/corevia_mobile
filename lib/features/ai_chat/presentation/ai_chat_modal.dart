@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../pillbox/presentation/providers/pillbox_provider.dart';
 import '../data/ai_chat_service.dart';
 import '../domain/chat_message.dart';
 import 'widgets/chat_bubble.dart';
@@ -49,10 +51,19 @@ class _AiChatModalState extends State<AiChatModal> {
     _inputController.clear();
 
     final userMessage = ChatMessage(role: ChatRole.user, content: text);
-    final assistantMessage = ChatMessage(role: ChatRole.assistant, content: '');
 
     setState(() {
       _messages.add(userMessage);
+    });
+
+    _streamResponse();
+  }
+
+  /// Starts a streaming request to /chat with the current messages.
+  void _streamResponse() {
+    final assistantMessage = ChatMessage(role: ChatRole.assistant, content: '');
+
+    setState(() {
       _messages.add(assistantMessage);
       _isStreaming = true;
     });
@@ -60,7 +71,7 @@ class _AiChatModalState extends State<AiChatModal> {
     _scrollToBottom();
 
     _activeCancelToken = _chatService.streamChat(
-      messages: _messages.where((m) => !m.isError && m.content.isNotEmpty).toList(),
+      messages: _messages.where((m) => !m.isError && (m.content.isNotEmpty || m.toolCalls.isNotEmpty)).toList(),
       onDelta: (delta) {
         if (!mounted) return;
         setState(() {
@@ -68,10 +79,17 @@ class _AiChatModalState extends State<AiChatModal> {
         });
         _scrollToBottom();
       },
+      onToolCall: (toolCall) {
+        if (!mounted) return;
+        setState(() {
+          assistantMessage.toolCalls.add(toolCall);
+        });
+        _scrollToBottom();
+      },
       onError: (error) {
         if (!mounted) return;
         setState(() {
-          if (assistantMessage.content.isEmpty) {
+          if (assistantMessage.content.isEmpty && assistantMessage.toolCalls.isEmpty) {
             _messages.remove(assistantMessage);
             _messages.add(ChatMessage(
               role: ChatRole.assistant,
@@ -87,12 +105,51 @@ class _AiChatModalState extends State<AiChatModal> {
         setState(() {
           _isStreaming = false;
           _activeCancelToken = null;
-          if (assistantMessage.content.isEmpty && _messages.contains(assistantMessage)) {
+          if (assistantMessage.content.isEmpty &&
+              assistantMessage.toolCalls.isEmpty &&
+              _messages.contains(assistantMessage)) {
             _messages.remove(assistantMessage);
           }
         });
       },
     );
+  }
+
+  void _approveToolCall(ToolCallInfo toolCall) {
+    setState(() {
+      toolCall.state = ToolCallState.approved;
+      toolCall.result = {'approved': true};
+    });
+
+    // Refresh providers for mutation tools
+    _refreshProviders(toolCall.toolName);
+
+    // Re-send conversation so the backend executes the tool and continues
+    _streamResponse();
+  }
+
+  void _rejectToolCall(ToolCallInfo toolCall) {
+    setState(() {
+      toolCall.state = ToolCallState.rejected;
+    });
+
+    // Re-send so the AI knows the tool was rejected
+    _streamResponse();
+  }
+
+  void _refreshProviders(String toolName) {
+    final providerType = ToolCallInfo.refreshProviders[toolName];
+    if (providerType == null) return;
+
+    switch (providerType) {
+      case 'pillbox':
+        try {
+          final pillbox = context.read<PillboxProvider>();
+          pillbox.loadTodayIntakes();
+          pillbox.loadMedications();
+        } catch (_) {}
+        break;
+    }
   }
 
   void _stopStreaming() {
@@ -117,7 +174,6 @@ class _AiChatModalState extends State<AiChatModal> {
         ),
         child: Column(
           children: [
-            // Drag handle
             Center(
               child: Container(
                 margin: const EdgeInsets.only(top: 10),
@@ -221,7 +277,11 @@ class _AiChatModalState extends State<AiChatModal> {
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       itemCount: _messages.length,
-      itemBuilder: (context, index) => ChatBubble(message: _messages[index]),
+      itemBuilder: (context, index) => ChatBubble(
+        message: _messages[index],
+        onApprove: _isStreaming ? null : _approveToolCall,
+        onReject: _isStreaming ? null : _rejectToolCall,
+      ),
     );
   }
 
@@ -288,6 +348,9 @@ void showAiChatModal(BuildContext context) {
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     useRootNavigator: true,
-    builder: (_) => const AiChatModal(),
+    builder: (modalContext) => ChangeNotifierProvider.value(
+      value: context.read<PillboxProvider>(),
+      child: const AiChatModal(),
+    ),
   );
 }

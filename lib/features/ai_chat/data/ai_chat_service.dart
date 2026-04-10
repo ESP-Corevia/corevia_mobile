@@ -41,6 +41,7 @@ class AiChatService {
   CancelToken streamChat({
     required List<ChatMessage> messages,
     required void Function(String delta) onDelta,
+    required void Function(ToolCallInfo toolCall) onToolCall,
     required void Function(String error) onError,
     required void Function() onDone,
   }) {
@@ -49,6 +50,7 @@ class AiChatService {
     _doStream(
       messages: messages,
       onDelta: onDelta,
+      onToolCall: onToolCall,
       onError: onError,
       onDone: onDone,
       cancelToken: cancelToken,
@@ -60,6 +62,7 @@ class AiChatService {
   Future<void> _doStream({
     required List<ChatMessage> messages,
     required void Function(String delta) onDelta,
+    required void Function(ToolCallInfo toolCall) onToolCall,
     required void Function(String error) onError,
     required void Function() onDone,
     required CancelToken cancelToken,
@@ -103,12 +106,12 @@ class AiChatService {
 
           if (line.isEmpty) continue;
 
-          _parseLine(line, onDelta: onDelta, onError: onError);
+          _parseLine(line, onDelta: onDelta, onToolCall: onToolCall, onError: onError);
         }
       }
 
       if (buffer.trim().isNotEmpty) {
-        _parseLine(buffer.trim(), onDelta: onDelta, onError: onError);
+        _parseLine(buffer.trim(), onDelta: onDelta, onToolCall: onToolCall, onError: onError);
       }
 
       onDone();
@@ -129,20 +132,15 @@ class AiChatService {
     }
   }
 
-  /// Parse a single line from the SSE stream.
-  ///
-  /// The backend sends Server-Sent Events with JSON payloads:
-  ///   data: {"type":"text-delta","id":"0","delta":"Hello"}
-  ///   data: {"type":"error","message":"..."}
-  ///   data: {"type":"finish-step",...}
   void _parseLine(
     String line, {
     required void Function(String delta) onDelta,
+    required void Function(ToolCallInfo toolCall) onToolCall,
     required void Function(String error) onError,
   }) {
     if (!line.startsWith('data: ')) return;
 
-    final jsonStr = line.substring(6); // strip "data: "
+    final jsonStr = line.substring(6);
 
     try {
       final data = jsonDecode(jsonStr);
@@ -153,14 +151,22 @@ class AiChatService {
           final delta = data['delta'] as String?;
           if (delta != null) onDelta(delta);
           break;
+        case 'tool-call':
+          final toolCallId = data['toolCallId'] as String? ?? '';
+          final toolName = data['toolName'] as String? ?? '';
+          final args = data['args'] as Map<String, dynamic>? ?? {};
+          onToolCall(ToolCallInfo(
+            toolCallId: toolCallId,
+            toolName: toolName,
+            args: args,
+          ));
+          break;
         case 'error':
           final msg = data['message'] as String? ?? data.toString();
           onError(msg);
           break;
       }
-    } catch (_) {
-      // Skip unparseable lines
-    }
+    } catch (_) {}
   }
 
   void dispose() {

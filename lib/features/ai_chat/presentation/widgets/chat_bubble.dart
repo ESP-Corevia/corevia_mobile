@@ -5,50 +5,74 @@ import '../../domain/chat_message.dart';
 
 class ChatBubble extends StatelessWidget {
   final ChatMessage message;
+  final void Function(ToolCallInfo)? onApprove;
+  final void Function(ToolCallInfo)? onReject;
 
-  const ChatBubble({super.key, required this.message});
+  const ChatBubble({
+    super.key,
+    required this.message,
+    this.onApprove,
+    this.onReject,
+  });
 
   @override
   Widget build(BuildContext context) {
     final isUser = message.role == ChatRole.user;
     final isError = message.isError;
 
-    return Align(
-      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.8,
-        ),
-        margin: EdgeInsets.only(
-          left: isUser ? 48 : 0,
-          right: isUser ? 0 : 48,
-          bottom: 8,
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isError
-              ? const Color(0xFFFEE2E2)
-              : isUser
-                  ? const Color(0xFF34C759)
-                  : const Color(0xFFF5F5F7),
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(20),
-            topRight: const Radius.circular(20),
-            bottomLeft: Radius.circular(isUser ? 20 : 4),
-            bottomRight: Radius.circular(isUser ? 4 : 20),
-          ),
-        ),
-        child: isUser
-            ? Text(
-                message.content,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  height: 1.4,
+    return Column(
+      crossAxisAlignment:
+          isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        // Text bubble (if content exists or is loading)
+        if (message.content.isNotEmpty || (message.toolCalls.isEmpty && !isError))
+          Align(
+            alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+            child: Container(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.8,
+              ),
+              margin: EdgeInsets.only(
+                left: isUser ? 48 : 0,
+                right: isUser ? 0 : 48,
+                bottom: 8,
+              ),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: isError
+                    ? const Color(0xFFFEE2E2)
+                    : isUser
+                        ? const Color(0xFF34C759)
+                        : const Color(0xFFF5F5F7),
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(20),
+                  topRight: const Radius.circular(20),
+                  bottomLeft: Radius.circular(isUser ? 20 : 4),
+                  bottomRight: Radius.circular(isUser ? 4 : 20),
                 ),
-              )
-            : _AssistantContent(message: message, isError: isError),
-      ),
+              ),
+              child: isUser
+                  ? Text(
+                      message.content,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        height: 1.4,
+                      ),
+                    )
+                  : _AssistantContent(message: message, isError: isError),
+            ),
+          ),
+
+        // Tool call cards
+        for (final tc in message.toolCalls)
+          _ToolCallCard(
+            toolCall: tc,
+            onApprove: onApprove != null ? () => onApprove!(tc) : null,
+            onReject: onReject != null ? () => onReject!(tc) : null,
+          ),
+      ],
     );
   }
 }
@@ -72,7 +96,8 @@ class _AssistantContent extends StatelessWidget {
       );
     }
 
-    final textColor = isError ? const Color(0xFFDC2626) : const Color(0xFF1D1D1F);
+    final textColor =
+        isError ? const Color(0xFFDC2626) : const Color(0xFF1D1D1F);
 
     return MarkdownBody(
       data: message.content,
@@ -80,8 +105,10 @@ class _AssistantContent extends StatelessWidget {
       shrinkWrap: true,
       styleSheet: MarkdownStyleSheet(
         p: TextStyle(fontSize: 15, height: 1.5, color: textColor),
-        strong: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: textColor),
-        em: TextStyle(fontSize: 15, fontStyle: FontStyle.italic, color: textColor),
+        strong: TextStyle(
+            fontSize: 15, fontWeight: FontWeight.w700, color: textColor),
+        em: TextStyle(
+            fontSize: 15, fontStyle: FontStyle.italic, color: textColor),
         code: TextStyle(
           fontSize: 13,
           color: textColor,
@@ -99,7 +126,161 @@ class _AssistantContent extends StatelessWidget {
             left: BorderSide(color: Colors.grey.shade400, width: 3),
           ),
         ),
-        blockquotePadding: const EdgeInsets.only(left: 12, top: 4, bottom: 4),
+        blockquotePadding:
+            const EdgeInsets.only(left: 12, top: 4, bottom: 4),
+      ),
+    );
+  }
+}
+
+class _ToolCallCard extends StatelessWidget {
+  final ToolCallInfo toolCall;
+  final VoidCallback? onApprove;
+  final VoidCallback? onReject;
+
+  const _ToolCallCard({
+    required this.toolCall,
+    this.onApprove,
+    this.onReject,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isPending = toolCall.state == ToolCallState.pending;
+    final isApproved = toolCall.state == ToolCallState.approved;
+    final isRejected = toolCall.state == ToolCallState.rejected;
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.8,
+        ),
+        margin: const EdgeInsets.only(right: 48, bottom: 8),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: isPending
+              ? const Color(0xFFFFF7ED)
+              : isApproved
+                  ? const Color(0xFFF0FDF4)
+                  : const Color(0xFFFEF2F2),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isPending
+                ? const Color(0xFFFED7AA)
+                : isApproved
+                    ? const Color(0xFFBBF7D0)
+                    : const Color(0xFFFECACA),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  isPending
+                      ? Icons.pending_actions_rounded
+                      : isApproved
+                          ? Icons.check_circle_rounded
+                          : Icons.cancel_rounded,
+                  size: 18,
+                  color: isPending
+                      ? const Color(0xFFEA580C)
+                      : isApproved
+                          ? const Color(0xFF16A34A)
+                          : const Color(0xFFDC2626),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    toolCall.displayName,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1D1D1F),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (isPending) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _ActionButton(
+                      label: 'Approuver',
+                      color: const Color(0xFF34C759),
+                      onTap: onApprove,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _ActionButton(
+                      label: 'Refuser',
+                      color: const Color(0xFFEF4444),
+                      onTap: onReject,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            if (isApproved)
+              const Padding(
+                padding: EdgeInsets.only(top: 6),
+                child: Text(
+                  'Action approuvée',
+                  style: TextStyle(fontSize: 12, color: Color(0xFF16A34A)),
+                ),
+              ),
+            if (isRejected)
+              const Padding(
+                padding: EdgeInsets.only(top: 6),
+                child: Text(
+                  'Action refusée',
+                  style: TextStyle(fontSize: 12, color: Color(0xFFDC2626)),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final String label;
+  final Color color;
+  final VoidCallback? onTap;
+
+  const _ActionButton({
+    required this.label,
+    required this.color,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
       ),
     );
   }
