@@ -7,6 +7,7 @@ import 'package:corevia_mobile/features/ai_chat/domain/chat_message.dart' as rag
 import 'package:corevia_mobile/widgets/navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as chat_core;
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 // Modèle pour les IAs spécialisées
 class AIDoctor {
@@ -1355,14 +1356,19 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                     ),
                                   ],
                                 ),
-                                child: Text(
-                                  message.text,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: isUser ? Colors.white : const Color(0xFF1D1D1F),
-                                    height: 1.5,
-                                  ),
-                                ),
+                                child: isUser
+                                    ? Text(
+                                        message.text,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.white,
+                                          height: 1.5,
+                                        ),
+                                      )
+                                    : _AssistantMarkdown(
+                                        data: message.text,
+                                        primaryColor: _currentAI.primaryColor,
+                                      ),
                               ),
                             );
                           }
@@ -1393,6 +1399,59 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             child: BottomNavBar(currentLocation: '/chat/ai/new'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AssistantMarkdown extends StatelessWidget {
+  final String data;
+  final Color primaryColor;
+
+  const _AssistantMarkdown({
+    required this.data,
+    required this.primaryColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const textColor = Color(0xFF1D1D1F);
+
+    return MarkdownBody(
+      data: data,
+      selectable: true,
+      shrinkWrap: true,
+      styleSheet: MarkdownStyleSheet(
+        p: TextStyle(fontSize: 14, height: 1.5, color: textColor),
+        strong: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          color: textColor,
+        ),
+        em: TextStyle(
+          fontSize: 14,
+          fontStyle: FontStyle.italic,
+          color: textColor,
+        ),
+        h1: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: textColor),
+        h2: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: textColor),
+        h3: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: textColor),
+        code: TextStyle(
+          fontSize: 13,
+          color: textColor,
+          backgroundColor: Colors.black.withValues(alpha: 0.05),
+          fontFamily: 'monospace',
+        ),
+        codeblockDecoration: BoxDecoration(
+          color: const Color(0xFF1D1D1F),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        codeblockPadding: const EdgeInsets.all(12),
+        listBullet: TextStyle(fontSize: 14, color: textColor.withValues(alpha: 0.9)),
+        blockquoteDecoration: BoxDecoration(
+          border: Border(left: BorderSide(color: primaryColor.withValues(alpha: 0.6), width: 3)),
+        ),
+        blockquotePadding: const EdgeInsets.only(left: 12, top: 4, bottom: 4),
       ),
     );
   }
