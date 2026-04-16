@@ -22,6 +22,7 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
   final _unitController = TextEditingController(text: 'comprime');
 
   DateTime _startDate = DateTime.now();
+  DateTime? _endDate;
   TimeOfDay _time = const TimeOfDay(hour: 8, minute: 0);
   String _intakeMoment = 'MORNING';
   MedicationSearchResult? _selectedSearchResult;
@@ -456,6 +457,14 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          _datePickerTile(
+            label: 'Date de fin',
+            date: _endDate,
+            placeholder: 'Aucune',
+            onPick: _pickEndDate,
+            onClear: _endDate != null ? () => setState(() => _endDate = null) : null,
+          ),
           const SizedBox(height: 14),
           const Text(
             'Moment de la journee',
@@ -632,8 +641,10 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
 
   Widget _datePickerTile({
     required String label,
-    required DateTime date,
+    DateTime? date,
+    String? placeholder,
     required VoidCallback onPick,
+    VoidCallback? onClear,
   }) {
     return GestureDetector(
       onTap: onPick,
@@ -663,16 +674,21 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    _formatDateFr(date),
-                    style: const TextStyle(
+                    date != null ? _formatDateFr(date) : (placeholder ?? ''),
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: _dark,
+                      color: date != null ? _dark : _grey,
                     ),
                   ),
                 ],
               ),
             ),
+            if (onClear != null)
+              GestureDetector(
+                onTap: onClear,
+                child: const Icon(Icons.close_rounded, size: 18, color: _grey),
+              ),
           ],
         ),
       ),
@@ -805,7 +821,24 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
       lastDate: DateTime(2100),
     );
     if (picked != null) {
-      setState(() => _startDate = picked);
+      setState(() {
+        _startDate = picked;
+        if (_endDate != null && _endDate!.isBefore(picked)) {
+          _endDate = null;
+        }
+      });
+    }
+  }
+
+  Future<void> _pickEndDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _endDate ?? _startDate,
+      firstDate: _startDate,
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      setState(() => _endDate = picked);
     }
   }
 
@@ -833,6 +866,7 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
       'dosageLabel': _nullableText(_dosageController.text),
       'instructions': _nullableText(_instructionsController.text),
       'startDate': _formatDate(_startDate),
+      'endDate': _endDate != null ? _formatDate(_endDate!) : null,
       'schedules': [
         {
           'intakeTime': time,
