@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:corevia_mobile/core/providers/notifiers.dart';
+import 'package:corevia_mobile/features/ai_chat/data/rag_chat_storage.dart';
 import 'package:corevia_mobile/networking/api_service.dart';
 import 'package:corevia_mobile/networking/routes/user_routes.dart';
 import '../../../../widgets/pro_member.dart';
@@ -46,6 +47,7 @@ class _AccountScreenState extends State<AccountScreen> {
     // Clear local session immediately so the app feels instant
     const storage = FlutterSecureStorage();
     await storage.delete(key: 'auth_token');
+    await RagChatStorage().clearAll();
 
     if (!mounted) return;
     final authNotifier = Provider.of<AuthNotifier>(context, listen: false);
