@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:timezone/data/latest_all.dart' as tz_data;
+import 'package:timezone/timezone.dart' as tz;
 import 'package:provider/provider.dart';
+import 'core/notification/pillbox_notification.dart';
 import 'core/routes/app_router.dart';
 import 'shared/theme/app_theme.dart';
 import 'features/home/presentation/providers/home_provider.dart';
@@ -21,6 +25,11 @@ void main() async {
 
   // Chargez le fichier .env
   await dotenv.load(fileName: ".env");
+
+  // Initialize timezones and set device local timezone
+  tz_data.initializeTimeZones();
+  final tzName = await FlutterTimezone.getLocalTimezone();
+  tz.setLocalLocation(tz.getLocation(tzName));
 
   // Onboarding
   final prefs = await SharedPreferences.getInstance();
@@ -64,18 +73,37 @@ void main() async {
     }
   }
 
+  // Create provider & router before notification init so handlers can use them
+  final pillboxProvider = PillboxProvider(PillboxRepositoryImpl());
+  final router = createRouter(onboardingNotifier, authNotifier);
+
+  // Wire interactive notification actions
+  setPillboxNotificationHandlers(
+    onAction: (intakeId, action) async {
+      if (action == 'taken') {
+        await pillboxProvider.markIntakeTaken(intakeId);
+      } else if (action == 'skipped') {
+        await pillboxProvider.markIntakeSkipped(intakeId);
+      }
+      await pillboxProvider.loadTodayIntakes();
+    },
+    onTap: () {
+      router.go('/home');
+    },
+  );
+  await initializePillboxNotifications();
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(
-          create: (context) => HomeProvider(HomeRepositoryImpl()),
+          create: (_) => HomeProvider(HomeRepositoryImpl()),
+        ),
+        ChangeNotifierProvider<PillboxProvider>.value(
+          value: pillboxProvider,
         ),
         ChangeNotifierProvider(
-          create: (context) => PillboxProvider(PillboxRepositoryImpl()),
-        ),
-        ChangeNotifierProvider(
-          create: (context) =>
-              MedicationSearchProvider(PillboxRepositoryImpl()),
+          create: (_) => MedicationSearchProvider(PillboxRepositoryImpl()),
         ),
         ChangeNotifierProvider<OnboardingNotifier>.value(
           value: onboardingNotifier,
@@ -84,24 +112,15 @@ void main() async {
           value: authNotifier,
         ),
       ],
-      child: MyApp(
-        onboardingNotifier: onboardingNotifier,
-        authNotifier: authNotifier,
-      ),
+      child: MyApp(router: router),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  final OnboardingNotifier onboardingNotifier;
-  final AuthNotifier authNotifier;
-  late final GoRouter _router;
+  final GoRouter router;
 
-  MyApp({
-    super.key,
-    required this.onboardingNotifier,
-    required this.authNotifier,
-  }) : _router = createRouter(onboardingNotifier, authNotifier);
+  const MyApp({super.key, required this.router});
 
   @override
   Widget build(BuildContext context) {
@@ -109,7 +128,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'CoreVia Mobile',
       theme: AppTheme.lightTheme,
-      routerConfig: _router,
+      routerConfig: router,
     );
   }
 }
