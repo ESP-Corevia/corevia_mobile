@@ -18,9 +18,14 @@ class PillboxProvider with ChangeNotifier {
   final int _limit = 20;
   int _total = 0;
 
+  // Today badge state — updated on every mark action and load
+  // Values: 'allTaken' | 'partial' | 'hasSkipped' | null
+  String? _todayBadgeStatus;
+
   // History state
   DateTime _historySelectedDate = DateTime.now();
   final Map<String, TodayIntakes> _historyCache = {};
+  final Map<String, bool?> _complianceCache = {};
   bool _isLoadingHistory = false;
   String? _historyError;
 
@@ -42,6 +47,11 @@ class PillboxProvider with ChangeNotifier {
       _historyCache[_dateKey(_historySelectedDate)]?.intakes ?? const [];
   Map<String, TodayIntakes> get historyCache => _historyCache;
 
+  bool? getComplianceForDate(DateTime date) =>
+      _complianceCache[_dateKey(date)];
+
+  String? get todayBadgeStatus => _todayBadgeStatus;
+
   Future<void> loadTodayIntakes() async {
     _isLoading = true;
     _error = null;
@@ -49,6 +59,7 @@ class PillboxProvider with ChangeNotifier {
 
     try {
       _todayIntakes = await _repository.getTodayIntakes();
+      _refreshTodayCompliance();
     } catch (e) {
       _error = 'Erreur lors du chargement du pilulier du jour';
       if (kDebugMode) debugPrint('Pillbox loadTodayIntakes error: $e');
@@ -114,6 +125,7 @@ class PillboxProvider with ChangeNotifier {
     try {
       await _repository.markIntakeTaken(intakeId, notes: notes);
       _updateLocalIntakeStatus(intakeId, status: 'TAKEN');
+      _refreshTodayCompliance();
     } catch (e) {
       _error = 'Impossible de marquer la prise comme effectuée';
       if (kDebugMode) debugPrint('Pillbox markIntakeTaken error: $e');
@@ -130,6 +142,7 @@ class PillboxProvider with ChangeNotifier {
     try {
       await _repository.markIntakeSkipped(intakeId, notes: notes);
       _updateLocalIntakeStatus(intakeId, status: 'SKIPPED');
+      _refreshTodayCompliance();
     } catch (e) {
       _error = 'Impossible de marquer la prise comme ignorée';
       if (kDebugMode) debugPrint('Pillbox markIntakeSkipped error: $e');
@@ -150,6 +163,7 @@ class PillboxProvider with ChangeNotifier {
       // Rafraichir les intakes du jour pour afficher le nouveau medicament
       try {
         _todayIntakes = await _repository.getTodayIntakes();
+        _refreshTodayCompliance();
       } catch (_) {}
     } catch (e) {
       _error = 'Impossible de créer le médicament';
@@ -203,6 +217,7 @@ class PillboxProvider with ChangeNotifier {
       // Refresh today's intakes to remove deleted medication's entries
       try {
         _todayIntakes = await _repository.getTodayIntakes();
+        _refreshTodayCompliance();
       } catch (_) {}
     } catch (e) {
       _error = 'Impossible de supprimer le médicament';
@@ -316,24 +331,44 @@ class PillboxProvider with ChangeNotifier {
     final first = DateTime(month.year, month.month, 1);
     final last = DateTime(month.year, month.month + 1, 0);
 
-    for (var d = first;
-        !d.isAfter(last);
-        d = d.add(const Duration(days: 1))) {
-      final key = _dateKey(d);
-      if (!_historyCache.containsKey(key)) {
-        try {
-          final result = await _repository.getIntakesForDate(d);
-          _historyCache[key] = result;
-        } catch (e) {
-          if (kDebugMode) debugPrint('Pillbox loadMonthIntakes error ($key): $e');
-        }
-      }
+    try {
+      final history =
+          await _repository.getIntakeHistory(from: first, to: last);
+      _complianceCache.addAll(history);
+    } catch (e) {
+      if (kDebugMode) debugPrint('Pillbox loadMonthIntakes error: $e');
     }
     notifyListeners();
   }
 
   TodayIntakes? getIntakesForCachedDate(DateTime date) {
     return _historyCache[_dateKey(date)];
+  }
+
+  void _refreshTodayCompliance() {
+    final current = _todayIntakes;
+    if (current == null || current.intakes.isEmpty) {
+      _todayBadgeStatus = null;
+      return;
+    }
+    final intakes = current.intakes;
+    final takenCount =
+        intakes.where((i) => i.status.toUpperCase() == 'TAKEN').length;
+    final skippedCount =
+        intakes.where((i) => i.status.toUpperCase() == 'SKIPPED').length;
+    final total = intakes.length;
+
+    _complianceCache[_dateKey(DateTime.now())] = takenCount == total;
+
+    if (takenCount == total) {
+      _todayBadgeStatus = 'allTaken';
+    } else if (takenCount > 0) {
+      _todayBadgeStatus = 'partial';
+    } else if (skippedCount > 0) {
+      _todayBadgeStatus = 'hasSkipped';
+    } else {
+      _todayBadgeStatus = null;
+    }
   }
 
   void _updateLocalIntakeStatus(String intakeId, {required String status}) {
