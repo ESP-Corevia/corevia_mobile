@@ -34,8 +34,6 @@ jobs:
             - name: Add env files
               run: |
                   echo API_BASE_URL=${{ vars.API_BASE_URL }} >> .env
-                  cat .env
-                  ls -la
 
             - name: Build APK
               run: flutter build apk --release
