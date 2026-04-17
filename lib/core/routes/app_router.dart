@@ -17,7 +17,6 @@ import '../../features/onboarding/presentation/screen/onboarding_screen.dart';
 import '../../features/pillbox/presentation/screens/add_medication_screen.dart';
 import '../../features/pillbox/presentation/screens/intake_history_screen.dart';
 import '../../features/pillbox/presentation/screens/medication_detail_screen.dart';
-import '../../features/documents/presentation/screens/documents_screen.dart';
 import '../../features/pillbox/presentation/screens/pillbox_screen.dart';
 
 // La barre de navigation
@@ -172,10 +171,6 @@ GoRouter createRouter(
             timeSlot: extra['timeSlot'] as String? ?? '',
           );
         },
-      ),
-      GoRoute(
-        path: '/documents',
-        builder: (context, state) => const DocumentsScreen(),
       ),
       GoRoute(
         path: '/pillbox',
