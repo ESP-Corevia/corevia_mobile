@@ -108,6 +108,7 @@ class _AccountScreenState extends State<AccountScreen> {
                               _buildActionTile(
                                 icon: LucideIcons.fileText,
                                 title: 'Documents',
+                                onTap: () => context.push('/documents'),
                               ),
                             ],
                           ),
