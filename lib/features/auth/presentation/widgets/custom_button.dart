@@ -14,7 +14,7 @@ class CustomButton extends StatelessWidget {
   final bool hasShadow;
 
   const CustomButton({
-    Key? key,
+    super.key,
     required this.onPressed,
     required this.child,
     this.isLoading = false,
@@ -26,7 +26,7 @@ class CustomButton extends StatelessWidget {
     this.padding,
     this.isFullWidth = true,
     this.hasShadow = true,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

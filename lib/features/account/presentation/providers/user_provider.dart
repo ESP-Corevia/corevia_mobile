@@ -70,23 +70,13 @@ class UserProvider with ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      // Mettre a jour localement meme si l'API echoue
-      _user = _user!.copyWith(
-        name: data['name']?.toString() ?? _user!.name,
-        email: data['email']?.toString() ?? _user!.email,
-        phone: data['phone']?.toString() ?? _user!.phone,
-        gender: data['gender']?.toString() ?? _user!.gender,
-        dateOfBirth: data['dateOfBirth']?.toString() ?? _user!.dateOfBirth,
-        address: data['address']?.toString() ?? _user!.address,
-      );
-      await _persistUser();
-      _error = 'Profil mis a jour localement';
+      _error = 'Erreur lors de la mise a jour du profil';
       if (kDebugMode) {
-        print('UserProvider.updateUser: $e (saved locally)');
+        print('UserProvider.updateUser: $e');
       }
       _isLoading = false;
       notifyListeners();
-      return true;
+      return false;
     }
   }
 

@@ -25,7 +25,7 @@ class HomeProvider with ChangeNotifier {
     } catch (e) {
       _error = 'Erreur lors du chargement des données';
       if (kDebugMode) {
-        print('Erreur: $e');
+        debugPrint('Erreur: $e');
       }
     } finally {
       _isLoading = false;

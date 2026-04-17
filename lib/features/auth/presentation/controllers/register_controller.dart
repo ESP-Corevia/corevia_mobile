@@ -1,36 +1,35 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:corevia_mobile/features/auth/domain/models/register_model.dart';
-import 'package:flutter_better_auth/flutter_better_auth.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:corevia_mobile/networking/api_service.dart';
+import 'package:corevia_mobile/networking/routes/auth_routes.dart';
 
 class RegisterController {
-  /// Retourne un Map avec les donnees user si register reussi, null sinon
-  Future<Map<String, dynamic>?> register(RegisterModel data) async {
+  static const _storage = FlutterSecureStorage();
+
+  Future<bool> register(RegisterModel data) async {
     try {
-      final result = await FlutterBetterAuth.client.signUp.email(
-        name: "${data.firstName} ${data.lastName}",
-        email: data.email,
-        password: data.password,
+      final res = await ApiService.post(
+        AuthRoutes.register(),
+        {
+          'name': '${data.firstName} ${data.lastName}',
+          'email': data.email,
+          'password': data.password,
+        },
       );
 
-      if (result.data != null) {
-        final token = result.data!.token;
-        if (token != null) {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('auth_token', token);
-        }
-
-        final user = result.data!.user;
-        return {
-          'id': user.id,
-          'name': user.name,
-          'email': user.email,
-          'image': user.image,
-          'phoneNumber': user.phoneNumber,
-        };
+      final token = res['token'] as String?;
+      if (token != null && token.isNotEmpty) {
+        debugPrint("Token stocké");
+        await _storage.write(key: 'auth_token', value: token);
+        return true;
+      } else {
+        debugPrint("Erreur register : token absent");
+        return false;
       }
-      return null;
-    } catch (_) {
-      return null;
+    } catch (e) {
+      debugPrint("Erreur register : $e");
+      return false;
     }
   }
 }

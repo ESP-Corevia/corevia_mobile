@@ -452,7 +452,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
         ],
       ),
       child: DropdownButtonFormField<String>(
-        value: selectedGender,
+        initialValue: selectedGender,
         decoration: InputDecoration(
           labelText: 'Gender',
           labelStyle: TextStyle(

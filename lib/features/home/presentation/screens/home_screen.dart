@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../../../widgets/pill_shadow.dart';
-import '../../../../widgets/medication_detail_modal.dart';
+import '../../../pillbox/domain/entities/intake.dart';
+import '../../../pillbox/presentation/providers/pillbox_provider.dart';
+import '../../../pillbox/presentation/widgets/intake_card.dart';
+import '../../../../networking/api_service.dart';
+import '../../../../networking/routes/user_routes.dart';
+import '../../../../widgets/initials_avatar.dart';
 import '../../../../widgets/navigation_bar.dart';
-import '../providers/home_provider.dart';
-import '../../../account/presentation/providers/user_provider.dart';
-
+import '../../../ai_chat/presentation/ai_chat_modal.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,35 +17,64 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   DateTime selectedDate = DateTime.now();
-  DateTime currentWeekStart = DateTime.now();
+  Map<String, dynamic>? _user;
+
+  String get _name => _user?['name'] as String? ?? '';
+  String? get _imageUrl => _user?['image'] as String?;
 
   @override
   void initState() {
     super.initState();
-    currentWeekStart = _getStartOfWeek(DateTime.now());
-    selectedDate = DateTime.now();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<HomeProvider>().loadHomeData();
-      final userProvider = context.read<UserProvider>();
-      if (userProvider.user == null) {
-        userProvider.loadUser();
-      }
+    WidgetsBinding.instance.addObserver(this);
+    _loadUser();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final provider = context.read<PillboxProvider>();
+      await provider.loadTodayIntakes();
+      await provider.loadMedications();
+      _loadWeekIntakes(provider);
     });
   }
 
-  DateTime _getStartOfWeek(DateTime date) {
-    return date.subtract(Duration(days: date.weekday - 1));
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      context.read<PillboxProvider>().loadTodayIntakes();
+    }
+  }
 
+  Future<void> _loadUser() async {
+    try {
+      final res = await ApiService.authGet(UserRoutes.me());
+      if (!mounted) return;
+      setState(() {
+        _user = res['user'] as Map<String, dynamic>?;
+      });
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       bottomNavigationBar: const BottomNavBar(currentLocation: '/home'),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 80),
+        child: FloatingActionButton(
+          onPressed: () => showAiChatModal(context),
+          backgroundColor: const Color(0xFF34C759),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: const Icon(Icons.smart_toy_rounded, color: Colors.white),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
@@ -58,8 +89,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildWeeklyCalendar(),
-                    const SizedBox(height: 40),
-                    _buildMedicationSection(),
+                    const SizedBox(height: 30),
+                    _buildTodayIntakesSection(),
                     const SizedBox(height: 100),
                   ],
                 ),
@@ -72,10 +103,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildTopCard() {
-    final userProvider = context.watch<UserProvider>();
-    final userName = userProvider.user?.name ?? 'Utilisateur';
-    final userImage = userProvider.user?.image;
-
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -97,64 +124,22 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Row(
             children: [
-              // Photo de profil à gauche
               GestureDetector(
-                onTap: () {
-                  _showSnackBar('Profil cliqué');
-                },
-                child: ClipOval(
-                  child: userImage != null && userImage.isNotEmpty
-                      ? Image.network(
-                          userImage,
-                          width: 60,
-                          height: 60,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            width: 60,
-                            height: 60,
-                            color: Colors.grey[200],
-                            child: const Icon(
-                              Icons.person,
-                              size: 30,
-                              color: Colors.grey,
-                            ),
-                          ),
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Container(
-                              width: 60,
-                              height: 60,
-                              color: Colors.grey[200],
-                              child: const Center(
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
-                                ),
-                              ),
-                            );
-                          },
-                        )
-                      : Container(
-                          width: 60,
-                          height: 60,
-                          color: Colors.grey[200],
-                          child: const Icon(
-                            Icons.person,
-                            size: 30,
-                            color: Colors.grey,
-                          ),
-                        ),
+                onTap: () => context.push('/account'),
+                child: InitialsAvatar(
+                  name: _name,
+                  imageUrl: _imageUrl,
+                  size: 60,
                 ),
               ),
               const SizedBox(width: 15),
-              // Hello Georges et Pro member
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Hello, $userName',
-                      style: TextStyle(
+                      _name.isNotEmpty ? 'Hello, $_name' : 'Hello',
+                      style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF1D1D1F),
@@ -163,9 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 2,
-                      ),
+                          horizontal: 10, vertical: 2),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF5F2C1),
                         borderRadius: BorderRadius.circular(12),
@@ -173,11 +156,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.star,
-                            size: 16,
-                            color: Color(0xFFFFBE0A),
-                          ),
+                          Icon(Icons.star, size: 16, color: Color(0xFFFFBE0A)),
                           SizedBox(width: 4),
                           Text(
                             'Pro member',
@@ -196,11 +175,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           const SizedBox(height: 20),
-          // Barre de recherche
           GestureDetector(
-            onTap: () {
-              _showDocAIDialog();
-            },
+            onTap: () => showAiChatModal(context),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
               decoration: BoxDecoration(
@@ -213,10 +189,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(width: 12),
                   Text(
                     'Start a chat with DocAI',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   ),
                 ],
               ),
@@ -227,416 +200,369 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Generate days of the current week
-  List<Map<String, dynamic>> getDaysOfWeek() {
+  void _loadWeekIntakes(PillboxProvider provider) {
     final now = DateTime.now();
-    // Get the first day of the week (Monday)
-    final firstDayOfWeek = now.subtract(Duration(days: now.weekday - 1));
-
-    return List.generate(7, (index) {
-      final date = firstDayOfWeek.add(Duration(days: index));
-      final dayName = _getDayName(date.weekday);
-      return {
-        'letter': dayName[0],
-        'status': _getDayStatus(date),
-        'fullName': dayName,
-        'date': date,
-      };
-    });
+    final start = now.subtract(Duration(days: now.weekday - 1));
+    for (int i = 0; i < 7; i++) {
+      final date = start.add(Duration(days: i));
+      if (date.isBefore(DateTime(now.year, now.month, now.day + 1))) {
+        provider.loadIntakesForDate(date);
+      }
+    }
   }
 
-  // Get the French name of the day
-  String _getDayName(int weekday) {
+  Widget _buildWeeklyCalendar() {
+    final now = DateTime.now();
+    final start = now.subtract(Duration(days: now.weekday - 1));
+    final week = List.generate(7, (index) => start.add(Duration(days: index)));
+
+    return Consumer<PillboxProvider>(
+      builder: (context, provider, _) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: week
+                .map(
+                  (date) => Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      child: _buildDayCircle(date, provider),
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDayCircle(DateTime date, PillboxProvider provider) {
+    final now = DateTime.now();
+    final isToday =
+        date.year == now.year && date.month == now.month && date.day == now.day;
+    final isFuture = date.isAfter(DateTime(now.year, now.month, now.day));
+    final label = _weekdayLetter(date.weekday);
+
+    _DayStatus? status;
+    if (!isFuture) {
+      final cached = provider.getIntakesForCachedDate(date);
+      final dayIntakes = isToday ? provider.intakes : (cached?.intakes ?? []);
+      if (dayIntakes.isNotEmpty) {
+        final takenCount =
+            dayIntakes.where((i) => i.status.toUpperCase() == 'TAKEN').length;
+        final skippedCount =
+            dayIntakes.where((i) => i.status.toUpperCase() == 'SKIPPED').length;
+        final total = dayIntakes.length;
+        final isPastDay = !isToday;
+
+        if (takenCount == total) {
+          status = _DayStatus.allTaken;
+        } else if (skippedCount > 0 || isPastDay) {
+          status = _DayStatus.hasSkipped;
+        }
+      }
+    }
+
+    return GestureDetector(
+      onTap: () => setState(() => selectedDate = date),
+      child: SizedBox(
+        width: 40,
+        height: 58,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned.fill(
+              top: 6,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isToday
+                        ? const Color(0xFF34C759)
+                        : const Color(0xFFF0F0F0),
+                    width: isToday ? 1.5 : 1.0,
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 20,
+                      color: const Color(0xFF333333),
+                      fontWeight: isToday ? FontWeight.bold : FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            if (status == _DayStatus.allTaken)
+              Positioned(
+                top: 0,
+                right: -2,
+                child: Container(
+                  width: 18,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFF34C759),
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: const Icon(Icons.check_rounded,
+                      size: 10, color: Colors.white),
+                ),
+              )
+            else if (status == _DayStatus.hasSkipped)
+              Positioned(
+                top: 0,
+                right: -2,
+                child: Container(
+                  width: 18,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFFEF4444),
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: const Icon(Icons.close_rounded,
+                      size: 10, color: Colors.white),
+                ),
+              )
+            else if (status == _DayStatus.partial)
+              Positioned(
+                top: 0,
+                right: -2,
+                child: Container(
+                  width: 18,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFFFF9500),
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: const Icon(Icons.remove_rounded,
+                      size: 10, color: Colors.white),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTodayIntakesSection() {
+    return Consumer<PillboxProvider>(
+      builder: (context, provider, _) {
+        final intakes = provider.intakes;
+        final takenCount =
+            intakes.where((i) => i.status.toUpperCase() == 'TAKEN').length;
+        final total = intakes.length;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Prises du jour',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1D1D1F),
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    if (total > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          '$takenCount/$total prises effectuees',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: takenCount == total
+                                ? const Color(0xFF34C759)
+                                : Colors.grey.shade500,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextButton.icon(
+                      onPressed: () => context.push('/pillbox/history'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.grey.shade600,
+                        textStyle: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
+                      icon: const Icon(Icons.history_rounded, size: 16),
+                      label: const Text('Historique'),
+                    ),
+                    TextButton.icon(
+                      onPressed: () => context.push('/pillbox'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF34C759),
+                        textStyle: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
+                      icon: const Icon(Icons.arrow_forward, size: 16),
+                      label: const Text('Voir tout'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            if (total > 0)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(
+                    value: total > 0 ? takenCount / total : 0,
+                    minHeight: 6,
+                    backgroundColor: const Color(0xFFE5E7EB),
+                    color: takenCount == total
+                        ? const Color(0xFF34C759)
+                        : const Color(0xFF007AFF),
+                  ),
+                ),
+              ),
+            if (provider.isLoading && intakes.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: Color(0xFF34C759),
+                  ),
+                ),
+              )
+            else if (intakes.isEmpty)
+              _buildEmptyIntakes()
+            else
+              Column(
+                children: intakes
+                    .map(
+                      (intake) => IntakeCard(
+                        intake: intake,
+                        onTaken: () => _markTaken(intake),
+                        onSkipped: () => _markSkipped(intake),
+                      ),
+                    )
+                    .toList(),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyIntakes() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F9FB),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.check_circle_outline_rounded,
+              size: 40, color: Color(0xFF34C759)),
+          const SizedBox(height: 10),
+          const Text(
+            'Aucune prise prevue aujourd\'hui',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1D1D1F),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Ajoutez des medicaments avec des horaires',
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey.shade500,
+            ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            height: 40,
+            child: ElevatedButton.icon(
+              onPressed: () => context.push('/pillbox/add'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF34C759),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: const Text(
+                'Ajouter un medicament',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _markTaken(Intake intake) async {
+    await context.read<PillboxProvider>().markIntakeTaken(intake.id);
+  }
+
+  Future<void> _markSkipped(Intake intake) async {
+    await context.read<PillboxProvider>().markIntakeSkipped(intake.id);
+  }
+
+  String _weekdayLetter(int weekday) {
     switch (weekday) {
       case DateTime.monday:
-        return 'Lundi';
+        return 'L';
       case DateTime.tuesday:
-        return 'Mardi';
+        return 'M';
       case DateTime.wednesday:
-        return 'Mercredi';
+        return 'M';
       case DateTime.thursday:
-        return 'Jeudi';
+        return 'J';
       case DateTime.friday:
-        return 'Vendredi';
+        return 'V';
       case DateTime.saturday:
-        return 'Samedi';
+        return 'S';
       case DateTime.sunday:
-        return 'Dimanche';
+        return 'D';
       default:
         return '';
     }
   }
-
-  // Get status for a specific day (you can modify this to get from your data source)
-  String _getDayStatus(DateTime date) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final currentDate = DateTime(date.year, date.month, date.day);
-
-    // Si c'est un jour futur, pas de statut
-    if (currentDate.isAfter(today)) return 'future';
-
-    // Si c'est aujourd'hui
-    if (currentDate.isAtSameMomentAs(today)) return 'today';
-
-    // Pour le mercredi, toujours retourner 'missed' pour afficher une croix
-    if (date.weekday == DateTime.wednesday) return 'missed';
-
-    // Pour les autres jours passés, on détermine un statut aléatoire
-    final random = date.day * date.month;
-    if (random % 10 < 4) return 'completed';
-    if (random % 10 < 7) return 'missed';
-    return 'normal';
-  }
-
-  // Get the index of the current day (0-6 where 0 is Monday)
-  int get selectedDayIndex => DateTime.now().weekday % 7;
-
-  Widget _buildWeeklyCalendar() {
-    final daysOfWeek = getDaysOfWeek();
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: daysOfWeek.map<Widget>((day) => Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2),
-            child: _buildDayCircle(day, daysOfWeek.indexOf(day)),
-          ),
-        )).toList(),
-      ),
-    );
-  }
-
-  Widget _buildDayCircle(Map<String, dynamic> day, int index) {
-    final now = DateTime.now();
-    final isToday = day['date'].year == now.year &&
-        day['date'].month == now.month &&
-        day['date'].day == now.day;
-    final isSelected = isToday; // Selected state is the same as today for now
-
-    // Determine status (in a real app, this would come from your data)
-    final status = _getDayStatus(day['date'] as DateTime);
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedDate = day['date'] as DateTime;
-        });
-        _showSnackBar('${day['fullName']} ${day['date'].day}/${day['date'].month} sélectionné');
-      },
-      child: Container(
-        width: 36,
-        height: 52,
-        margin: const EdgeInsets.symmetric(horizontal: 2),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8), // Coins légèrement arrondis
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-          border: Border.all(
-            color: isSelected
-                ? const Color(0xFF5DF394) // Vert pour le jour sélectionné
-                : const Color(0xFFF0F0F0), // Gris clair pour les autres jours
-            width: isSelected ? 1.5 : 1.0,
-          ),
-        ),
-        child: Stack(
-          clipBehavior: Clip.none, // Permet aux enfants de déborderer
-          children: [
-            // Lettre du jour
-            Center(
-              child: Text(
-                day['letter'],
-                style: TextStyle(
-                  fontSize: 20, // Taille de police augmentée
-                  color: isSelected ? Colors.black : const Color(0xFF333333),
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                ),
-              ),
-            ),
-
-            // Indicateur de statut uniquement pour les jours passés
-            if (status == 'completed' || status == 'missed' || status == 'normal')
-              Positioned(
-                top: -10, // Ajusté pour le nouveau cercle plus grand
-                right: -10, // Ajusté pour le nouveau cercle plus grand
-                child: Container(
-                  width: 20, // Taille augmentée
-                  height: 20, // Taille augmentée
-                  decoration: BoxDecoration(
-                    color: status == 'completed'
-                        ? const Color(0xFF34C759) // Vert pour validé
-                        : status == 'missed'
-                            ? const Color(0xFFFF3B30) // Rouge pour manqué
-                            : Colors.transparent, // Transparent pour 'normal'
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: status == 'normal'
-                          ? const Color(0xFFD1D1D6) // Gris pour normal
-                          : Colors.white, // Blanc pour les autres états
-                      width: 1.5,
-                    ),
-                    boxShadow: [
-                      if (status != 'normal')
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 2,
-                          offset: const Offset(0, 1),
-                        ),
-                    ],
-                  ),
-                  child: status == 'normal'
-                      ? null // Pas d'icône pour l'état normal
-                      : Icon(
-                          status == 'completed' ? Icons.check : Icons.close,
-                          color: Colors.white,
-                          size: 10,
-                        ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMedicationSection() {
-    final medications = [
-      {
-        'name': 'Ibuprofen',
-        'dosage': '200mg',
-        'frequency': '3 times a day',
-        'time': '08:00 AM',
-        'description':
-        'Anti-inflammatory medication used to reduce fever and treat pain or inflammation.',
-        'prescribedBy': 'Dr. Sarah Johnson',
-        'startDate': '15/11/2024',
-        'endDate': '30/11/2024',
-        'instructions':
-        'Take with food to avoid stomach upset. Do not exceed 6 tablets per day.'
-      },
-      {
-        'name': 'Doliprane',
-        'dosage': '500mg',
-        'frequency': '2 times a day',
-        'time': '09:00 AM',
-        'description': 'Pain relief and fever reduction medication.',
-        'prescribedBy': 'Dr. Paul Martin',
-        'startDate': '12/11/2024',
-        'endDate': '22/11/2024',
-        'instructions': 'Can be taken without food.'
-      },
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.only(left: 20, bottom: 12, top: 10),
-          child: Text(
-            'Medication Plan',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF1D1D1F),
-              letterSpacing: -0.5,
-            ),
-          ),
-        ),
-
-        // 👉 On enlève le scroll + Row
-        Column(
-          children: medications.map((med) {
-            return _buildMedicationCardTest(context, med);
-          }).toList(),
-        )
-      ],
-    );
-  }
-
-  Widget _buildMedicationCardTest(BuildContext context, Map<String, String> med) {
-    return GestureDetector(
-      onTap: () {
-        showDialog(
-          context: context,
-          barrierDismissible: true,
-          builder: (_) => MedicationDetailModal(
-            medicationName: med['name']!,
-            dosage: med['dosage']!,
-            frequency: med['frequency']!,
-            time: med['time']!,
-            description: med['description']!,
-            prescribedBy: med['prescribedBy']!,
-            startDate: med['startDate']!,
-            endDate: med['endDate']!,
-            instructions: med['instructions']!,
-          ),
-        );
-      },
-      child: Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(right: 12, bottom: 8),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start, // Changez selon vos besoins
-                  children: [
-                    Text(
-                      med['name']!,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                        '${med['time']} . ${med['dosage']}',
-                        style: TextStyle(color: Colors.black)
-                    ),
-                  ],
-                ),
-                PillShadow(assetPath: 'assets/pill2.png', widthValue: 50, heightValue: 50),
-
-              ]
-            ),
-
-            // Text(
-            //   med['dosage']!,
-            //   style: const TextStyle(color: Colors.grey),
-            // ),
-            // const SizedBox(height: 10),
-            // Row(
-            //   children: [
-            //     Icon(LucideIcons.clock3, size: 16, color: Colors.grey.shade600),
-            //     const SizedBox(width: 4),
-            //     Text(med['time']!,
-            //         style: TextStyle(color: Colors.grey.shade700)),
-            //   ],
-            // ),
-            // const SizedBox(height: 4),
-            // Row(
-            //   children: [
-            //     Icon(LucideIcons.repeat, size: 16, color: Colors.grey.shade600),
-            //     const SizedBox(width: 4),
-            //     Text(med['frequency']!,
-            //         style: TextStyle(color: Colors.grey.shade700)),
-            //   ],
-            // ),
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Container(
-                width: 40, // Définissez la largeur du cercle
-                height: 40, // Définissez la hauteur du cercle pour le rendre plus petit
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.lightGreen[100], // Fond vert léger
-                ),
-                padding: EdgeInsets.all(0), // Ajustez ce padding pour la taille du cercle
-                child: Center( // Centrer l'icône dans le cercle
-                  child: IconButton(
-                    icon: const Icon(
-                      LucideIcons.check,
-                      color: Colors.green,
-                      size: 20, // Ajustez la taille de l'icône
-                    ),
-                    padding: EdgeInsets.zero, // Aucune marge autour de l'icône
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('${med['name']} marked as taken!'),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
-    );
-  }
-
-  void _showDocAIDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: const Text('DocAI Chat'),
-        content: const Text('Bienvenue dans DocAI!\nComment puis-je vous aider aujourd\'hui?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Fermer'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _showSnackBar('Démarrage du chat...');
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF34C759),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: const Text('Démarrer'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  container({required Axis scrollDirection, required EdgeInsets padding, required Row child}) {}
 }
+
+enum _DayStatus { allTaken, hasSkipped, partial }

@@ -117,14 +117,14 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
         confirmPassword: _confirmPasswordController.text,
       );
 
-      final userData = await _controller.register(registerData);
+      final success = await _controller.register(registerData);
 
       if (mounted) {
-        if (userData != null) {
+        if (success) {
           final authNotifier = Provider.of<AuthNotifier>(context, listen: false);
           authNotifier.value = true;
           final userProvider = context.read<UserProvider>();
-          await userProvider.setUserFromLoginData(userData);
+          await userProvider.loadUser();
           if (!mounted) return;
           context.go('/home');
         } else {

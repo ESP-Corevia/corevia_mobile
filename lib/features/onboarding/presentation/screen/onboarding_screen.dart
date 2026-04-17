@@ -1,5 +1,6 @@
 import 'package:corevia_mobile/core/providers/notifiers.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 
@@ -77,7 +78,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
     // 🔥 Met à jour le notifier spécifique
     final onboardingNotifier = Provider.of<OnboardingNotifier>(context, listen: false);
-    onboardingNotifier.value = false; 
+    onboardingNotifier.value = false;
+    context.go('/login');
   }
 
   @override
@@ -176,7 +178,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: (data['color'] as Color).withOpacity(0.4),
+                        color: (data['color'] as Color).withValues(alpha: 0.4),
                         blurRadius: 30,
                         offset: const Offset(0, 15),
                       ),

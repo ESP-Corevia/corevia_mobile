@@ -60,19 +60,18 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
     setState(() => _isLoading = true);
 
     try {
-      final userData = await _controller.login(
+      final success = await _controller.login(
         _emailController.text.trim(),
         _passwordController.text,
       );
 
       if (mounted) {
-        if (userData != null) {
+        if (success) {
           final authNotifier = Provider.of<AuthNotifier>(context, listen: false);
           authNotifier.value = true;
 
-          // Stocker les donnees utilisateur depuis la reponse login
           final userProvider = context.read<UserProvider>();
-          await userProvider.setUserFromLoginData(userData);
+          await userProvider.loadUser();
 
           if (!mounted) return;
           context.go('/home');

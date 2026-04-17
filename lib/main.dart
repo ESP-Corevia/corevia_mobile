@@ -7,57 +7,68 @@ import 'features/home/presentation/providers/home_provider.dart';
 import 'features/home/data/repositories/home_repository_impl.dart';
 import 'features/account/presentation/providers/user_provider.dart';
 import 'features/account/data/repositories/user_repository_impl.dart';
+import 'features/pillbox/data/repositories/pillbox_repository_impl.dart';
+import 'features/pillbox/presentation/providers/medication_search_provider.dart';
+import 'features/pillbox/presentation/providers/pillbox_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_better_auth/flutter_better_auth.dart';
-
-import 'core/providers/notifiers.dart'; // ⬅️ Ajoute cet import
+import 'core/providers/notifiers.dart';
+import 'networking/api_service.dart';
+import 'networking/routes/auth_routes.dart';
 
 void main() async {
-  // Assurez-vous que Flutter est initialisé avant de charger le fichier .env
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Chargez le fichier .env
   await dotenv.load(fileName: ".env");
-  
-  await FlutterBetterAuth.initialize(
-    url: '${dotenv.env['API_BASE_URL'] ?? 'http://10.0.2.2:3000'}/api/auth',
-  );
 
-  // Onboarding
   // Onboarding
   final prefs = await SharedPreferences.getInstance();
   bool? hasCompletedOnboarding = prefs.getBool('onboarding_done');
-  
-  // 🔥 true = onboarding nécessaire, false = déjà fait
-  bool onboardingNeeded = (hasCompletedOnboarding == null || hasCompletedOnboarding == false);
-  
-  print('hasCompletedOnboarding: $hasCompletedOnboarding');
-  print('onboardingNeeded: $onboardingNeeded');
-  
-  final onboardingNotifier = OnboardingNotifier(onboardingNeeded); // ⬅️ Utilise la classe spécifique
+  bool onboardingNeeded =
+      (hasCompletedOnboarding == null || hasCompletedOnboarding == false);
 
-  // Auth state
-  final authNotifier = AuthNotifier(false); // ⬅️ Utilise la classe spécifique
+  debugPrint('hasCompletedOnboarding: $hasCompletedOnboarding');
+  debugPrint('onboardingNeeded: $onboardingNeeded');
 
-  print('onboardingNotifier main: $onboardingNotifier');
+  final onboardingNotifier = OnboardingNotifier(onboardingNeeded);
+  final authNotifier = AuthNotifier(false);
 
+  // Verify session with server
+  const secureStorage = FlutterSecureStorage();
+  final token = await secureStorage.read(key: 'auth_token');
+  if (token != null && token.isNotEmpty) {
+    authNotifier.value = true;
+    try {
+      final session = await ApiService.authGet(AuthRoutes.getSession());
+      final valid = session != null && session['session'] != null;
+      if (!valid) {
+        await secureStorage.delete(key: 'auth_token');
+        authNotifier.value = false;
+      }
+    } catch (e) {
+      final msg = e.toString();
+      if (msg.contains('401') || msg.contains('403')) {
+        await secureStorage.delete(key: 'auth_token');
+        authNotifier.value = false;
+      }
+    }
+  }
 
-  // Vérifie la session persistée dès le lancement
-  final result = await FlutterBetterAuth.client.getSession();
-  final isAuthenticated = result.data != null;
-  authNotifier.value = isAuthenticated;
-
+  // Load user data from cache
   final userProvider = UserProvider(UserRepositoryImpl());
-
-  // Charger les donnees utilisateur depuis le cache
   await userProvider.loadUser();
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(
-          create: (context) => HomeProvider(HomeRepositoryImpl()),
+          create: (_) => HomeProvider(HomeRepositoryImpl()),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => PillboxProvider(PillboxRepositoryImpl()),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => MedicationSearchProvider(PillboxRepositoryImpl()),
         ),
         ChangeNotifierProvider<UserProvider>.value(
           value: userProvider,
@@ -77,12 +88,6 @@ void main() async {
   );
 }
 
-// // Vérifie la session BetterAuth
-// Future<void> checkAuth(ValueNotifier<bool> authNotifier) async {
-//   final result = await FlutterBetterAuth.client.getSession();
-//   authNotifier.value = result.data != null;
-// }
-
 class MyApp extends StatelessWidget {
   final OnboardingNotifier onboardingNotifier;
   final AuthNotifier authNotifier;
@@ -96,13 +101,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BetterAuthProvider(
-      child: MaterialApp.router(
-        debugShowCheckedModeBanner: false,
-        title: 'CoreVia Mobile',
-        theme: AppTheme.lightTheme,
-        routerConfig: _router,
-      ),
+    return MaterialApp.router(
+      debugShowCheckedModeBanner: false,
+      title: 'CoreVia Mobile',
+      theme: AppTheme.lightTheme,
+      routerConfig: _router,
     );
   }
 }

@@ -193,7 +193,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha:0.1),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -213,7 +213,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha:0.05),
                           blurRadius: 5,
                           offset: const Offset(0, 2),
                         ),
@@ -254,15 +254,15 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                           margin: const EdgeInsets.only(bottom: 8),
                           decoration: BoxDecoration(
                             color: _currentAI.id == ai.id 
-                                ? ai.primaryColor.withOpacity(0.1) 
-                                : Colors.grey.withOpacity(0.05),
+                                ? ai.primaryColor.withValues(alpha:0.1) 
+                                : Colors.grey.withValues(alpha:0.05),
                             borderRadius: BorderRadius.circular(16),
                             border: _currentAI.id == ai.id
                                 ? Border.all(color: ai.primaryColor, width: 1.5)
                                 : null,
                             boxShadow: _currentAI.id == ai.id ? [
                               BoxShadow(
-                                color: ai.primaryColor.withOpacity(0.1),
+                                color: ai.primaryColor.withValues(alpha:0.1),
                                 blurRadius: 8,
                                 spreadRadius: 2,
                               )
@@ -313,7 +313,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                         borderRadius: BorderRadius.circular(12),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: ai.primaryColor.withOpacity(0.3),
+                                            color: ai.primaryColor.withValues(alpha:0.3),
                                             blurRadius: 8,
                                             offset: const Offset(0, 3),
                                           ),
@@ -355,7 +355,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                       Container(
                                         padding: const EdgeInsets.all(4),
                                         decoration: BoxDecoration(
-                                          color: ai.primaryColor.withOpacity(0.1),
+                                          color: ai.primaryColor.withValues(alpha:0.1),
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(
@@ -430,7 +430,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                         width: 50,
                         height: 50,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha:0.3),
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: const Icon(
@@ -486,7 +486,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: _currentAI.primaryColor.withOpacity(0.3),
+                        color: _currentAI.primaryColor.withValues(alpha:0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -521,7 +521,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey.withOpacity(0.2),
+                      color: Colors.grey.withValues(alpha:0.2),
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -558,7 +558,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 ai.specialty,
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey.withOpacity(0.2),
+                  color: Colors.grey.withValues(alpha:0.2),
                 ),
               ),
               trailing: ai.id == _currentAI.id
@@ -592,7 +592,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey.withOpacity(0.2),
+                      color: Colors.grey.withValues(alpha:0.2),
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -647,7 +647,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                           conversation.preview,
                           style: TextStyle(
                             fontSize: 11,
-                            color: Colors.grey.withOpacity(0.2),
+                            color: Colors.grey.withValues(alpha:0.2),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -657,13 +657,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                           _formatDate(conversation.lastMessageDate),
                           style: TextStyle(
                             fontSize: 10,
-                            color: Colors.grey.withOpacity(0.2),
+                            color: Colors.grey.withValues(alpha:0.2),
                           ),
                         ),
                       ],
                     ),
                     trailing: IconButton(
-                      icon: Icon(Icons.close, size: 18, color: Colors.grey.withOpacity(0.2)),
+                      icon: Icon(Icons.close, size: 18, color: Colors.grey.withValues(alpha:0.2)),
                       onPressed: () {
                         // Supprimer la conversation
                         setState(() {
@@ -715,7 +715,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha:0.05),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -730,7 +730,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               borderRadius: BorderRadius.circular(14),
             ),
             child: IconButton(
-              icon: Icon(Icons.add, color: Colors.grey.withOpacity(0.7), size: 22),
+              icon: Icon(Icons.add, color: Colors.grey.withValues(alpha:0.7), size: 22),
               onPressed: () {},
             ),
           ),
@@ -756,7 +756,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 decoration: InputDecoration(
                   hintText: 'Type a message...',
                   hintStyle: TextStyle(
-                    color: Colors.grey.withOpacity(0.2), 
+                    color: Colors.grey.withValues(alpha:0.2), 
                     fontSize: 15,
                   ),
                   isDense: true,
@@ -775,7 +775,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
-                  color: _currentAI.primaryColor.withOpacity(0.3),
+                  color: _currentAI.primaryColor.withValues(alpha:0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -899,7 +899,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha:0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -928,11 +928,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           width: 8,
           height: 8,
           decoration: BoxDecoration(
-            color: _currentAI.primaryColor.withOpacity(0.4 + (opacity * 0.6)),
+            color: _currentAI.primaryColor.withValues(alpha:0.4 + (opacity * 0.6)),
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: _currentAI.primaryColor.withOpacity(opacity * 0.3),
+                color: _currentAI.primaryColor.withValues(alpha:opacity * 0.3),
                 blurRadius: 4,
                 spreadRadius: 1,
               ),
@@ -952,7 +952,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha:0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -970,7 +970,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   color: const Color(0xFFF5F5F7),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(Icons.person, size: 28, color: Colors.grey.withOpacity(0.7)),
+                child: Icon(Icons.person, size: 28, color: Colors.grey.withValues(alpha:0.7)),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1003,7 +1003,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                       doctor['specialty'] ?? 'Lung Specialist',
                       style: TextStyle(
                         fontSize: 13,
-                        color: Colors.grey.withOpacity(0.2),
+                        color: Colors.grey.withValues(alpha:0.2),
                       ),
                     ),
                   ],
@@ -1029,13 +1029,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.location_on, color: Colors.grey.withOpacity(0.2), size: 12),
+                      Icon(Icons.location_on, color: Colors.grey.withValues(alpha:0.2), size: 12),
                       const SizedBox(width: 2),
                       Text(
                         doctor['distance'] ?? '2km',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey.withOpacity(0.2),
+                          color: Colors.grey.withValues(alpha:0.2),
                         ),
                       ),
                     ],
@@ -1045,7 +1045,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             ],
           ),
           const SizedBox(height: 12),
-          Divider(height: 1, color: Colors.grey.withOpacity(0.2)),
+          Divider(height: 1, color: Colors.grey.withValues(alpha:0.2)),
           const SizedBox(height: 12),
           Container(
             width: double.infinity,
@@ -1076,7 +1076,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               'For a Lung Checkup',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey.withOpacity(0.2),
+                color: Colors.grey.withValues(alpha:0.2),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -1171,7 +1171,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                     _currentAI.specialty,
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey.withOpacity(0.2),
+                      color: Colors.grey.withValues(alpha:0.2),
                       fontWeight: FontWeight.w500,
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -1188,7 +1188,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha:0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -1244,7 +1244,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                           leading: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Colors.red.withOpacity(0.1),
+                              color: Colors.red.withValues(alpha:0.1),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 22),
@@ -1328,7 +1328,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                   borderRadius: BorderRadius.circular(20),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
+                                      color: Colors.black.withValues(alpha:0.05),
                                       blurRadius: 8,
                                       offset: const Offset(0, 2),
                                     ),
