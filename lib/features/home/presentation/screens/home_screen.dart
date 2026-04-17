@@ -251,24 +251,29 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final label = _weekdayLetter(date.weekday);
 
     _DayStatus? status;
-    if (!isFuture) {
-      final cached = provider.getIntakesForCachedDate(date);
-      final dayIntakes = isToday ? provider.intakes : (cached?.intakes ?? []);
-      if (dayIntakes.isNotEmpty) {
-        final takenCount =
-            dayIntakes.where((i) => i.status.toUpperCase() == 'TAKEN').length;
-        final skippedCount =
-            dayIntakes.where((i) => i.status.toUpperCase() == 'SKIPPED').length;
-        final total = dayIntakes.length;
-        final isPastDay = !isToday;
-
-        if (takenCount == total) {
+    if (!isFuture || isToday) {
+      if (isToday) {
+        switch (provider.todayBadgeStatus) {
+          case 'allTaken':
+            status = _DayStatus.allTaken;
+          case 'partial':
+            status = _DayStatus.partial;
+          case 'hasSkipped':
+            status = _DayStatus.hasSkipped;
+        }
+      } else {
+        final compliance = provider.getComplianceForDate(date);
+        if (compliance == true) {
           status = _DayStatus.allTaken;
-        } else if (skippedCount > 0 || isPastDay) {
+        } else if (compliance == false) {
           status = _DayStatus.hasSkipped;
         }
       }
     }
+
+    final isTodayEmpty =
+        isToday && provider.intakes.isEmpty && !provider.isLoadingToday;
+    if (isTodayEmpty) status = null;
 
     return GestureDetector(
       onTap: isFuture
@@ -306,14 +311,31 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     style: TextStyle(
                       fontSize: 20,
                       color: const Color(0xFF333333),
-                      fontWeight: isToday ? FontWeight.bold : FontWeight.w600,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.w600,
                     ),
                   ),
                 ),
               ),
             ),
-            // Badge — top right corner, half in / half out
-            if (status == _DayStatus.allTaken)
+            // Badge - top right corner, half in / half out
+            if (status == null && !isFuture && !isTodayEmpty)
+              Positioned(
+                top: 0,
+                right: -2,
+                child: Container(
+                  width: 18,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFFB0B7C3),
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: const Icon(Icons.remove_rounded,
+                      size: 10, color: Colors.white),
+                ),
+              )
+            else if (status == _DayStatus.allTaken)
               Positioned(
                 top: 0,
                 right: -2,

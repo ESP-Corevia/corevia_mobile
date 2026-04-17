@@ -46,6 +46,19 @@ class PillboxProvider with ChangeNotifier {
   List<Intake> get historyIntakes =>
       _historyCache[_dateKey(_historySelectedDate)]?.intakes ?? const [];
   Map<String, TodayIntakes> get historyCache => _historyCache;
+  String get todayBadgeStatus {
+    if (intakes.isEmpty) return 'none';
+    final takenCount =
+        intakes.where((i) => i.status.toUpperCase() == 'TAKEN').length;
+    final skippedCount =
+        intakes.where((i) => i.status.toUpperCase() == 'SKIPPED').length;
+    final total = intakes.length;
+
+    if (takenCount == total) return 'allTaken';
+    if (skippedCount > 0) return 'hasSkipped';
+    if (takenCount > 0) return 'partial';
+    return 'none';
+  }
 
   Future<void> loadTodayIntakes() async {
     _isLoadingToday = true;
@@ -339,6 +352,18 @@ class PillboxProvider with ChangeNotifier {
 
   TodayIntakes? getIntakesForCachedDate(DateTime date) {
     return _historyCache[_dateKey(date)];
+  }
+
+  bool? getComplianceForDate(DateTime date) {
+    final cached = getIntakesForCachedDate(date);
+    if (cached == null || cached.intakes.isEmpty) return null;
+
+    final intakes = cached.intakes;
+    final takenCount =
+        intakes.where((i) => i.status.toUpperCase() == 'TAKEN').length;
+
+    if (takenCount == intakes.length) return true;
+    return false;
   }
 
   void _updateLocalIntakeStatus(String intakeId, {required String status}) {
