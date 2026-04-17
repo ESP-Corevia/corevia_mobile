@@ -19,13 +19,22 @@ import '../../features/pillbox/presentation/screens/intake_history_screen.dart';
 import '../../features/pillbox/presentation/screens/medication_detail_screen.dart';
 import '../../features/documents/presentation/screens/documents_screen.dart';
 import '../../features/pillbox/presentation/screens/pillbox_screen.dart';
+import 'route_persistence.dart';
 
 // La barre de navigation
 import '../../widgets/navigation_bar.dart';
 
 GoRouter createRouter(
-    ValueNotifier<bool> onboardingNotifier, ValueNotifier<bool> authNotifier) {
+  ValueNotifier<bool> onboardingNotifier,
+  ValueNotifier<bool> authNotifier, {
+  String initialLocation = '/',
+  String? restoredLocation,
+}) {
+  final fallbackAuthenticatedLocation =
+      sanitizeRestorableRoute(restoredLocation);
+
   return GoRouter(
+    initialLocation: initialLocation,
     // 👇 Ici : si onboarding pas encore vu → on commence par /onboarding
 
     refreshListenable: Listenable.merge([onboardingNotifier, authNotifier]),
@@ -42,7 +51,7 @@ GoRouter createRouter(
           (location == '/login' ||
               location == '/onboarding' ||
               location == '/')) {
-        return '/home';
+        return fallbackAuthenticatedLocation;
       }
 
       if (onboardingNeeded && location != '/onboarding') {
@@ -97,7 +106,7 @@ GoRouter createRouter(
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  child: BottomNavBar(currentLocation: state.uri.toString()),
+                  child: BottomNavBar(currentLocation: state.uri.path),
                 ),
               ],
             ),
