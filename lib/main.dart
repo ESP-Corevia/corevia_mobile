@@ -23,7 +23,12 @@ import 'networking/routes/auth_routes.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    // Keep boot resilient in dev setups where `.env` isn't present yet.
+    debugPrint('⚠️  Unable to load .env (continuing): $e');
+  }
 
   // Initialize timezones and set device local timezone
   tz_data.initializeTimeZones();
