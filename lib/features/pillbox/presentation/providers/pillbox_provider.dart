@@ -9,9 +9,11 @@ class PillboxProvider with ChangeNotifier {
 
   PillboxProvider(this._repository);
 
-  bool _isLoading = false;
+  bool _isLoadingToday = false;
+  bool _isLoadingMedications = false;
   bool _isSubmitting = false;
-  String? _error;
+  String? _todayError;
+  String? _medicationsError;
   TodayIntakes? _todayIntakes;
   List<PatientMedication> _medications = [];
   int _page = 1;
@@ -24,9 +26,12 @@ class PillboxProvider with ChangeNotifier {
   bool _isLoadingHistory = false;
   String? _historyError;
 
-  bool get isLoading => _isLoading;
+  bool get isLoadingToday => _isLoadingToday;
+  bool get isLoadingMedications => _isLoadingMedications;
+  bool get isLoading => _isLoadingMedications;
   bool get isSubmitting => _isSubmitting;
-  String? get error => _error;
+  String? get todayError => _todayError;
+  String? get error => _medicationsError;
   TodayIntakes? get todayIntakes => _todayIntakes;
   List<Intake> get intakes => _todayIntakes?.intakes ?? const [];
   List<PatientMedication> get medications => _medications;
@@ -43,25 +48,25 @@ class PillboxProvider with ChangeNotifier {
   Map<String, TodayIntakes> get historyCache => _historyCache;
 
   Future<void> loadTodayIntakes() async {
-    _isLoading = true;
-    _error = null;
+    _isLoadingToday = true;
+    _todayError = null;
     notifyListeners();
 
     try {
       _todayIntakes = await _repository.getTodayIntakes();
     } catch (e) {
-      _error = 'Erreur lors du chargement du pilulier du jour';
+      _todayError = 'Erreur lors du chargement du pilulier du jour';
       if (kDebugMode) debugPrint('Pillbox loadTodayIntakes error: $e');
     } finally {
-      _isLoading = false;
+      _isLoadingToday = false;
       notifyListeners();
     }
   }
 
   Future<void> loadMedications({bool refresh = true}) async {
-    if (_isLoading) return;
-    _isLoading = true;
-    _error = null;
+    if (_isLoadingMedications) return;
+    _isLoadingMedications = true;
+    _medicationsError = null;
     if (refresh) {
       _page = 1;
       _medications = [];
@@ -78,19 +83,19 @@ class PillboxProvider with ChangeNotifier {
         _medications = [..._medications, ...response.items];
       }
     } catch (e) {
-      _error = 'Erreur lors du chargement des médicaments';
+      _medicationsError = 'Erreur lors du chargement des médicaments';
       if (kDebugMode) debugPrint('Pillbox loadMedications error: $e');
     } finally {
-      _isLoading = false;
+      _isLoadingMedications = false;
       notifyListeners();
     }
   }
 
   Future<void> loadMoreMedications() async {
-    if (!hasMore || _isLoading) return;
+    if (!hasMore || _isLoadingMedications) return;
     final nextPage = _page + 1;
-    _isLoading = true;
-    _error = null;
+    _isLoadingMedications = true;
+    _medicationsError = null;
     notifyListeners();
     try {
       final response =
@@ -99,23 +104,22 @@ class PillboxProvider with ChangeNotifier {
       _total = response.total;
       _medications = [..._medications, ...response.items];
     } catch (e) {
-      _error = 'Erreur lors du chargement des médicaments';
+      _medicationsError = 'Erreur lors du chargement des médicaments';
       if (kDebugMode) debugPrint('Pillbox loadMoreMedications error: $e');
     } finally {
-      _isLoading = false;
+      _isLoadingMedications = false;
       notifyListeners();
     }
   }
 
   Future<void> markIntakeTaken(String intakeId, {String? notes}) async {
     _isSubmitting = true;
-    _error = null;
     notifyListeners();
     try {
       await _repository.markIntakeTaken(intakeId, notes: notes);
       _updateLocalIntakeStatus(intakeId, status: 'TAKEN');
     } catch (e) {
-      _error = 'Impossible de marquer la prise comme effectuée';
+      _todayError = 'Impossible de marquer la prise comme effectuée';
       if (kDebugMode) debugPrint('Pillbox markIntakeTaken error: $e');
     } finally {
       _isSubmitting = false;
@@ -125,13 +129,12 @@ class PillboxProvider with ChangeNotifier {
 
   Future<void> markIntakeSkipped(String intakeId, {String? notes}) async {
     _isSubmitting = true;
-    _error = null;
     notifyListeners();
     try {
       await _repository.markIntakeSkipped(intakeId, notes: notes);
       _updateLocalIntakeStatus(intakeId, status: 'SKIPPED');
     } catch (e) {
-      _error = 'Impossible de marquer la prise comme ignorée';
+      _todayError = 'Impossible de marquer la prise comme ignorée';
       if (kDebugMode) debugPrint('Pillbox markIntakeSkipped error: $e');
     } finally {
       _isSubmitting = false;
@@ -141,18 +144,19 @@ class PillboxProvider with ChangeNotifier {
 
   Future<void> createMedication(Map<String, dynamic> body) async {
     _isSubmitting = true;
-    _error = null;
+    _medicationsError = null;
     notifyListeners();
     try {
       final created = await _repository.createMedication(body);
       _medications = [created, ..._medications];
       _total += 1;
-      // Rafraichir les intakes du jour pour afficher le nouveau medicament
       try {
         _todayIntakes = await _repository.getTodayIntakes();
-      } catch (_) {}
+      } catch (e) {
+        if (kDebugMode) debugPrint('Pillbox refresh today after create: $e');
+      }
     } catch (e) {
-      _error = 'Impossible de créer le médicament';
+      _medicationsError = 'Impossible de créer le médicament';
       if (kDebugMode) debugPrint('Pillbox createMedication error: $e');
       rethrow;
     } finally {
@@ -165,7 +169,7 @@ class PillboxProvider with ChangeNotifier {
     try {
       return await _repository.getMedicationDetail(id);
     } catch (e) {
-      _error = 'Impossible de charger le détail du médicament';
+      _medicationsError = 'Impossible de charger le détail du médicament';
       if (kDebugMode) debugPrint('Pillbox getMedicationDetail error: $e');
       notifyListeners();
       return null;
@@ -174,7 +178,7 @@ class PillboxProvider with ChangeNotifier {
 
   Future<void> updateMedication(String id, Map<String, dynamic> body) async {
     _isSubmitting = true;
-    _error = null;
+    _medicationsError = null;
     notifyListeners();
     try {
       final updated = await _repository.updateMedication(id, body);
@@ -182,7 +186,7 @@ class PillboxProvider with ChangeNotifier {
           .map((medication) => medication.id == id ? updated : medication)
           .toList();
     } catch (e) {
-      _error = 'Impossible de modifier le médicament';
+      _medicationsError = 'Impossible de modifier le médicament';
       if (kDebugMode) debugPrint('Pillbox updateMedication error: $e');
       rethrow;
     } finally {
@@ -193,15 +197,20 @@ class PillboxProvider with ChangeNotifier {
 
   Future<void> deleteMedication(String id) async {
     _isSubmitting = true;
-    _error = null;
+    _medicationsError = null;
     notifyListeners();
     try {
       await _repository.deleteMedication(id);
       _medications =
           _medications.where((medication) => medication.id != id).toList();
       if (_total > 0) _total -= 1;
+      try {
+        _todayIntakes = await _repository.getTodayIntakes();
+      } catch (e) {
+        if (kDebugMode) debugPrint('Pillbox refresh today after delete: $e');
+      }
     } catch (e) {
-      _error = 'Impossible de supprimer le médicament';
+      _medicationsError = 'Impossible de supprimer le médicament';
       if (kDebugMode) debugPrint('Pillbox deleteMedication error: $e');
       rethrow;
     } finally {
@@ -212,7 +221,7 @@ class PillboxProvider with ChangeNotifier {
 
   Future<void> createSchedule(Map<String, dynamic> body) async {
     _isSubmitting = true;
-    _error = null;
+    _medicationsError = null;
     notifyListeners();
     try {
       final created = await _repository.createSchedule(body);
@@ -223,7 +232,7 @@ class PillboxProvider with ChangeNotifier {
         );
       }).toList();
     } catch (e) {
-      _error = 'Impossible d\'ajouter un horaire';
+      _medicationsError = 'Impossible d\'ajouter un horaire';
       if (kDebugMode) debugPrint('Pillbox createSchedule error: $e');
       rethrow;
     } finally {
@@ -234,7 +243,7 @@ class PillboxProvider with ChangeNotifier {
 
   Future<void> updateSchedule(String id, Map<String, dynamic> body) async {
     _isSubmitting = true;
-    _error = null;
+    _medicationsError = null;
     notifyListeners();
     try {
       final updated = await _repository.updateSchedule(id, body);
@@ -247,7 +256,7 @@ class PillboxProvider with ChangeNotifier {
         return medication.copyWith(schedules: schedules);
       }).toList();
     } catch (e) {
-      _error = 'Impossible de modifier l\'horaire';
+      _medicationsError = 'Impossible de modifier l\'horaire';
       if (kDebugMode) debugPrint('Pillbox updateSchedule error: $e');
       rethrow;
     } finally {
@@ -258,7 +267,7 @@ class PillboxProvider with ChangeNotifier {
 
   Future<void> deleteSchedule(String id) async {
     _isSubmitting = true;
-    _error = null;
+    _medicationsError = null;
     notifyListeners();
     try {
       await _repository.deleteSchedule(id);
@@ -268,7 +277,7 @@ class PillboxProvider with ChangeNotifier {
         return medication.copyWith(schedules: schedules);
       }).toList();
     } catch (e) {
-      _error = 'Impossible de supprimer l\'horaire';
+      _medicationsError = 'Impossible de supprimer l\'horaire';
       if (kDebugMode) debugPrint('Pillbox deleteSchedule error: $e');
       rethrow;
     } finally {

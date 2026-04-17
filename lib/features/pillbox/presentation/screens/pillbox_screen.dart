@@ -95,7 +95,7 @@ class _PillboxScreenState extends State<PillboxScreen> {
                         children: [
                           _SummaryCard(
                             label: 'Total',
-                            count: provider.total,
+                            count: provider.medications.length,
                             icon: Icons.medication_rounded,
                             color: const Color(0xFF34C759),
                             bgColor: const Color(0xFFEAF9F0),

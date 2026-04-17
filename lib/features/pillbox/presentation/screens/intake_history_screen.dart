@@ -559,8 +559,8 @@ class _IntakeHistoryScreenState extends State<IntakeHistoryScreen> {
 
   String _monthName(int month) {
     const months = [
-      '', 'Janvier', 'Fevrier', 'Mars', 'Avril', 'Mai', 'Juin',
-      'Juillet', 'Aout', 'Septembre', 'Octobre', 'Novembre', 'Decembre',
+      '', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
     ];
     return months[month];
   }

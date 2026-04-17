@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../pillbox/domain/entities/intake.dart';
@@ -16,7 +17,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   DateTime selectedDate = DateTime.now();
   Map<String, dynamic>? _user;
 
@@ -26,12 +27,27 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadUser();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final provider = context.read<PillboxProvider>();
       await provider.loadTodayIntakes();
       await provider.loadMedications();
+      _loadWeekIntakes(provider);
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      context.read<PillboxProvider>().loadTodayIntakes();
+    }
   }
 
   Future<void> _loadUser() async {
@@ -41,7 +57,9 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _user = res['user'] as Map<String, dynamic>?;
       });
-    } catch (_) {}
+    } catch (e) {
+      if (kDebugMode) debugPrint('Home loadUser error: $e');
+    }
   }
 
   @override
@@ -174,6 +192,17 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _loadWeekIntakes(PillboxProvider provider) {
+    final now = DateTime.now();
+    final start = now.subtract(Duration(days: now.weekday - 1));
+    for (int i = 0; i < 7; i++) {
+      final date = start.add(Duration(days: i));
+      if (date.isBefore(DateTime(now.year, now.month, now.day + 1))) {
+        provider.loadIntakesForDate(date);
+      }
+    }
+  }
+
   // ── Weekly calendar ────────────────────────────────────────────────────────
 
   Widget _buildWeeklyCalendar() {
@@ -203,7 +232,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   (date) => Expanded(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 2),
-                      child: _buildDayCircle(date, provider.intakes),
+                      child: _buildDayCircle(date, provider),
                     ),
                   ),
                 )
@@ -214,39 +243,50 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildDayCircle(DateTime date, List<Intake> todayIntakes) {
+  Widget _buildDayCircle(DateTime date, PillboxProvider provider) {
     final now = DateTime.now();
-    final isToday =
-        date.year == now.year && date.month == now.month && date.day == now.day;
+    final isToday = _isSameDay(date, now);
+    final isSelected = _isSameDay(date, selectedDate);
+    final isFuture = date.isAfter(DateTime(now.year, now.month, now.day));
     final label = _weekdayLetter(date.weekday);
 
-    // Compute status for today only
     _DayStatus? status;
-    if (isToday && todayIntakes.isNotEmpty) {
-      final takenCount =
-          todayIntakes.where((i) => i.status.toUpperCase() == 'TAKEN').length;
-      final skippedCount =
-          todayIntakes.where((i) => i.status.toUpperCase() == 'SKIPPED').length;
-      final total = todayIntakes.length;
+    if (!isFuture) {
+      final cached = provider.getIntakesForCachedDate(date);
+      final dayIntakes = isToday ? provider.intakes : (cached?.intakes ?? []);
+      if (dayIntakes.isNotEmpty) {
+        final takenCount =
+            dayIntakes.where((i) => i.status.toUpperCase() == 'TAKEN').length;
+        final skippedCount =
+            dayIntakes.where((i) => i.status.toUpperCase() == 'SKIPPED').length;
+        final total = dayIntakes.length;
+        final isPastDay = !isToday;
 
-      if (takenCount == total) {
-        status = _DayStatus.allTaken;
-      } else if (skippedCount > 0) {
-        status = _DayStatus.hasSkipped;
-      } else if (takenCount > 0) {
-        status = _DayStatus.partial;
+        if (takenCount == total) {
+          status = _DayStatus.allTaken;
+        } else if (skippedCount > 0 || isPastDay) {
+          status = _DayStatus.hasSkipped;
+        }
       }
     }
 
     return GestureDetector(
-      onTap: () => setState(() => selectedDate = date),
+      onTap: isFuture
+          ? null
+          : () {
+              setState(() => selectedDate = date);
+              if (isToday) {
+                provider.loadTodayIntakes();
+              } else {
+                provider.selectHistoryDate(date);
+              }
+            },
       child: SizedBox(
         width: 40,
         height: 58,
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            // Day rectangle
             Positioned.fill(
               top: 6,
               child: Container(
@@ -254,10 +294,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: isToday
+                    color: isSelected
                         ? const Color(0xFF34C759)
                         : const Color(0xFFF0F0F0),
-                    width: isToday ? 1.5 : 1.0,
+                    width: isSelected ? 1.5 : 1.0,
                   ),
                 ),
                 child: Center(
@@ -332,24 +372,37 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildTodayIntakesSection() {
     return Consumer<PillboxProvider>(
       builder: (context, provider, _) {
-        final intakes = provider.intakes;
+        final now = DateTime.now();
+        final isTodaySelected = _isSameDay(selectedDate, now);
+        final intakes = isTodaySelected
+            ? provider.intakes
+            : (provider.getIntakesForCachedDate(selectedDate)?.intakes ??
+                const <Intake>[]);
+        final isLoading = isTodaySelected
+            ? provider.isLoadingToday
+            : (provider.isLoadingHistory &&
+                _isSameDay(provider.historySelectedDate, selectedDate));
+        final selectedError =
+            isTodaySelected ? provider.todayError : provider.historyError;
         final takenCount =
             intakes.where((i) => i.status.toUpperCase() == 'TAKEN').length;
         final total = intakes.length;
+        final sectionTitle = isTodaySelected
+            ? 'Prises du jour'
+            : 'Prises du ${selectedDate.day}/${selectedDate.month}';
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Prises du jour',
-                      style: TextStyle(
+                    Text(
+                      sectionTitle,
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                         color: Color(0xFF1D1D1F),
@@ -404,7 +457,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             const SizedBox(height: 4),
-            // Progress bar
             if (total > 0)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
@@ -420,8 +472,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
-            // Content
-            if (provider.isLoading && intakes.isEmpty)
+            if (isLoading && intakes.isEmpty)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 20),
                 child: Center(
@@ -429,6 +480,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: Color(0xFF34C759),
                   ),
                 ),
+              )
+            else if (selectedError != null && intakes.isEmpty)
+              _buildIntakesError(
+                selectedError,
+                onRetry: () {
+                  if (isTodaySelected) {
+                    provider.loadTodayIntakes();
+                  } else {
+                    provider.selectHistoryDate(selectedDate);
+                  }
+                },
               )
             else if (intakes.isEmpty)
               _buildEmptyIntakes()
@@ -447,6 +509,38 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildIntakesError(String message, {required VoidCallback onRetry}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 18),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF1F2),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.error_outline_rounded,
+              size: 30, color: Color(0xFFEF4444)),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFFB42318),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh_rounded, size: 16),
+            label: const Text('Reessayer'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -515,6 +609,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
 
   String _weekdayLetter(int weekday) {
     switch (weekday) {
