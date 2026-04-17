@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../../pillbox/domain/entities/intake.dart';
-import '../../../pillbox/presentation/providers/pillbox_provider.dart';
-import '../../../pillbox/presentation/widgets/intake_card.dart';
+
 import '../../../../networking/api_service.dart';
 import '../../../../networking/routes/user_routes.dart';
 import '../../../../widgets/initials_avatar.dart';
 import '../../../../widgets/navigation_bar.dart';
+import '../../../ai_chat/presentation/ai_chat_modal.dart';
+import '../../../pillbox/domain/entities/intake.dart';
+import '../../../pillbox/presentation/providers/pillbox_provider.dart';
+import '../../../pillbox/presentation/widgets/intake_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -33,6 +34,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       final provider = context.read<PillboxProvider>();
       await provider.loadTodayIntakes();
       await provider.loadMedications();
+      // Load intakes for the whole week so calendar badges are accurate
       _loadWeekIntakes(provider);
     });
   }
@@ -57,9 +59,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       setState(() {
         _user = res['user'] as Map<String, dynamic>?;
       });
-    } catch (e) {
-      if (kDebugMode) debugPrint('Home loadUser error: $e');
-    }
+    } catch (_) {}
   }
 
   @override
@@ -67,6 +67,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     return Scaffold(
       backgroundColor: Colors.white,
       bottomNavigationBar: const BottomNavBar(currentLocation: '/home'),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 80),
+        child: FloatingActionButton(
+          onPressed: () => showAiChatModal(context),
+          backgroundColor: const Color(0xFF34C759),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: const Icon(Icons.smart_toy_rounded, color: Colors.white),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
@@ -168,7 +179,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
           const SizedBox(height: 20),
           GestureDetector(
-            onTap: _showDocAIDialog,
+            onTap: () => showAiChatModal(context),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
               decoration: BoxDecoration(
@@ -194,13 +205,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   void _loadWeekIntakes(PillboxProvider provider) {
     final now = DateTime.now();
-    final start = now.subtract(Duration(days: now.weekday - 1));
-    for (int i = 0; i < 7; i++) {
-      final date = start.add(Duration(days: i));
-      if (date.isBefore(DateTime(now.year, now.month, now.day + 1))) {
-        provider.loadIntakesForDate(date);
-      }
-    }
+    provider.loadMonthIntakes(DateTime(now.year, now.month, 1));
   }
 
   // ── Weekly calendar ────────────────────────────────────────────────────────
@@ -245,11 +250,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Widget _buildDayCircle(DateTime date, PillboxProvider provider) {
     final now = DateTime.now();
-    final isToday = _isSameDay(date, now);
-    final isSelected = _isSameDay(date, selectedDate);
+    final isToday =
+        date.year == now.year && date.month == now.month && date.day == now.day;
     final isFuture = date.isAfter(DateTime(now.year, now.month, now.day));
     final label = _weekdayLetter(date.weekday);
 
+    // Get status for this specific day
     _DayStatus? status;
     if (!isFuture || isToday) {
       if (isToday) {
@@ -262,47 +268,59 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             status = _DayStatus.hasSkipped;
         }
       } else {
+        // Compliance cache for past days.
+        // null means no data loaded or no intakes that day — show no badge.
         final compliance = provider.getComplianceForDate(date);
         if (compliance == true) {
           status = _DayStatus.allTaken;
         } else if (compliance == false) {
           status = _DayStatus.hasSkipped;
+        } else {
+          status = null;
         }
       }
     }
 
+    // Today with no medications scheduled → gray styling, no badge.
     final isTodayEmpty =
-        isToday && provider.intakes.isEmpty && !provider.isLoadingToday;
+        isToday && provider.intakes.isEmpty && !provider.isLoading;
     if (isTodayEmpty) status = null;
 
+    final Color borderColor;
+    final Color textColor;
+    final Color bgColor;
+    if (isTodayEmpty) {
+      borderColor = const Color(0xFFD1D5DB);
+      textColor = const Color(0xFFB0B7C3);
+      bgColor = const Color(0xFFF5F5F7);
+    } else if (isToday) {
+      borderColor = const Color(0xFF34C759);
+      textColor = const Color(0xFF333333);
+      bgColor = Colors.white;
+    } else {
+      borderColor = const Color(0xFFF0F0F0);
+      textColor = const Color(0xFF333333);
+      bgColor = Colors.white;
+    }
+
     return GestureDetector(
-      onTap: isFuture
-          ? null
-          : () {
-              setState(() => selectedDate = date);
-              if (isToday) {
-                provider.loadTodayIntakes();
-              } else {
-                provider.selectHistoryDate(date);
-              }
-            },
+      onTap: () => setState(() => selectedDate = date),
       child: SizedBox(
         width: 40,
         height: 58,
         child: Stack(
           clipBehavior: Clip.none,
           children: [
+            // Day rectangle
             Positioned.fill(
               top: 6,
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: bgColor,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: isSelected
-                        ? const Color(0xFF34C759)
-                        : const Color(0xFFF0F0F0),
-                    width: isSelected ? 1.5 : 1.0,
+                    color: borderColor,
+                    width: isToday ? 1.5 : 1.0,
                   ),
                 ),
                 child: Center(
@@ -310,16 +328,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     label,
                     style: TextStyle(
                       fontSize: 20,
-                      color: const Color(0xFF333333),
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.w600,
+                      color: textColor,
+                      fontWeight: isToday ? FontWeight.bold : FontWeight.w600,
                     ),
                   ),
                 ),
               ),
             ),
-            // Badge - top right corner, half in / half out
-            if (status == null && !isFuture && !isTodayEmpty)
+            // Badge — top right corner, half in / half out
+            if (status == null && !isFuture)
               Positioned(
                 top: 0,
                 right: -2,
@@ -394,37 +411,24 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Widget _buildTodayIntakesSection() {
     return Consumer<PillboxProvider>(
       builder: (context, provider, _) {
-        final now = DateTime.now();
-        final isTodaySelected = _isSameDay(selectedDate, now);
-        final intakes = isTodaySelected
-            ? provider.intakes
-            : (provider.getIntakesForCachedDate(selectedDate)?.intakes ??
-                const <Intake>[]);
-        final isLoading = isTodaySelected
-            ? provider.isLoadingToday
-            : (provider.isLoadingHistory &&
-                _isSameDay(provider.historySelectedDate, selectedDate));
-        final selectedError =
-            isTodaySelected ? provider.todayError : provider.historyError;
+        final intakes = provider.intakes;
         final takenCount =
             intakes.where((i) => i.status.toUpperCase() == 'TAKEN').length;
         final total = intakes.length;
-        final sectionTitle = isTodaySelected
-            ? 'Prises du jour'
-            : 'Prises du ${selectedDate.day}/${selectedDate.month}';
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      sectionTitle,
-                      style: const TextStyle(
+                    const Text(
+                      'Prises du jour',
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                         color: Color(0xFF1D1D1F),
@@ -479,6 +483,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ],
             ),
             const SizedBox(height: 4),
+            // Progress bar
             if (total > 0)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
@@ -494,7 +499,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   ),
                 ),
               ),
-            if (isLoading && intakes.isEmpty)
+            // Content
+            if (provider.isLoading && intakes.isEmpty)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 20),
                 child: Center(
@@ -502,17 +508,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     color: Color(0xFF34C759),
                   ),
                 ),
-              )
-            else if (selectedError != null && intakes.isEmpty)
-              _buildIntakesError(
-                selectedError,
-                onRetry: () {
-                  if (isTodaySelected) {
-                    provider.loadTodayIntakes();
-                  } else {
-                    provider.selectHistoryDate(selectedDate);
-                  }
-                },
               )
             else if (intakes.isEmpty)
               _buildEmptyIntakes()
@@ -531,38 +526,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ],
         );
       },
-    );
-  }
-
-  Widget _buildIntakesError(String message, {required VoidCallback onRetry}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 18),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF1F2),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        children: [
-          const Icon(Icons.error_outline_rounded,
-              size: 30, color: Color(0xFFEF4444)),
-          const SizedBox(height: 8),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Color(0xFFB42318),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 10),
-          TextButton.icon(
-            onPressed: onRetry,
-            icon: const Icon(Icons.refresh_rounded, size: 16),
-            label: const Text('Reessayer'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -632,10 +595,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
-  bool _isSameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
-  }
-
   String _weekdayLetter(int weekday) {
     switch (weekday) {
       case DateTime.monday:
@@ -655,47 +614,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       default:
         return '';
     }
-  }
-
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
-  }
-
-  void _showDocAIDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('DocAI Chat'),
-        content: const Text(
-            'Bienvenue dans DocAI!\nComment puis-je vous aider aujourd\'hui?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Fermer'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _showSnackBar('Démarrage du chat...');
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF34C759),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
-            child: const Text('Démarrer'),
-          ),
-        ],
-      ),
-    );
   }
 }
 

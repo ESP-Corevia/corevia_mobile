@@ -1,30 +1,15 @@
-import 'package:corevia_mobile/core/providers/notifiers.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:corevia_mobile/main.dart';
+import 'package:corevia_mobile/core/providers/notifiers.dart';
+import 'package:corevia_mobile/core/routes/app_router.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Créez des instances des notifiers au lieu de ValueNotifier
-    OnboardingNotifier onboardingNotifier = OnboardingNotifier(true); // Ou l'état que tu souhaites
-    AuthNotifier authNotifier = AuthNotifier(false); // Ou l'état que tu souhaites
+  testWidgets('App smoke test', (WidgetTester tester) async {
+    final onboardingNotifier = OnboardingNotifier(true);
+    final authNotifier = AuthNotifier(false);
+    final router = createRouter(onboardingNotifier, authNotifier);
 
-    // Pompez le widget avec les notifiers corrects
-    await tester.pumpWidget(MyApp(
-      onboardingNotifier: onboardingNotifier,
-      authNotifier: authNotifier,
-    ));
-
-    // Continue avec les tests...
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap sur l'icône '+' et triggerez un frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Vérifiez que le compteur a été incrémenté.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    await tester.pumpWidget(MyApp(router: router));
+    await tester.pumpAndSettle();
   });
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../../../../core/notification/pillbox_notification.dart';
 import '../../domain/entities/intake.dart';
 import '../../domain/entities/patient_medication.dart';
 import '../../domain/entities/today_intakes.dart';
@@ -9,29 +10,29 @@ class PillboxProvider with ChangeNotifier {
 
   PillboxProvider(this._repository);
 
-  bool _isLoadingToday = false;
-  bool _isLoadingMedications = false;
+  bool _isLoading = false;
   bool _isSubmitting = false;
-  String? _todayError;
-  String? _medicationsError;
+  String? _error;
   TodayIntakes? _todayIntakes;
   List<PatientMedication> _medications = [];
   int _page = 1;
   final int _limit = 20;
   int _total = 0;
 
+  // Today badge state — updated on every mark action and load
+  // Values: 'allTaken' | 'partial' | 'hasSkipped' | null
+  String? _todayBadgeStatus;
+
   // History state
   DateTime _historySelectedDate = DateTime.now();
   final Map<String, TodayIntakes> _historyCache = {};
+  final Map<String, bool?> _complianceCache = {};
   bool _isLoadingHistory = false;
   String? _historyError;
 
-  bool get isLoadingToday => _isLoadingToday;
-  bool get isLoadingMedications => _isLoadingMedications;
-  bool get isLoading => _isLoadingMedications;
+  bool get isLoading => _isLoading;
   bool get isSubmitting => _isSubmitting;
-  String? get todayError => _todayError;
-  String? get error => _medicationsError;
+  String? get error => _error;
   TodayIntakes? get todayIntakes => _todayIntakes;
   List<Intake> get intakes => _todayIntakes?.intakes ?? const [];
   List<PatientMedication> get medications => _medications;
@@ -46,40 +47,35 @@ class PillboxProvider with ChangeNotifier {
   List<Intake> get historyIntakes =>
       _historyCache[_dateKey(_historySelectedDate)]?.intakes ?? const [];
   Map<String, TodayIntakes> get historyCache => _historyCache;
-  String get todayBadgeStatus {
-    if (intakes.isEmpty) return 'none';
-    final takenCount =
-        intakes.where((i) => i.status.toUpperCase() == 'TAKEN').length;
-    final skippedCount =
-        intakes.where((i) => i.status.toUpperCase() == 'SKIPPED').length;
-    final total = intakes.length;
 
-    if (takenCount == total) return 'allTaken';
-    if (skippedCount > 0) return 'hasSkipped';
-    if (takenCount > 0) return 'partial';
-    return 'none';
-  }
+  bool? getComplianceForDate(DateTime date) =>
+      _complianceCache[_dateKey(date)];
+
+  String? get todayBadgeStatus => _todayBadgeStatus;
 
   Future<void> loadTodayIntakes() async {
-    _isLoadingToday = true;
-    _todayError = null;
+    _isLoading = true;
+    _error = null;
     notifyListeners();
 
     try {
       _todayIntakes = await _repository.getTodayIntakes();
+      _refreshTodayCompliance();
+      // Schedule notifications for all PENDING intakes
+      schedulePillboxReminders(_todayIntakes?.intakes ?? []);
     } catch (e) {
-      _todayError = 'Erreur lors du chargement du pilulier du jour';
+      _error = 'Erreur lors du chargement du pilulier du jour';
       if (kDebugMode) debugPrint('Pillbox loadTodayIntakes error: $e');
     } finally {
-      _isLoadingToday = false;
+      _isLoading = false;
       notifyListeners();
     }
   }
 
   Future<void> loadMedications({bool refresh = true}) async {
-    if (_isLoadingMedications) return;
-    _isLoadingMedications = true;
-    _medicationsError = null;
+    if (_isLoading) return;
+    _isLoading = true;
+    _error = null;
     if (refresh) {
       _page = 1;
       _medications = [];
@@ -96,19 +92,19 @@ class PillboxProvider with ChangeNotifier {
         _medications = [..._medications, ...response.items];
       }
     } catch (e) {
-      _medicationsError = 'Erreur lors du chargement des médicaments';
+      _error = 'Erreur lors du chargement des médicaments';
       if (kDebugMode) debugPrint('Pillbox loadMedications error: $e');
     } finally {
-      _isLoadingMedications = false;
+      _isLoading = false;
       notifyListeners();
     }
   }
 
   Future<void> loadMoreMedications() async {
-    if (!hasMore || _isLoadingMedications) return;
+    if (!hasMore || _isLoading) return;
     final nextPage = _page + 1;
-    _isLoadingMedications = true;
-    _medicationsError = null;
+    _isLoading = true;
+    _error = null;
     notifyListeners();
     try {
       final response =
@@ -117,22 +113,25 @@ class PillboxProvider with ChangeNotifier {
       _total = response.total;
       _medications = [..._medications, ...response.items];
     } catch (e) {
-      _medicationsError = 'Erreur lors du chargement des médicaments';
+      _error = 'Erreur lors du chargement des médicaments';
       if (kDebugMode) debugPrint('Pillbox loadMoreMedications error: $e');
     } finally {
-      _isLoadingMedications = false;
+      _isLoading = false;
       notifyListeners();
     }
   }
 
   Future<void> markIntakeTaken(String intakeId, {String? notes}) async {
     _isSubmitting = true;
+    _error = null;
     notifyListeners();
     try {
       await _repository.markIntakeTaken(intakeId, notes: notes);
       _updateLocalIntakeStatus(intakeId, status: 'TAKEN');
+      _refreshTodayCompliance();
+      cancelPillboxReminder(intakeId);
     } catch (e) {
-      _todayError = 'Impossible de marquer la prise comme effectuée';
+      _error = 'Impossible de marquer la prise comme effectuée';
       if (kDebugMode) debugPrint('Pillbox markIntakeTaken error: $e');
     } finally {
       _isSubmitting = false;
@@ -142,12 +141,15 @@ class PillboxProvider with ChangeNotifier {
 
   Future<void> markIntakeSkipped(String intakeId, {String? notes}) async {
     _isSubmitting = true;
+    _error = null;
     notifyListeners();
     try {
       await _repository.markIntakeSkipped(intakeId, notes: notes);
       _updateLocalIntakeStatus(intakeId, status: 'SKIPPED');
+      _refreshTodayCompliance();
+      cancelPillboxReminder(intakeId);
     } catch (e) {
-      _todayError = 'Impossible de marquer la prise comme ignorée';
+      _error = 'Impossible de marquer la prise comme ignorée';
       if (kDebugMode) debugPrint('Pillbox markIntakeSkipped error: $e');
     } finally {
       _isSubmitting = false;
@@ -157,19 +159,20 @@ class PillboxProvider with ChangeNotifier {
 
   Future<void> createMedication(Map<String, dynamic> body) async {
     _isSubmitting = true;
-    _medicationsError = null;
+    _error = null;
     notifyListeners();
     try {
       final created = await _repository.createMedication(body);
       _medications = [created, ..._medications];
       _total += 1;
+      // Rafraichir les intakes du jour pour afficher le nouveau medicament
       try {
         _todayIntakes = await _repository.getTodayIntakes();
-      } catch (e) {
-        if (kDebugMode) debugPrint('Pillbox refresh today after create: $e');
-      }
+        _refreshTodayCompliance();
+        schedulePillboxReminders(_todayIntakes?.intakes ?? []);
+      } catch (_) {}
     } catch (e) {
-      _medicationsError = 'Impossible de créer le médicament';
+      _error = 'Impossible de créer le médicament';
       if (kDebugMode) debugPrint('Pillbox createMedication error: $e');
       rethrow;
     } finally {
@@ -182,7 +185,7 @@ class PillboxProvider with ChangeNotifier {
     try {
       return await _repository.getMedicationDetail(id);
     } catch (e) {
-      _medicationsError = 'Impossible de charger le détail du médicament';
+      _error = 'Impossible de charger le détail du médicament';
       if (kDebugMode) debugPrint('Pillbox getMedicationDetail error: $e');
       notifyListeners();
       return null;
@@ -191,7 +194,7 @@ class PillboxProvider with ChangeNotifier {
 
   Future<void> updateMedication(String id, Map<String, dynamic> body) async {
     _isSubmitting = true;
-    _medicationsError = null;
+    _error = null;
     notifyListeners();
     try {
       final updated = await _repository.updateMedication(id, body);
@@ -199,7 +202,7 @@ class PillboxProvider with ChangeNotifier {
           .map((medication) => medication.id == id ? updated : medication)
           .toList();
     } catch (e) {
-      _medicationsError = 'Impossible de modifier le médicament';
+      _error = 'Impossible de modifier le médicament';
       if (kDebugMode) debugPrint('Pillbox updateMedication error: $e');
       rethrow;
     } finally {
@@ -210,20 +213,20 @@ class PillboxProvider with ChangeNotifier {
 
   Future<void> deleteMedication(String id) async {
     _isSubmitting = true;
-    _medicationsError = null;
+    _error = null;
     notifyListeners();
     try {
       await _repository.deleteMedication(id);
       _medications =
           _medications.where((medication) => medication.id != id).toList();
       if (_total > 0) _total -= 1;
+      // Refresh today's intakes to remove deleted medication's entries
       try {
         _todayIntakes = await _repository.getTodayIntakes();
-      } catch (e) {
-        if (kDebugMode) debugPrint('Pillbox refresh today after delete: $e');
-      }
+        _refreshTodayCompliance();
+      } catch (_) {}
     } catch (e) {
-      _medicationsError = 'Impossible de supprimer le médicament';
+      _error = 'Impossible de supprimer le médicament';
       if (kDebugMode) debugPrint('Pillbox deleteMedication error: $e');
       rethrow;
     } finally {
@@ -234,7 +237,7 @@ class PillboxProvider with ChangeNotifier {
 
   Future<void> createSchedule(Map<String, dynamic> body) async {
     _isSubmitting = true;
-    _medicationsError = null;
+    _error = null;
     notifyListeners();
     try {
       final created = await _repository.createSchedule(body);
@@ -245,7 +248,7 @@ class PillboxProvider with ChangeNotifier {
         );
       }).toList();
     } catch (e) {
-      _medicationsError = 'Impossible d\'ajouter un horaire';
+      _error = 'Impossible d\'ajouter un horaire';
       if (kDebugMode) debugPrint('Pillbox createSchedule error: $e');
       rethrow;
     } finally {
@@ -256,7 +259,7 @@ class PillboxProvider with ChangeNotifier {
 
   Future<void> updateSchedule(String id, Map<String, dynamic> body) async {
     _isSubmitting = true;
-    _medicationsError = null;
+    _error = null;
     notifyListeners();
     try {
       final updated = await _repository.updateSchedule(id, body);
@@ -269,7 +272,7 @@ class PillboxProvider with ChangeNotifier {
         return medication.copyWith(schedules: schedules);
       }).toList();
     } catch (e) {
-      _medicationsError = 'Impossible de modifier l\'horaire';
+      _error = 'Impossible de modifier l\'horaire';
       if (kDebugMode) debugPrint('Pillbox updateSchedule error: $e');
       rethrow;
     } finally {
@@ -280,7 +283,7 @@ class PillboxProvider with ChangeNotifier {
 
   Future<void> deleteSchedule(String id) async {
     _isSubmitting = true;
-    _medicationsError = null;
+    _error = null;
     notifyListeners();
     try {
       await _repository.deleteSchedule(id);
@@ -290,7 +293,7 @@ class PillboxProvider with ChangeNotifier {
         return medication.copyWith(schedules: schedules);
       }).toList();
     } catch (e) {
-      _medicationsError = 'Impossible de supprimer l\'horaire';
+      _error = 'Impossible de supprimer l\'horaire';
       if (kDebugMode) debugPrint('Pillbox deleteSchedule error: $e');
       rethrow;
     } finally {
@@ -334,18 +337,12 @@ class PillboxProvider with ChangeNotifier {
     final first = DateTime(month.year, month.month, 1);
     final last = DateTime(month.year, month.month + 1, 0);
 
-    for (var d = first;
-        !d.isAfter(last);
-        d = d.add(const Duration(days: 1))) {
-      final key = _dateKey(d);
-      if (!_historyCache.containsKey(key)) {
-        try {
-          final result = await _repository.getIntakesForDate(d);
-          _historyCache[key] = result;
-        } catch (e) {
-          if (kDebugMode) debugPrint('Pillbox loadMonthIntakes error ($key): $e');
-        }
-      }
+    try {
+      final history =
+          await _repository.getIntakeHistory(from: first, to: last);
+      _complianceCache.addAll(history);
+    } catch (e) {
+      if (kDebugMode) debugPrint('Pillbox loadMonthIntakes error: $e');
     }
     notifyListeners();
   }
@@ -354,16 +351,30 @@ class PillboxProvider with ChangeNotifier {
     return _historyCache[_dateKey(date)];
   }
 
-  bool? getComplianceForDate(DateTime date) {
-    final cached = getIntakesForCachedDate(date);
-    if (cached == null || cached.intakes.isEmpty) return null;
-
-    final intakes = cached.intakes;
+  void _refreshTodayCompliance() {
+    final current = _todayIntakes;
+    if (current == null || current.intakes.isEmpty) {
+      _todayBadgeStatus = null;
+      return;
+    }
+    final intakes = current.intakes;
     final takenCount =
         intakes.where((i) => i.status.toUpperCase() == 'TAKEN').length;
+    final skippedCount =
+        intakes.where((i) => i.status.toUpperCase() == 'SKIPPED').length;
+    final total = intakes.length;
 
-    if (takenCount == intakes.length) return true;
-    return false;
+    _complianceCache[_dateKey(DateTime.now())] = takenCount == total;
+
+    if (takenCount == total) {
+      _todayBadgeStatus = 'allTaken';
+    } else if (takenCount > 0) {
+      _todayBadgeStatus = 'partial';
+    } else if (skippedCount > 0) {
+      _todayBadgeStatus = 'hasSkipped';
+    } else {
+      _todayBadgeStatus = null;
+    }
   }
 
   void _updateLocalIntakeStatus(String intakeId, {required String status}) {

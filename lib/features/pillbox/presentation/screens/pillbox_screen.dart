@@ -74,6 +74,14 @@ class _PillboxScreenState extends State<PillboxScreen> {
                     letterSpacing: -0.5,
                   ),
                 ),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.history_rounded,
+                        size: 22, color: Color.fromARGB(255, 0, 0, 0)),
+                    tooltip: 'Historique',
+                    onPressed: () => context.push('/pillbox/history'),
+                  ),
+                ],
                 centerTitle: true,
                 bottom: PreferredSize(
                   preferredSize: const Size.fromHeight(1),
