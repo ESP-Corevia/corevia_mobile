@@ -17,7 +17,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   DateTime selectedDate = DateTime.now();
   Map<String, dynamic>? _user;
 
@@ -27,6 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadUser();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final provider = context.read<PillboxProvider>();
@@ -35,6 +36,19 @@ class _HomeScreenState extends State<HomeScreen> {
       // Load intakes for the whole week so calendar badges are accurate
       _loadWeekIntakes(provider);
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      context.read<PillboxProvider>().loadTodayIntakes();
+    }
   }
 
   Future<void> _loadUser() async {
