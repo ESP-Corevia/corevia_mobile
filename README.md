@@ -1,17 +1,44 @@
-[![Flutter Analyze](https://github.com/ESP-Corevia/corevia_mobile/actions/workflows/flutter_analyze.yml/badge.svg)](https://github.com/ESP-Corevia/corevia_mobile/actions/workflows/flutter_analyze.yml)
-# corevia_mobile
+# Corevia Mobile
 
-A new Flutter project.
+Application mobile Corevia développée avec Flutter.
 
-## Getting Started
+## Prérequis
 
-This project is a starting point for a Flutter application.
+- Flutter 3.6.1+
+- Dart 3.6.1+
 
-A few resources to get you started if this is your first Flutter project:
+## Installation
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+```bash
+flutter pub get
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Lancer l'application
+
+```bash
+flutter run
+```
+
+## Build
+
+```bash
+# Android
+flutter build apk
+
+# iOS
+flutter build ios
+```
+
+## Dépendances principales
+
+- **State Management**: flutter_riverpod
+- **Navigation**: go_router
+- **HTTP Client**: dio
+- **Notifications**: flutter_local_notifications
+- **Chat**: flutter_chat_ui, flutter_chat_core
+- **Stockage sécurisé**: flutter_secure_storage
+- **Variables d'environnement**: flutter_dotenv
+
+## Configuration
+
+Copier `.env.template` vers `.env` et configurer les variables d'environnement.
