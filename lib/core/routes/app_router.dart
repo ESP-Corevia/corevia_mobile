@@ -124,7 +124,9 @@ GoRouter createRouter(
           ),
           GoRoute(
             path: '/calendar',
-            builder: (context, state) => const CalendarScreen(),
+            builder: (context, state) => CalendarScreen(
+              initialTab: state.uri.queryParameters['tab'] ?? 'schedule',
+            ),
           ),
           GoRoute(
             path: '/account',

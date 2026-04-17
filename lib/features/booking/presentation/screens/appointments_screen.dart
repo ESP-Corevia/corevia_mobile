@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+
+import '../../domain/entities/appointment.dart';
+import '../providers/booking_provider.dart';
 
 class AppointmentsScreen extends StatefulWidget {
   const AppointmentsScreen({super.key});
@@ -11,15 +14,18 @@ class AppointmentsScreen extends StatefulWidget {
   State<AppointmentsScreen> createState() => _AppointmentsScreenState();
 }
 
-class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTickerProviderStateMixin {
+class _AppointmentsScreenState extends State<AppointmentsScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
-
 
   @override
   void initState() {
     super.initState();
     initializeDateFormatting('fr_FR');
     _tabController = TabController(length: 3, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _reload();
+    });
   }
 
   @override
@@ -28,93 +34,388 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTick
     super.dispose();
   }
 
-  // Données de démonstration
-  final List<Map<String, dynamic>> _upcomingAppointments = [
-    {
-      'id': '1',
-      'doctorName': 'Dr. Ahmed Badaoui',
-      'specialty': 'Pneumologue',
-      'address': '123 Rue de la Santé, Paris 75014',
-      'date': DateTime.now().add(Duration(days: 2)),
-      'time': '10:30',
-      'status': 'confirmed',
-      'imageUrl': 'https://i.pravatar.cc/150?img=12',
-    },
-    {
-      'id': '2',
-      'doctorName': 'Dr. Noura Songo',
-      'specialty': 'Médecin généraliste',
-      'address': '45 Avenue Victor Hugo, Paris 75016',
-      'date': DateTime.now().add(Duration(days: 5)),
-      'time': '14:00',
-      'status': 'pending',
-      'imageUrl': 'https://i.pravatar.cc/150?img=45',
-    },
-    {
-      'id': '3',
-      'doctorName': 'Dr. Marie Dubois',
-      'specialty': 'Cardiologue',
-      'address': '78 Boulevard Saint-Germain, Paris 75005',
-      'date': DateTime.now().add(Duration(days: 7)),
-      'time': '09:00',
-      'status': 'confirmed',
-      'imageUrl': 'https://i.pravatar.cc/150?img=28',
-    },
-  ];
-
-  final List<Map<String, dynamic>> _pastAppointments = [
-    {
-      'id': '4',
-      'doctorName': 'Dr. Sakura Kisuke',
-      'specialty': 'Chirurgien',
-      'address': '56 Rue du Faubourg, Paris 75008',
-      'date': DateTime.now().subtract(Duration(days: 10)),
-      'time': '11:00',
-      'status': 'completed',
-      'imageUrl': 'https://i.pravatar.cc/150?img=32',
-    },
-    {
-      'id': '5',
-      'doctorName': 'Dr. Jean Martin',
-      'specialty': 'Dermatologue',
-      'address': '12 Place de la République, Paris 75011',
-      'date': DateTime.now().subtract(Duration(days: 30)),
-      'time': '15:30',
-      'status': 'completed',
-      'imageUrl': 'https://i.pravatar.cc/150?img=15',
-    },
-  ];
-
-  final List<Map<String, dynamic>> _cancelledAppointments = [
-    {
-      'id': '6',
-      'doctorName': 'Dr. Sophie Laurent',
-      'specialty': 'Ophtalmologue',
-      'address': '90 Rue de Rivoli, Paris 75001',
-      'date': DateTime.now().subtract(Duration(days: 3)),
-      'time': '16:00',
-      'status': 'cancelled',
-      'imageUrl': 'https://i.pravatar.cc/150?img=47',
-    },
-  ];
+  Future<void> _reload() {
+    return context.read<BookingProvider>().loadMyAppointments();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: const Color(0xFFF5F7FA),
       body: SafeArea(
+        child: Consumer<BookingProvider>(
+          builder: (context, provider, _) {
+            final all = provider.appointments;
+            final upcoming = all
+                .where(
+                  (a) =>
+                      a.status.toUpperCase() == 'PENDING' ||
+                      a.status.toUpperCase() == 'CONFIRMED',
+                )
+                .toList();
+            final past =
+                all.where((a) => a.status.toUpperCase() == 'COMPLETED').toList();
+            final cancelled =
+                all.where((a) => a.status.toUpperCase() == 'CANCELLED').toList();
+
+            return Column(
+              children: [
+                _buildHeader(
+                  isLoading: provider.isLoadingAppointments,
+                  onReload: () => _reload(),
+                ),
+                const SizedBox(height: 14),
+                _buildSummary(
+                  total: all.length,
+                  upcoming: upcoming.length,
+                  completed: past.length,
+                ),
+                const SizedBox(height: 14),
+                _buildTabBar(upcoming.length, past.length, cancelled.length),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: provider.isLoadingAppointments && all.isEmpty
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF34C759),
+                          ),
+                        )
+                      : (provider.error != null && all.isEmpty)
+                          ? _buildErrorState(provider.error!)
+                          : TabBarView(
+                              controller: _tabController,
+                              children: [
+                                _buildAppointmentsList(
+                                  appointments: upcoming,
+                                  emptyTitle: 'Aucun rendez-vous a venir',
+                                  emptySubtitle:
+                                      'Prenez un rendez-vous depuis la liste des medecins.',
+                                ),
+                                _buildAppointmentsList(
+                                  appointments: past,
+                                  emptyTitle: 'Aucun rendez-vous passe',
+                                  emptySubtitle:
+                                      'Vos consultations terminees apparaitront ici.',
+                                ),
+                                _buildAppointmentsList(
+                                  appointments: cancelled,
+                                  emptyTitle: 'Aucun rendez-vous annule',
+                                  emptySubtitle:
+                                      'Les rendez-vous annules apparaitront ici.',
+                                ),
+                              ],
+                            ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader({
+    required bool isLoading,
+    required VoidCallback onReload,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          _CircleActionButton(
+            icon: Icons.arrow_back_ios_new_rounded,
+            onTap: _handleBack,
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              'Mes rendez-vous',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF111827),
+              ),
+            ),
+          ),
+          _CircleActionButton(
+            icon: isLoading ? Icons.sync_rounded : Icons.refresh_rounded,
+            onTap: isLoading ? null : onReload,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummary({
+    required int total,
+    required int upcoming,
+    required int completed,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: _SummaryCard(
+              label: 'Total',
+              value: total,
+              color: const Color(0xFF0EA5E9),
+              icon: Icons.calendar_month_rounded,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _SummaryCard(
+              label: 'A venir',
+              value: upcoming,
+              color: const Color(0xFF34C759),
+              icon: Icons.schedule_rounded,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _SummaryCard(
+              label: 'Termines',
+              value: completed,
+              color: const Color(0xFF6366F1),
+              icon: Icons.check_circle_rounded,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabBar(int upcoming, int past, int cancelled) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+        ),
+        child: TabBar(
+          controller: _tabController,
+          isScrollable: false,
+          indicatorSize: TabBarIndicatorSize.tab,
+          indicator: BoxDecoration(
+            color: const Color(0xFF34C759),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          indicatorPadding: const EdgeInsets.all(3),
+          labelPadding: EdgeInsets.zero,
+          dividerColor: Colors.transparent,
+          labelColor: Colors.white,
+          unselectedLabelColor: const Color(0xFF6B7280),
+          labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+          unselectedLabelStyle: const TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 12,
+          ),
+          tabs: [
+            Tab(text: 'A venir ($upcoming)'),
+            Tab(text: 'Passes ($past)'),
+            Tab(text: 'Annules ($cancelled)'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _handleBack() {
+    final router = GoRouter.of(context);
+    if (router.canPop()) {
+      context.pop();
+      return;
+    }
+    context.go('/home');
+  }
+
+  Widget _buildAppointmentsList({
+    required List<Appointment> appointments,
+    required String emptyTitle,
+    required String emptySubtitle,
+  }) {
+    if (appointments.isEmpty) {
+      return _buildEmptyState(emptyTitle, emptySubtitle);
+    }
+
+    return RefreshIndicator(
+      color: const Color(0xFF34C759),
+      onRefresh: _reload,
+      child: ListView.separated(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+        itemCount: appointments.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 10),
+        itemBuilder: (context, index) => _buildAppointmentCard(appointments[index]),
+      ),
+    );
+  }
+
+  Widget _buildAppointmentCard(Appointment appointment) {
+    final parsedDate = DateTime.tryParse(appointment.date);
+    final dateLabel = parsedDate != null
+        ? DateFormat('EEEE d MMMM yyyy', 'fr_FR').format(parsedDate)
+        : appointment.date;
+    final formattedDate = _capitalize(dateLabel);
+    final doctorName = appointment.doctor?.name ?? 'Medecin';
+    final specialty = appointment.doctor?.specialty ?? '';
+    final address = appointment.doctor?.address ?? '';
+    final status = _statusMeta(appointment.status);
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8F6EC),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.local_hospital_rounded,
+                  color: Color(0xFF34C759),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      doctorName,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                    if (specialty.isNotEmpty)
+                      Text(
+                        specialty,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF6B7280),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: status.bgColor,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(status.icon, size: 13, color: status.textColor),
+                    const SizedBox(width: 4),
+                    Text(
+                      status.label,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: status.textColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _InfoRow(
+            icon: Icons.event_rounded,
+            text: formattedDate,
+          ),
+          const SizedBox(height: 6),
+          _InfoRow(
+            icon: Icons.access_time_rounded,
+            text: appointment.time,
+          ),
+          if (address.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            _InfoRow(
+              icon: Icons.location_on_rounded,
+              text: address,
+            ),
+          ],
+          if ((appointment.reason ?? '').trim().isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9FAFB),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                appointment.reason!.trim(),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF374151),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(String title, String subtitle) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            _buildHeader(),
-            _buildTabBar(),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildAppointmentsList(_upcomingAppointments, 'upcoming'),
-                  _buildAppointmentsList(_pastAppointments, 'past'),
-                  _buildAppointmentsList(_cancelledAppointments, 'cancelled'),
-                ],
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F6EC),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Icon(
+                Icons.event_busy_rounded,
+                color: Color(0xFF34C759),
+                size: 34,
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF111827),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF6B7280),
               ),
             ),
           ],
@@ -123,684 +424,209 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTick
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
+  Widget _buildErrorState(String message) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.error_outline_rounded,
+              color: Color(0xFFEF4444),
+              size: 34,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                color: Color(0xFFB42318),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextButton.icon(
+              onPressed: _reload,
+              icon: const Icon(Icons.refresh_rounded, size: 16),
+              label: const Text('Reessayer'),
+            ),
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha:0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              GestureDetector(
-                onTap: () => context.pop(),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F7),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.arrow_back_ios_new,
-                    size: 20,
-                    color: Color(0xFF1D1D1F),
-                  ),
-                ),
-              ),
-              const Text(
-                'Mes rendez-vous',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1D1D1F),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF5F5F7),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  LucideIcons.search,
-                  size: 20,
-                  color: Colors.grey.shade700,
-                ),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
 
-  Widget _buildTabBar() {
-    return Container(
-      margin: const EdgeInsets.all(20),
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha:0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: TabBar(
-        controller: _tabController,
-        indicator: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF34C759), Color(0xFF30D158)],
-          ),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        indicatorSize: TabBarIndicatorSize.tab,
-        dividerColor: Colors.transparent,
-        labelColor: Colors.white,
-        unselectedLabelColor: Colors.grey.shade600,
-        labelStyle: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
-        tabs: const [
-          Tab(text: 'À venir'),
-          Tab(text: 'Passés'),
-          Tab(text: 'Annulés'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAppointmentsList(List<Map<String, dynamic>> appointments, String type) {
-    if (appointments.isEmpty) {
-      return _buildEmptyState(type);
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      itemCount: appointments.length,
-      itemBuilder: (context, index) {
-        final appointment = appointments[index];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: _buildAppointmentCard(appointment, type),
+  _StatusMeta _statusMeta(String raw) {
+    switch (raw.toUpperCase()) {
+      case 'CONFIRMED':
+        return const _StatusMeta(
+          label: 'Confirme',
+          textColor: Color(0xFF047857),
+          bgColor: Color(0xFFD1FAE5),
+          icon: Icons.verified_rounded,
         );
-      },
-    );
+      case 'COMPLETED':
+        return const _StatusMeta(
+          label: 'Termine',
+          textColor: Color(0xFF3730A3),
+          bgColor: Color(0xFFE0E7FF),
+          icon: Icons.check_circle_rounded,
+        );
+      case 'CANCELLED':
+        return const _StatusMeta(
+          label: 'Annule',
+          textColor: Color(0xFFB42318),
+          bgColor: Color(0xFFFEE4E2),
+          icon: Icons.close_rounded,
+        );
+      default:
+        return const _StatusMeta(
+          label: 'En attente',
+          textColor: Color(0xFFB45309),
+          bgColor: Color(0xFFFEF3C7),
+          icon: Icons.hourglass_top_rounded,
+        );
+    }
   }
 
-  Widget _buildAppointmentCard(Map<String, dynamic> appointment, String type) {
-    final doctorName = appointment['doctorName'] as String? ?? 'Médecin inconnu';
-    final specialty = appointment['specialty'] as String? ?? 'Spécialité non spécifiée';
-    final address = appointment['address'] as String? ?? 'Adresse non disponible';
-    final date = appointment['date'] as DateTime? ?? DateTime.now();
-    final time = appointment['time'] as String? ?? '--:--';
-    final status = appointment['status'] as String? ?? 'unknown';
-    final imageUrl = appointment['imageUrl'] as String?;
+  String _capitalize(String text) {
+    if (text.isEmpty) return text;
+    return text[0].toUpperCase() + text.substring(1);
+  }
+}
 
-    Color statusColor;
-    String statusText;
-    IconData statusIcon;
+class _CircleActionButton extends StatelessWidget {
+  const _CircleActionButton({
+    required this.icon,
+    required this.onTap,
+  });
 
-    switch (status) {
-      case 'confirmed':
-        statusColor = const Color(0xFF34C759);
-        statusText = 'Confirmé';
-        statusIcon = LucideIcons.check;
-        break;
-      case 'pending':
-        statusColor = const Color(0xFFFF9500);
-        statusText = 'En attente';
-        statusIcon = LucideIcons.clock3;
-        break;
-      case 'cancelled':
-        statusColor = const Color(0xFFFF3B30);
-        statusText = 'Annulé';
-        statusIcon = LucideIcons.circle;
-        break;
-      case 'completed':
-        statusColor = const Color(0xFF007AFF);
-        statusText = 'Terminé';
-        statusIcon = LucideIcons.check;
-        break;
-      default:
-        statusColor = Colors.grey;
-        statusText = 'Inconnu';
-        statusIcon = LucideIcons.handHelping;
-    }
+  final IconData icon;
+  final VoidCallback? onTap;
 
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFFFFF),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+        ),
+        child: Icon(icon, size: 20, color: const Color(0xFF374151)),
+      ),
+    );
+  }
+}
+
+class _SummaryCard extends StatelessWidget {
+  const _SummaryCard({
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.icon,
+  });
+
+  final String label;
+  final int value;
+  final Color color;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha:0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
-      child: Column(
+      child: Row(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(18),
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: Color.fromARGB(31, color.red, color.green, color.blue),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 16, color: color),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header avec statut
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha:0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(statusIcon, size: 14, color: statusColor),
-                          const SizedBox(width: 6),
-                          Text(
-                            statusText,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: statusColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (type == 'upcoming' && status == 'confirmed')
-                      Icon(
-                        LucideIcons.moveVertical,
-                        color: Colors.grey.shade600,
-                        size: 20,
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                
-                // Doctor info
-                Row(
-                  children: [
-                    Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: Image.network(
-                            imageUrl ?? 'https://i.pravatar.cc/150?img=1',
-                            width: 60,
-                            height: 60,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Container(
-                              width: 60,
-                              height: 60,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[200],
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: const Icon(Icons.person, color: Colors.grey),
-                            ),
-                          ),
-                        ),
-                        if (status == 'confirmed')
-                          Positioned(
-                            bottom: 2,
-                            right: 2,
-                            child: Container(
-                              width: 14,
-                              height: 14,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF34C759),
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 2),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            doctorName,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 17,
-                              color: Color(0xFF1D1D1F),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            specialty,
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                
-                const SizedBox(height: 16),
-                
-                // Date et heure
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F7),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        LucideIcons.calendar,
-                        size: 18,
-                        color: Colors.grey.shade700,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          DateFormat('EEEE d MMMM yyyy', 'fr_FR').format(date),
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade800,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Icon(
-                        LucideIcons.clock3,
-                        size: 18,
-                        color: Colors.grey.shade700,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        time,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade800,
-                        ),
-                      ),
-                    ],
+                Text(
+                  value.toString(),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF111827),
                   ),
                 ),
-                
-                const SizedBox(height: 12),
-                
-                // Adresse
-                Row(
-                  children: [
-                    Icon(
-                      LucideIcons.mapPin,
-                      size: 16,
-                      color: Colors.grey.shade600,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        address,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade600,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF6B7280),
+                  ),
                 ),
               ],
             ),
           ),
-          
-          // Actions buttons
-          if (type == 'upcoming') _buildActionButtons(appointment),
         ],
       ),
     );
   }
+}
 
-  Widget _buildActionButtons(Map<String, dynamic> appointment) {
-    final status = appointment['status'] as String;
-    
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(color: Colors.grey.shade200, width: 1),
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({
+    required this.icon,
+    required this.text,
+  });
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 14, color: const Color(0xFF6B7280)),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF374151),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          if (status == 'confirmed') ...[
-            Expanded(
-              child: InkWell(
-                onTap: () {
-                  _showCancelDialog(appointment);
-                },
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(24),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        LucideIcons.circle,
-                        size: 18,
-                        color: Colors.grey.shade700,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Annuler',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Container(
-              width: 1,
-              height: 50,
-              color: Colors.grey.shade200,
-            ),
-            Expanded(
-              child: InkWell(
-                onTap: () {
-                  // Reprogrammer
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Fonctionnalité de reprogrammation à venir'),
-                      backgroundColor: Color(0xFF007AFF),
-                    ),
-                  );
-                },
-                borderRadius: const BorderRadius.only(
-                  bottomRight: Radius.circular(24),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        LucideIcons.calendarClock,
-                        size: 18,
-                        color: const Color(0xFF34C759),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Reprogrammer',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF34C759),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ] else if (status == 'pending') ...[
-            Expanded(
-              child: InkWell(
-                onTap: () {
-                  _showCancelDialog(appointment);
-                },
-                borderRadius: BorderRadius.circular(24),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        LucideIcons.circle,
-                        size: 18,
-                        color: Colors.grey.shade700,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Annuler la demande',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
+      ],
     );
   }
+}
 
-  Widget _buildEmptyState(String type) {
-    String title;
-    String subtitle;
-    IconData icon;
+class _StatusMeta {
+  const _StatusMeta({
+    required this.label,
+    required this.textColor,
+    required this.bgColor,
+    required this.icon,
+  });
 
-    switch (type) {
-      case 'upcoming':
-        title = 'Aucun rendez-vous à venir';
-        subtitle = 'Prenez rendez-vous avec un médecin';
-        icon = LucideIcons.calendarPlus;
-        break;
-      case 'past':
-        title = 'Aucun rendez-vous passé';
-        subtitle = 'Vos rendez-vous passés apparaîtront ici';
-        icon = LucideIcons.calendarCheck;
-        break;
-      case 'cancelled':
-        title = 'Aucun rendez-vous annulé';
-        subtitle = 'Les rendez-vous annulés apparaîtront ici';
-        icon = LucideIcons.calendarX;
-        break;
-      default:
-        title = 'Aucun rendez-vous';
-        subtitle = '';
-        icon = LucideIcons.calendar;
-    }
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF5F5F7),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                icon,
-                size: 60,
-                color: Colors.grey.shade400,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1D1D1F),
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 15,
-                color: Colors.grey.shade600,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            if (type == 'upcoming') ...[
-              const SizedBox(height: 32),
-              Container(
-                height: 50,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF34C759), Color(0xFF30D158)],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF34C759).withValues(alpha:0.3),
-                      blurRadius: 15,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: ElevatedButton(
-                  onPressed: () {
-                    context.push('/calendar');
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(LucideIcons.calendarPlus, color: Colors.white, size: 20),
-                      SizedBox(width: 10),
-                      Text(
-                        'Prendre rendez-vous',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showCancelDialog(Map<String, dynamic> appointment) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          title: const Text(
-            'Annuler le rendez-vous',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1D1D1F),
-            ),
-          ),
-          content: Text(
-            'Êtes-vous sûr de vouloir annuler votre rendez-vous avec ${appointment['doctorName']} ?',
-            style: TextStyle(
-              fontSize: 15,
-              color: Colors.grey.shade700,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                'Non, garder',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-            ),
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFFF3B30),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Row(
-                        children: [
-                          const Icon(LucideIcons.check, color: Colors.white),
-                          const SizedBox(width: 12),
-                          Text('Rendez-vous avec ${appointment['doctorName']} annulé'),
-                        ],
-                      ),
-                      backgroundColor: const Color(0xFFFF3B30),
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  );
-                },
-                child: const Text(
-                  'Oui, annuler',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  final String label;
+  final Color textColor;
+  final Color bgColor;
+  final IconData icon;
 }
