@@ -21,12 +21,15 @@ class MedicationSchedule {
 
   factory MedicationSchedule.fromJson(Map<String, dynamic> json) {
     final rawQuantity = json['quantity'];
+    final rawWeekday = json['weekday'];
     return MedicationSchedule(
       id: (json['id'] ?? '').toString(),
       patientMedicationId: (json['patientMedicationId'] ?? '').toString(),
       intakeTime: (json['intakeTime'] ?? '').toString(),
       intakeMoment: (json['intakeMoment'] ?? 'CUSTOM').toString(),
-      weekday: json['weekday'] as int?,
+      weekday: rawWeekday is int
+          ? rawWeekday
+          : int.tryParse(rawWeekday?.toString() ?? ''),
       quantity: rawQuantity is num
           ? rawQuantity.toDouble()
           : double.tryParse(rawQuantity?.toString() ?? ''),

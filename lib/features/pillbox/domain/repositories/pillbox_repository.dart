@@ -49,4 +49,9 @@ abstract class PillboxRepository {
   });
 
   Future<Intake> getIntakeByIdFromToday(String intakeId);
+
+  Future<Map<String, bool?>> getIntakeHistory({
+    required DateTime from,
+    required DateTime to,
+  });
 }

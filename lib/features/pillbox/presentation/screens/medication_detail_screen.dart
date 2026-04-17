@@ -862,7 +862,9 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
           .read<PillboxProvider>()
           .updateMedication(medication.id, payload);
       await _load();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('MedicationDetail updateMedication error: $e');
+    }
   }
 
   // ── Upsert schedule (bottom sheet) ─────────────────────────────────────────
@@ -1131,7 +1133,9 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
             .updateSchedule(schedule.id, body..removeWhere((k, v) => v == null));
       }
       await _load();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('MedicationDetail upsertSchedule error: $e');
+    }
   }
 
   // ── Delete schedule ────────────────────────────────────────────────────────
@@ -1183,7 +1187,9 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
     try {
       await context.read<PillboxProvider>().deleteSchedule(scheduleId);
       await _load();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('MedicationDetail deleteSchedule error: $e');
+    }
   }
 
   // ── Toggle active ──────────────────────────────────────────────────────────
@@ -1197,7 +1203,9 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
             {'isActive': !medication.isActive},
           );
       await _load();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('MedicationDetail toggleActive error: $e');
+    }
   }
 
   // ── Delete medication ──────────────────────────────────────────────────────
@@ -1252,7 +1260,9 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
       await context.read<PillboxProvider>().deleteMedication(medication.id);
       if (!mounted) return;
       Navigator.pop(context, true);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('MedicationDetail deleteMedication error: $e');
+    }
   }
 
   // ── Shared widgets ─────────────────────────────────────────────────────────
@@ -1404,8 +1414,8 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
 
   String _formatDateFr(DateTime date) {
     const months = [
-      '', 'janvier', 'fevrier', 'mars', 'avril', 'mai', 'juin',
-      'juillet', 'aout', 'septembre', 'octobre', 'novembre', 'decembre',
+      '', 'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+      'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
     ];
     return '${date.day} ${months[date.month]} ${date.year}';
   }
