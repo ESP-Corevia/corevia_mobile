@@ -27,7 +27,6 @@ class DocumentProvider with ChangeNotifier {
     }
   }
 
-  /// Request a presigned upload URL from the server
   Future<Map<String, String>> requestUpload({
     required String fileName,
     required String mimeType,
@@ -40,10 +39,15 @@ class DocumentProvider with ChangeNotifier {
     );
   }
 
-  /// Confirm an upload after the file is in S3
   Future<void> confirmUpload(String documentId) async {
-    await _repository.confirmUpload(documentId);
-    await loadDocuments();
+    try {
+      await _repository.confirmUpload(documentId);
+      await loadDocuments();
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      rethrow;
+    }
   }
 
   Future<String> getDownloadUrl(String documentId) {
@@ -51,8 +55,14 @@ class DocumentProvider with ChangeNotifier {
   }
 
   Future<void> deleteDocument(String documentId) async {
-    await _repository.deleteDocument(documentId);
-    _documents.removeWhere((d) => d.id == documentId);
-    notifyListeners();
+    try {
+      await _repository.deleteDocument(documentId);
+      _documents.removeWhere((d) => d.id == documentId);
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      rethrow;
+    }
   }
 }

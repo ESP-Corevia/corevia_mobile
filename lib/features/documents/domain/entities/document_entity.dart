@@ -21,14 +21,14 @@ class DocumentEntity {
 
   factory DocumentEntity.fromJson(Map<String, dynamic> json) {
     return DocumentEntity(
-      id: json['id'] as String,
-      userId: json['userId'] as String,
-      fileName: json['fileName'] as String,
-      mimeType: json['mimeType'] as String,
-      fileSize: json['fileSize'] as int,
-      status: json['status'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      id: json['id'] as String? ?? '',
+      userId: json['userId'] as String? ?? '',
+      fileName: json['fileName'] as String? ?? '',
+      mimeType: json['mimeType'] as String? ?? '',
+      fileSize: (json['fileSize'] as num?)?.toInt() ?? 0,
+      status: json['status'] as String? ?? 'pending',
+      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
+      updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? '') ?? DateTime.now(),
     );
   }
 

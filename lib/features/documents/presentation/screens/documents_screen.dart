@@ -50,8 +50,6 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
     if (_fluppy != null) return _fluppy!;
 
     final provider = context.read<DocumentProvider>();
-
-    // Store documentId per fluppy file id
     final fileDocIds = <String, String>{};
 
     final fluppy = Fluppy(
@@ -71,7 +69,6 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
               headers: {'Content-Type': file.type ?? 'application/octet-stream'},
             );
           },
-          // Required but unused for single-part uploads
           createMultipartUpload: (_) async =>
               throw UnsupportedError('Multipart not used'),
           signPart: (_, __) async =>
@@ -91,29 +88,40 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
       switch (event) {
         case UploadProgress(:final file, :final progress):
           setState(() {
-            _uploads[file.id]?.progress = progress.percent / 100;
+            final entry = _uploads[file.id];
+            if (entry != null) {
+              entry.progress = progress.percent / 100;
+              entry.status = _UploadStatus.uploading;
+            }
             _overallProgress = fluppy.overallProgress.percent / 100;
           });
         case UploadComplete(:final file):
           final docId = fileDocIds[file.id];
           if (docId != null) {
-            provider.confirmUpload(docId);
+            provider.confirmUpload(docId).then((_) {
+              if (!mounted) return;
+              setState(() {
+                _uploads[file.id]?.status = _UploadStatus.confirmed;
+              });
+              _checkAllDone();
+            }).catchError((e) {
+              if (!mounted) return;
+              setState(() {
+                _uploads[file.id]?.status = _UploadStatus.error;
+                _uploads[file.id]?.error = 'Confirm failed';
+              });
+              _checkAllDone();
+            });
           }
-          setState(() {
-            _uploads[file.id]?.status = _UploadStatus.confirmed;
-          });
         case UploadError(:final file, :final message):
           setState(() {
             _uploads[file.id]?.status = _UploadStatus.error;
             _uploads[file.id]?.error = message;
           });
-        case AllUploadsComplete():
-          setState(() => _isUploading = false);
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('All uploads complete')),
-            );
-          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Upload failed: $message')),
+          );
+          _checkAllDone();
         default:
           break;
       }
@@ -121,6 +129,21 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
 
     _fluppy = fluppy;
     return fluppy;
+  }
+
+  void _checkAllDone() {
+    final allTerminal = _uploads.values.every(
+      (e) => e.status == _UploadStatus.confirmed || e.status == _UploadStatus.error,
+    );
+    if (allTerminal && _isUploading) {
+      setState(() => _isUploading = false);
+      final successCount = _uploads.values.where((e) => e.status == _UploadStatus.confirmed).length;
+      if (successCount > 0 && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$successCount file(s) uploaded')),
+        );
+      }
+    }
   }
 
   Future<void> _pickAndUpload() async {
@@ -181,13 +204,17 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
 
     final confirmed = await showDialog<bool>(
       context: context,
+      useRootNavigator: true,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Document'),
         content: Text('Delete "${doc.fileName}"? This action cannot be undone.'),
         actions: [
-          TextButton(onPressed: () => ctx.pop(false), child: const Text('Cancel')),
           TextButton(
-            onPressed: () => ctx.pop(true),
+            onPressed: () => Navigator.of(ctx, rootNavigator: true).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx, rootNavigator: true).pop(true),
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
         ],
@@ -231,15 +258,12 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       children: [
                         const SizedBox(height: 16),
-                        // Upload section
                         if (_uploads.isNotEmpty) ...[
                           _buildUploadSection(),
                           const SizedBox(height: 20),
                         ],
-                        // Upload button
                         _buildUploadButton(),
                         const SizedBox(height: 20),
-                        // Documents list
                         _buildDocumentsList(provider),
                         const SizedBox(height: 100),
                       ],
@@ -346,7 +370,6 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Overall progress
           if (_isUploading) ...[
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -377,7 +400,6 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
             ),
             const SizedBox(height: 12),
           ],
-          // Per-file entries
           ..._uploads.entries.map((entry) => _buildUploadItem(entry.key, entry.value)),
         ],
       ),
@@ -595,7 +617,7 @@ class _UploadEntry {
   final String name;
   final int size;
   double progress = 0;
-  _UploadStatus status = _UploadStatus.uploading;
+  _UploadStatus status = _UploadStatus.pending;
   String? error;
 
   _UploadEntry({required this.name, required this.size});
