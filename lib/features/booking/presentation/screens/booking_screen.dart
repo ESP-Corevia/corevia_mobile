@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:provider/provider.dart';
+import '../providers/booking_provider.dart';
 
 class BookingScreen extends StatefulWidget {
   final String doctorId;
@@ -18,11 +20,11 @@ class BookingScreen extends StatefulWidget {
     String? specialty,
     String? imageUrl,
     String? address,
-  }) : doctorId = doctorId ?? 'default_doctor_id',
-       doctorName = doctorName ?? 'Médecin',
-       specialty = specialty ?? 'Spécialité',
-       imageUrl = imageUrl ?? 'https://via.placeholder.com/150',
-       address = address ?? 'Adresse non renseignée';
+  })  : doctorId = doctorId ?? '',
+        doctorName = doctorName ?? 'Medecin',
+        specialty = specialty ?? 'Specialite',
+        imageUrl = imageUrl ?? 'https://via.placeholder.com/150',
+        address = address ?? 'Adresse non renseignee';
 
   @override
   State<BookingScreen> createState() => _BookingScreenState();
@@ -31,23 +33,71 @@ class BookingScreen extends StatefulWidget {
 class _BookingScreenState extends State<BookingScreen> {
   DateTime _selectedDate = DateTime.now();
   String? _selectedTimeSlot;
-  
-  final List<String> _timeSlots = [
-    '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
-    '11:00', '11:30', '13:00', '13:30', '14:00', '14:30',
-    '15:00', '15:30', '16:00', '16:30', '17:00', '17:30',
-  ];
 
-  // Générer les 7 prochains jours
-  List<DateTime> _getNextSevenDays() {
+  List<DateTime> _nextSevenDays() {
     return List.generate(7, (index) => DateTime.now().add(Duration(days: index)));
   }
 
   @override
   void initState() {
     super.initState();
-    // Initialisation du formatage des dates pour la locale française
     initializeDateFormatting('fr_FR', null);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadSlots();
+    });
+  }
+
+  String _toApiDate(DateTime date) {
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '${date.year}-$month-$day';
+  }
+
+  Future<void> _loadSlots() async {
+    if (widget.doctorId.isEmpty) return;
+    await context.read<BookingProvider>().loadAvailableSlots(
+          doctorId: widget.doctorId,
+          date: _toApiDate(_selectedDate),
+        );
+  }
+
+  Future<void> _confirmBooking() async {
+    if (_selectedTimeSlot == null) return;
+    if (widget.doctorId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Medecin invalide')),
+      );
+      return;
+    }
+
+    final appointment = await context.read<BookingProvider>().createAppointment(
+          doctorId: widget.doctorId,
+          date: _toApiDate(_selectedDate),
+          time: _selectedTimeSlot!,
+        );
+    if (!mounted) return;
+
+    if (appointment == null) {
+      final err = context.read<BookingProvider>().error ??
+          'Erreur lors de la creation du rendez-vous';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+      return;
+    }
+
+    context.push(
+      '/calendar/booking/confirmation',
+      extra: {
+        'doctorId': widget.doctorId,
+        'doctorName': widget.doctorName,
+        'specialty': widget.specialty,
+        'imageUrl': widget.imageUrl,
+        'address': widget.address,
+        'date': _selectedDate,
+        'timeSlot': _selectedTimeSlot!,
+        'appointmentId': appointment.id,
+        'status': appointment.status,
+      },
+    );
   }
 
   @override
@@ -110,11 +160,8 @@ class _BookingScreenState extends State<BookingScreen> {
                 color: const Color(0xFFF5F5F7),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
-                Icons.arrow_back_ios_new,
-                size: 20,
-                color: Color(0xFF1D1D1F),
-              ),
+              child: const Icon(Icons.arrow_back_ios_new,
+                  size: 20, color: Color(0xFF1D1D1F)),
             ),
           ),
           const Text(
@@ -139,104 +186,38 @@ class _BookingScreenState extends State<BookingScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
         ),
-        child: Column(
+        child: Row(
           children: [
-            Row(
-              children: [
-                Stack(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.network(
-                        widget.imageUrl,
-                        width: 56,
-                        height: 56,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          width: 56,
-                          height: 56,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Icon(Icons.person, color: Colors.grey),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 2,
-                      right: 2,
-                      child: Container(
-                        width: 14,
-                        height: 14,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF34C759),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                      ),
-                    ),
-                  ],
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.network(
+                widget.imageUrl,
+                width: 56,
+                height: 56,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  width: 56,
+                  height: 56,
+                  color: Colors.grey[200],
+                  child: const Icon(Icons.person, color: Colors.grey),
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.doctorName,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Color(0xFF1D1D1F),
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        widget.specialty,
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF5F5F7),
-                borderRadius: BorderRadius.circular(14),
               ),
-              child: Row(
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    LucideIcons.mapPin,
-                    size: 16,
-                    color: Colors.grey.shade600,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      widget.address,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 13,
-                        color: Colors.grey.shade700,
-                      ),
-                    ),
-                  ),
+                  Text(widget.doctorName,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(height: 2),
+                  Text(widget.specialty,
+                      style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                  const SizedBox(height: 2),
+                  Text(widget.address,
+                      style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
                 ],
               ),
             ),
@@ -247,169 +228,88 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   Widget _buildDateSelection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20),
-          child: Text(
-            'Sélectionner une date',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF1D1D1F),
-              letterSpacing: -0.5,
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          height: 90,
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            scrollDirection: Axis.horizontal,
-            itemCount: _getNextSevenDays().length,
-            itemBuilder: (context, index) {
-              final date = _getNextSevenDays()[index];
-              final isSelected = DateFormat('yyyy-MM-dd').format(date) ==
-                  DateFormat('yyyy-MM-dd').format(_selectedDate);
-              
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _selectedDate = date;
-                    _selectedTimeSlot = null; // Reset time slot
-                  });
-                },
-                child: Container(
-                  width: 70,
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  decoration: BoxDecoration(
-                    color: isSelected ? const Color(0xFF34C759) : Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: isSelected 
-                            ? const Color(0xFF34C759).withValues(alpha: 0.3)
-                            : Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        DateFormat('EEE', 'fr_FR').format(date),
-                        style: TextStyle(
+    return SizedBox(
+      height: 90,
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        scrollDirection: Axis.horizontal,
+        itemCount: _nextSevenDays().length,
+        itemBuilder: (context, index) {
+          final date = _nextSevenDays()[index];
+          final isSelected = DateFormat('yyyy-MM-dd').format(date) ==
+              DateFormat('yyyy-MM-dd').format(_selectedDate);
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                _selectedDate = date;
+                _selectedTimeSlot = null;
+              });
+              _loadSlots();
+            },
+            child: Container(
+              width: 70,
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              decoration: BoxDecoration(
+                color: isSelected ? const Color(0xFF34C759) : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(DateFormat('EEE', 'fr_FR').format(date),
+                      style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: isSelected ? Colors.white : Colors.grey.shade600,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        DateFormat('dd').format(date),
-                        style: TextStyle(
+                          color: isSelected ? Colors.white : Colors.grey.shade600)),
+                  const SizedBox(height: 8),
+                  Text(DateFormat('dd').format(date),
+                      style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: isSelected ? Colors.white : const Color(0xFF1D1D1F),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        DateFormat('MMM', 'fr_FR').format(date),
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: isSelected ? Colors.white.withValues(alpha: 0.9) : Colors.grey.shade500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
+                          color: isSelected ? Colors.white : const Color(0xFF1D1D1F))),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
   Widget _buildTimeSlotSelection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Créneaux horaires disponibles',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF1D1D1F),
-                  letterSpacing: -0.5,
-                ),
-              ),
-              Text(
-                DateFormat('dd MMM', 'fr_FR').format(_selectedDate),
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        Padding(
+    return Consumer<BookingProvider>(
+      builder: (context, provider, _) {
+        if (provider.isLoadingSlots) {
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFF34C759)),
+          );
+        }
+        if (provider.availableSlots.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Text('Aucun creneau disponible pour cette date.'),
+          );
+        }
+        return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Wrap(
             spacing: 10,
             runSpacing: 10,
-            children: _timeSlots.map((time) {
+            children: provider.availableSlots.map((time) {
               final isSelected = _selectedTimeSlot == time;
-              // Simuler quelques créneaux non disponibles
-              final isAvailable = !['09:30', '14:00', '15:30'].contains(time);
-              
               return GestureDetector(
-                onTap: isAvailable ? () {
-                  setState(() {
-                    _selectedTimeSlot = time;
-                  });
-                } : null,
+                onTap: () => setState(() => _selectedTimeSlot = time),
                 child: Container(
                   width: (MediaQuery.of(context).size.width - 60) / 3,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   decoration: BoxDecoration(
-                    color: !isAvailable
-                        ? Colors.grey.shade100
-                        : isSelected
-                            ? const Color(0xFF34C759)
-                            : Colors.white,
+                    color: isSelected ? const Color(0xFF34C759) : Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: !isAvailable
-                          ? Colors.grey.shade300
-                          : isSelected
-                              ? const Color(0xFF34C759)
-                              : Colors.grey.shade200,
+                      color:
+                          isSelected ? const Color(0xFF34C759) : Colors.grey.shade200,
                       width: 1.5,
                     ),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: const Color(0xFF34C759).withValues(alpha: 0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
-                            ),
-                          ]
-                        : null,
                   ),
                   child: Text(
                     time,
@@ -417,19 +317,15 @@ class _BookingScreenState extends State<BookingScreen> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: !isAvailable
-                          ? Colors.grey.shade400
-                          : isSelected
-                              ? Colors.white
-                              : const Color(0xFF1D1D1F),
+                      color: isSelected ? Colors.white : const Color(0xFF1D1D1F),
                     ),
                   ),
                 ),
               );
             }).toList(),
           ),
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -440,30 +336,17 @@ class _BookingScreenState extends State<BookingScreen> {
         height: 56,
         decoration: BoxDecoration(
           gradient: _selectedTimeSlot != null
-              ? const LinearGradient(
-                  colors: [Color(0xFF34C759), Color(0xFF30D158)],
-                )
+              ? const LinearGradient(colors: [Color(0xFF34C759), Color(0xFF30D158)])
               : null,
           color: _selectedTimeSlot == null ? Colors.grey.shade300 : null,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: _selectedTimeSlot != null
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF34C759).withValues(alpha: 0.4),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ]
-              : null,
         ),
         child: ElevatedButton(
           onPressed: _selectedTimeSlot != null ? _confirmBooking : null,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.transparent,
             shadowColor: Colors.transparent,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           ),
           child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -477,33 +360,11 @@ class _BookingScreenState extends State<BookingScreen> {
                 ),
               ),
               SizedBox(width: 8),
-              Icon(
-                LucideIcons.arrowRight,
-                color: Colors.white,
-                size: 20,
-              ),
+              Icon(LucideIcons.arrowRight, color: Colors.white, size: 20),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  void _confirmBooking() {
-    if (_selectedTimeSlot == null) return;
-    
-    // Navigation vers l'écran de confirmation
-    context.push(
-      '/calendar/booking/confirmation',
-      extra: {
-        'doctorId': widget.doctorId,
-        'doctorName': widget.doctorName,
-        'specialty': widget.specialty,
-        'imageUrl': widget.imageUrl,
-        'address': widget.address,
-        'date': _selectedDate,
-        'timeSlot': _selectedTimeSlot!,
-      },
     );
   }
 }
