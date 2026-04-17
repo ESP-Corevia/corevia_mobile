@@ -13,7 +13,6 @@ import 'features/account/presentation/providers/user_provider.dart';
 import 'features/account/data/repositories/user_repository_impl.dart';
 import 'features/pillbox/data/repositories/pillbox_repository_impl.dart';
 import 'features/pillbox/presentation/providers/medication_search_provider.dart';
-import 'features/documents/presentation/providers/document_provider.dart';
 import 'features/pillbox/presentation/providers/pillbox_provider.dart';
 import 'features/booking/data/repositories/booking_repository_impl.dart';
 import 'features/booking/presentation/providers/booking_provider.dart';
@@ -116,9 +115,6 @@ void main() async {
         ),
         ChangeNotifierProvider<UserProvider>.value(
           value: userProvider,
-        ),
-        ChangeNotifierProvider(
-          create: (_) => DocumentProvider(),
         ),
         ChangeNotifierProvider<OnboardingNotifier>.value(
           value: onboardingNotifier,
