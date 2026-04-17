@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../../pillbox/domain/entities/intake.dart';
-import '../../../pillbox/presentation/providers/pillbox_provider.dart';
-import '../../../pillbox/presentation/widgets/intake_card.dart';
+
 import '../../../../networking/api_service.dart';
 import '../../../../networking/routes/user_routes.dart';
 import '../../../../widgets/initials_avatar.dart';
 import '../../../../widgets/navigation_bar.dart';
 import '../../../ai_chat/presentation/ai_chat_modal.dart';
+import '../../../pillbox/domain/entities/intake.dart';
+import '../../../pillbox/presentation/providers/pillbox_provider.dart';
+import '../../../pillbox/presentation/widgets/intake_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -71,7 +72,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         child: FloatingActionButton(
           onPressed: () => showAiChatModal(context),
           backgroundColor: const Color(0xFF34C759),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: const Icon(Icons.smart_toy_rounded, color: Colors.white),
         ),
       ),
@@ -203,13 +205,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   void _loadWeekIntakes(PillboxProvider provider) {
     final now = DateTime.now();
-    final start = now.subtract(Duration(days: now.weekday - 1));
-    for (int i = 0; i < 7; i++) {
-      final date = start.add(Duration(days: i));
-      if (date.isBefore(DateTime(now.year, now.month, now.day + 1))) {
-        provider.loadIntakesForDate(date);
-      }
-    }
+    provider.loadMonthIntakes(DateTime(now.year, now.month, 1));
   }
 
   // ── Weekly calendar ────────────────────────────────────────────────────────
@@ -259,26 +255,52 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final isFuture = date.isAfter(DateTime(now.year, now.month, now.day));
     final label = _weekdayLetter(date.weekday);
 
-    // Get intakes for this specific day from cache
+    // Get status for this specific day
     _DayStatus? status;
-    if (!isFuture) {
-      final cached = provider.getIntakesForCachedDate(date);
-      final dayIntakes = isToday ? provider.intakes : (cached?.intakes ?? []);
-      if (dayIntakes.isNotEmpty) {
-        final takenCount =
-            dayIntakes.where((i) => i.status.toUpperCase() == 'TAKEN').length;
-        final skippedCount =
-            dayIntakes.where((i) => i.status.toUpperCase() == 'SKIPPED').length;
-        final total = dayIntakes.length;
-        final isPastDay = !isToday;
-
-        if (takenCount == total) {
+    if (!isFuture || isToday) {
+      if (isToday) {
+        switch (provider.todayBadgeStatus) {
+          case 'allTaken':
+            status = _DayStatus.allTaken;
+          case 'partial':
+            status = _DayStatus.partial;
+          case 'hasSkipped':
+            status = _DayStatus.hasSkipped;
+        }
+      } else {
+        // Compliance cache for past days.
+        // null means no data loaded or no intakes that day — show no badge.
+        final compliance = provider.getComplianceForDate(date);
+        if (compliance == true) {
           status = _DayStatus.allTaken;
-        } else if (skippedCount > 0 || isPastDay) {
-          // Not all taken → red X
+        } else if (compliance == false) {
           status = _DayStatus.hasSkipped;
+        } else {
+          status = null;
         }
       }
+    }
+
+    // Today with no medications scheduled → gray styling, no badge.
+    final isTodayEmpty =
+        isToday && provider.intakes.isEmpty && !provider.isLoading;
+    if (isTodayEmpty) status = null;
+
+    final Color borderColor;
+    final Color textColor;
+    final Color bgColor;
+    if (isTodayEmpty) {
+      borderColor = const Color(0xFFD1D5DB);
+      textColor = const Color(0xFFB0B7C3);
+      bgColor = const Color(0xFFF5F5F7);
+    } else if (isToday) {
+      borderColor = const Color(0xFF34C759);
+      textColor = const Color(0xFF333333);
+      bgColor = Colors.white;
+    } else {
+      borderColor = const Color(0xFFF0F0F0);
+      textColor = const Color(0xFF333333);
+      bgColor = Colors.white;
     }
 
     return GestureDetector(
@@ -294,12 +316,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               top: 6,
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: bgColor,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: isToday
-                        ? const Color(0xFF34C759)
-                        : const Color(0xFFF0F0F0),
+                    color: borderColor,
                     width: isToday ? 1.5 : 1.0,
                   ),
                 ),
@@ -308,7 +328,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     label,
                     style: TextStyle(
                       fontSize: 20,
-                      color: const Color(0xFF333333),
+                      color: textColor,
                       fontWeight: isToday ? FontWeight.bold : FontWeight.w600,
                     ),
                   ),
@@ -316,7 +336,23 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ),
             ),
             // Badge — top right corner, half in / half out
-            if (status == _DayStatus.allTaken)
+            if (status == null && !isFuture)
+              Positioned(
+                top: 0,
+                right: -2,
+                child: Container(
+                  width: 18,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFFB0B7C3),
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: const Icon(Icons.remove_rounded,
+                      size: 10, color: Colors.white),
+                ),
+              )
+            else if (status == _DayStatus.allTaken)
               Positioned(
                 top: 0,
                 right: -2,
@@ -579,7 +615,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         return '';
     }
   }
-
 }
 
 enum _DayStatus { allTaken, hasSkipped, partial }

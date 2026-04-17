@@ -179,4 +179,21 @@ class PillboxRepositoryImpl implements PillboxRepository {
     }
     throw StateError('Intake introuvable: $intakeId');
   }
+
+  @override
+  Future<Map<String, bool?>> getIntakeHistory({
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    String fmt(DateTime d) =>
+        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    final response = await ApiService.authGet(
+      PillboxRoutes.intakeHistory(from: fmt(from), to: fmt(to)),
+    );
+    final days = (response['days'] as List?) ?? const [];
+    return {
+      for (final day in days.whereType<Map<String, dynamic>>())
+        day['date'] as String: day['allTaken'] as bool?,
+    };
+  }
 }
