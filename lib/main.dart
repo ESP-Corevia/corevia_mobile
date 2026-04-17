@@ -28,8 +28,12 @@ void main() async {
 
   // Initialize timezones and set device local timezone
   tz_data.initializeTimeZones();
-  final tzName = await FlutterTimezone.getLocalTimezone();
-  tz.setLocalLocation(tz.getLocation(tzName));
+  try {
+    final tzName = await FlutterTimezone.getLocalTimezone();
+    tz.setLocalLocation(tz.getLocation(tzName));
+  } catch (_) {
+    // Fallback to UTC if timezone is not recognized
+  }
 
   // Onboarding
   final prefs = await SharedPreferences.getInstance();

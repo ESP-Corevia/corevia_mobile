@@ -120,11 +120,16 @@ void _onBackgroundResponse(NotificationResponse details) async {
       headers['Host'] = hostHeader;
     }
 
-    await http.post(
+    final response = await http.post(
       Uri.parse('$baseUrl$route'),
       headers: headers,
       body: jsonEncode({}),
     );
+
+    if (kDebugMode) {
+      debugPrint(
+          '[PillboxNotif] Background API: ${response.statusCode} $route');
+    }
 
     final notifId = payload.hashCode & 0x7FFFFFFF;
     await FlutterLocalNotificationsPlugin().cancel(notifId);
@@ -146,12 +151,12 @@ Future<void> schedulePillboxReminders(List<Intake> intakes) async {
   }
   if (!_initialized) return;
 
-  // Cancel all existing timers and notifications
-  for (final timer in _activeTimers.values) {
-    timer.cancel();
+  // Cancel all existing pillbox timers and their notifications
+  for (final entry in _activeTimers.entries) {
+    entry.value.cancel();
+    await _plugin.cancel(entry.key);
   }
   _activeTimers.clear();
-  await _plugin.cancelAll();
 
   for (final intake in intakes) {
     if (intake.status != 'PENDING') continue;

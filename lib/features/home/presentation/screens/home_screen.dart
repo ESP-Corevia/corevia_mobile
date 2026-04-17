@@ -46,9 +46,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      // Refresh intakes when the app comes back to foreground
-      // (e.g. after tapping a notification action)
+    if (state == AppLifecycleState.resumed && mounted) {
       context.read<PillboxProvider>().loadTodayIntakes();
     }
   }
