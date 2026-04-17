@@ -9,6 +9,7 @@ import 'package:corevia_mobile/networking/routes/user_routes.dart';
 import '../../../../widgets/pro_member.dart';
 import 'package:corevia_mobile/core/theme/colors.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../providers/user_provider.dart';
 import '../../../../widgets/initials_avatar.dart';
 
 class AccountScreen extends StatefulWidget {
@@ -44,17 +45,16 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   Future<void> _logout() async {
-    // Clear local session immediately so the app feels instant
     const storage = FlutterSecureStorage();
     await storage.delete(key: 'auth_token');
     await RagChatStorage().clearAll();
 
     if (!mounted) return;
+    context.read<UserProvider>().clear();
     final authNotifier = Provider.of<AuthNotifier>(context, listen: false);
     authNotifier.value = false;
     context.go('/login');
 
-    // Best-effort server logout (fire-and-forget)
     ApiService.signOut().ignore();
   }
 

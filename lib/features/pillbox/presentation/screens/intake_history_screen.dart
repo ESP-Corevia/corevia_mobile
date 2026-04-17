@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../domain/entities/today_intakes.dart';
 import '../providers/pillbox_provider.dart';
 import '../widgets/intake_card.dart';
 
@@ -70,8 +70,8 @@ class _IntakeHistoryScreenState extends State<IntakeHistoryScreen> {
             surfaceTintColor: Colors.transparent,
             centerTitle: true,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: _dark),
+              onPressed: () => context.pop(),
             ),
             title: const Text(
               'Historique',
@@ -262,8 +262,8 @@ class _IntakeHistoryScreenState extends State<IntakeHistoryScreen> {
               date.month == today.month &&
               date.day == today.day;
 
-          final cached = provider.getIntakesForCachedDate(date);
-          final status = isFuture ? null : _dayStatus(cached);
+          final compliance = provider.getComplianceForDate(date);
+          final status = isFuture ? null : _dayStatus(compliance);
 
           cells.add(
             Expanded(
@@ -323,35 +323,18 @@ class _IntakeHistoryScreenState extends State<IntakeHistoryScreen> {
     return weeks;
   }
 
-  _DayStatus? _dayStatus(TodayIntakes? cached) {
-    if (cached == null) return null;
-    final intakes = cached.intakes;
-    if (intakes.isEmpty) return null;
-
-    final takenCount =
-        intakes.where((i) => i.status.toUpperCase() == 'TAKEN').length;
-    final skippedCount =
-        intakes.where((i) => i.status.toUpperCase() == 'SKIPPED').length;
-    final total = intakes.length;
-
-    if (takenCount == total) return _DayStatus.allTaken;
-    if (skippedCount == total) return _DayStatus.allSkipped;
-    if (takenCount > 0 || skippedCount > 0) return _DayStatus.partial;
-    return _DayStatus.pending;
+  _DayStatus? _dayStatus(bool? compliance) {
+    if (compliance == null) return null;
+    if (compliance) return _DayStatus.allTaken;
+    return _DayStatus.partial;
   }
 
   Color _statusColor(_DayStatus status, bool isSelected) {
     switch (status) {
       case _DayStatus.allTaken:
         return isSelected ? Colors.white : _green;
-      case _DayStatus.allSkipped:
-        return isSelected ? Colors.white : const Color(0xFFEF4444);
       case _DayStatus.partial:
         return isSelected ? Colors.white : const Color(0xFFFF9500);
-      case _DayStatus.pending:
-        return isSelected
-            ? Colors.white.withValues(alpha: 0.5)
-            : Colors.grey.shade300;
     }
   }
 
@@ -362,12 +345,8 @@ class _IntakeHistoryScreenState extends State<IntakeHistoryScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _legendDot(_green, 'Tout pris'),
-        const SizedBox(width: 16),
-        _legendDot(const Color(0xFFFF9500), 'Partiel'),
-        const SizedBox(width: 16),
-        _legendDot(const Color(0xFFEF4444), 'Manque'),
-        const SizedBox(width: 16),
-        _legendDot(Colors.grey.shade300, 'En attente'),
+        const SizedBox(width: 20),
+        _legendDot(const Color(0xFFFF9500), 'Incomplet'),
       ],
     );
   }
@@ -559,11 +538,11 @@ class _IntakeHistoryScreenState extends State<IntakeHistoryScreen> {
 
   String _monthName(int month) {
     const months = [
-      '', 'Janvier', 'Fevrier', 'Mars', 'Avril', 'Mai', 'Juin',
-      'Juillet', 'Aout', 'Septembre', 'Octobre', 'Novembre', 'Decembre',
+      '', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
     ];
     return months[month];
   }
 }
 
-enum _DayStatus { allTaken, allSkipped, partial, pending }
+enum _DayStatus { allTaken, partial }

@@ -240,4 +240,5 @@ class ApiService {
     }
     await _storage.delete(key: 'auth_token');
   }
+
 }

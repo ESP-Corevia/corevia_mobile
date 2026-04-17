@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:corevia_mobile/features/auth/presentation/screens/register_screen.dart';
 import 'package:corevia_mobile/features/auth/presentation/screens/reset_password_screen.dart';
+import 'package:corevia_mobile/features/account/presentation/providers/user_provider.dart';
 import 'package:provider/provider.dart';
 import '../controllers/login_controller.dart';
 
@@ -67,9 +68,12 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
       if (mounted) {
         if (success) {
           final authNotifier = Provider.of<AuthNotifier>(context, listen: false);
-          authNotifier.value = true; 
+          authNotifier.value = true;
 
-          // 🔹 2️⃣ Navigue vers /home
+          final userProvider = context.read<UserProvider>();
+          await userProvider.loadUser();
+
+          if (!mounted) return;
           context.go('/home');
         } else {
         ScaffoldMessenger.of(context).showSnackBar(

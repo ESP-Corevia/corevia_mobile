@@ -69,7 +69,10 @@ class PillboxRepositoryImpl implements PillboxRepository {
   @override
   Future<TodayIntakes> getTodayIntakes() async {
     final response = await ApiService.authGet(PillboxRoutes.todayIntakes());
-    return TodayIntakes.fromJson(response as Map<String, dynamic>);
+    return TodayIntakes.fromJson(
+      response as Map<String, dynamic>,
+      fallbackDate: DateTime.now(),
+    );
   }
 
   @override
@@ -168,7 +171,10 @@ class PillboxRepositoryImpl implements PillboxRepository {
         '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
     final response =
         await ApiService.authGet(PillboxRoutes.todayIntakes(date: dateStr));
-    return TodayIntakes.fromJson(response as Map<String, dynamic>);
+    return TodayIntakes.fromJson(
+      response as Map<String, dynamic>,
+      fallbackDate: date,
+    );
   }
 
   @override
@@ -178,5 +184,22 @@ class PillboxRepositoryImpl implements PillboxRepository {
       if (intake.id == intakeId) return intake;
     }
     throw StateError('Intake introuvable: $intakeId');
+  }
+
+  @override
+  Future<Map<String, bool?>> getIntakeHistory({
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    String fmt(DateTime d) =>
+        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    final response = await ApiService.authGet(
+      PillboxRoutes.intakeHistory(from: fmt(from), to: fmt(to)),
+    );
+    final days = (response['days'] as List?) ?? const [];
+    return {
+      for (final day in days.whereType<Map<String, dynamic>>())
+        day['date'] as String: day['allTaken'] as bool?,
+    };
   }
 }
