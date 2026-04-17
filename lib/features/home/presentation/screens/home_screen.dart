@@ -34,7 +34,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       final provider = context.read<PillboxProvider>();
       await provider.loadTodayIntakes();
       await provider.loadMedications();
-      // Load intakes for the whole week so calendar badges are accurate
       _loadWeekIntakes(provider);
     });
   }
@@ -208,8 +207,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     provider.loadMonthIntakes(DateTime(now.year, now.month, 1));
   }
 
-  // ── Weekly calendar ────────────────────────────────────────────────────────
-
   Widget _buildWeeklyCalendar() {
     final now = DateTime.now();
     final start = now.subtract(Duration(days: now.weekday - 1));
@@ -311,7 +308,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            // Day rectangle
             Positioned.fill(
               top: 6,
               child: Container(
@@ -335,7 +331,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ),
               ),
             ),
-            // Badge — top right corner, half in / half out
+            // Badge - top right corner, half in / half out
             if (status == null && !isFuture)
               Positioned(
                 top: 0,
@@ -406,8 +402,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  // ── Today's intakes section ────────────────────────────────────────────────
-
   Widget _buildTodayIntakesSection() {
     return Consumer<PillboxProvider>(
       builder: (context, provider, _) {
@@ -419,7 +413,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -483,7 +476,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ],
             ),
             const SizedBox(height: 4),
-            // Progress bar
             if (total > 0)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
@@ -499,7 +491,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   ),
                 ),
               ),
-            // Content
             if (provider.isLoading && intakes.isEmpty)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 20),
@@ -583,8 +574,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  // ── Intake actions ─────────────────────────────────────────────────────────
-
   Future<void> _markTaken(Intake intake) async {
     await context.read<PillboxProvider>().markIntakeTaken(intake.id);
   }
@@ -592,8 +581,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Future<void> _markSkipped(Intake intake) async {
     await context.read<PillboxProvider>().markIntakeSkipped(intake.id);
   }
-
-  // ── Helpers ────────────────────────────────────────────────────────────────
 
   String _weekdayLetter(int weekday) {
     switch (weekday) {

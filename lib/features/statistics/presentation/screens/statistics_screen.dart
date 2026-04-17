@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../home/presentation/providers/home_provider.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -71,6 +73,17 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<HomeProvider>();
+      if (provider.homeData == null && !provider.isLoading) {
+        provider.loadHomeData();
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
@@ -88,6 +101,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               _buildChartSection(),
               const SizedBox(height: 30),
               _buildStatisticsCards(),
+              const SizedBox(height: 20),
+              _buildDashboardSummary(),
               const SizedBox(height: 24),
               _buildAddDataButton(),
               const SizedBox(height: 20),
@@ -439,6 +454,83 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDashboardSummary() {
+    final provider = context.watch<HomeProvider>();
+    final data = provider.homeData;
+
+    if (provider.isLoading && data == null) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 20),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Resume dashboard',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1D1D1F),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  'RDV/mois',
+                  '${data?.appointmentsThisMonth ?? 0}',
+                  '',
+                  const Color(0xFF007AFF),
+                  Icons.calendar_month,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  'Terminés',
+                  '${data?.completedAppointments ?? 0}',
+                  '',
+                  const Color(0xFF34C759),
+                  Icons.check_circle,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  'En attente',
+                  '${data?.pendingAppointments ?? 0}',
+                  '',
+                  const Color(0xFFFF9500),
+                  Icons.hourglass_bottom,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  'Adhérence',
+                  '${data?.medicationAdherenceRate ?? 0}',
+                  '%',
+                  const Color(0xFF5856D6),
+                  Icons.monitor_heart,
+                ),
+              ),
+            ],
           ),
         ],
       ),

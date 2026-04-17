@@ -9,6 +9,8 @@ import 'core/routes/app_router.dart';
 import 'shared/theme/app_theme.dart';
 import 'features/home/presentation/providers/home_provider.dart';
 import 'features/home/data/repositories/home_repository_impl.dart';
+import 'features/account/presentation/providers/user_provider.dart';
+import 'features/account/data/repositories/user_repository_impl.dart';
 import 'features/pillbox/data/repositories/pillbox_repository_impl.dart';
 import 'features/pillbox/presentation/providers/medication_search_provider.dart';
 import 'features/pillbox/presentation/providers/pillbox_provider.dart';
@@ -20,10 +22,7 @@ import 'networking/api_service.dart';
 import 'networking/routes/auth_routes.dart';
 
 void main() async {
-  // Assurez-vous que Flutter est initialisé avant de charger le fichier .env
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Chargez le fichier .env
   await dotenv.load(fileName: ".env");
 
   // Initialize timezones and set device local timezone
@@ -38,42 +37,33 @@ void main() async {
   // Onboarding
   final prefs = await SharedPreferences.getInstance();
   bool? hasCompletedOnboarding = prefs.getBool('onboarding_done');
-
-  // 🔥 true = onboarding nécessaire, false = déjà fait
   bool onboardingNeeded =
       (hasCompletedOnboarding == null || hasCompletedOnboarding == false);
 
   debugPrint('hasCompletedOnboarding: $hasCompletedOnboarding');
   debugPrint('onboardingNeeded: $onboardingNeeded');
 
-  final onboardingNotifier =
-      OnboardingNotifier(onboardingNeeded); // ⬅️ Utilise la classe spécifique
+  final onboardingNotifier = OnboardingNotifier(onboardingNeeded);
+  final authNotifier = AuthNotifier(false);
 
-  // Auth state
-  final authNotifier = AuthNotifier(false); // ⬅️ Utilise la classe spécifique
-
-  // 🔹 Vérifie la session avec le serveur dès le lancement
+  // Verify session with server
   const secureStorage = FlutterSecureStorage();
   final token = await secureStorage.read(key: 'auth_token');
   if (token != null && token.isNotEmpty) {
-    // Optimistic: assume logged in, then verify with server
     authNotifier.value = true;
     try {
       final session = await ApiService.authGet(AuthRoutes.getSession());
       final valid = session != null && session['session'] != null;
       if (!valid) {
-        // Server explicitly says session is invalid → clear token
         await secureStorage.delete(key: 'auth_token');
         authNotifier.value = false;
       }
     } catch (e) {
       final msg = e.toString();
       if (msg.contains('401') || msg.contains('403')) {
-        // Token rejected by server → clear it
         await secureStorage.delete(key: 'auth_token');
         authNotifier.value = false;
       }
-      // Other errors (network, timeout) → keep token, stay logged in
     }
   }
 
@@ -97,6 +87,10 @@ void main() async {
   );
   await initializePillboxNotifications();
 
+  // Load user data from cache
+  final userProvider = UserProvider(UserRepositoryImpl());
+  await userProvider.loadUser();
+
   runApp(
     MultiProvider(
       providers: [
@@ -108,6 +102,9 @@ void main() async {
         ),
         ChangeNotifierProvider(
           create: (_) => MedicationSearchProvider(PillboxRepositoryImpl()),
+        ),
+        ChangeNotifierProvider<UserProvider>.value(
+          value: userProvider,
         ),
         ChangeNotifierProvider<OnboardingNotifier>.value(
           value: onboardingNotifier,
