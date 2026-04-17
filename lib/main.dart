@@ -6,6 +6,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:provider/provider.dart';
 import 'core/notification/pillbox_notification.dart';
 import 'core/routes/app_router.dart';
+import 'core/routes/route_persistence.dart';
 import 'shared/theme/app_theme.dart';
 import 'features/home/presentation/providers/home_provider.dart';
 import 'features/home/data/repositories/home_repository_impl.dart';
@@ -21,7 +22,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'core/providers/notifiers.dart';
 import 'networking/api_service.dart';
-import 'networking/routes/auth_routes.dart';
+import 'networking/routes/user_routes.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,15 +49,18 @@ void main() async {
   final onboardingNotifier = OnboardingNotifier(onboardingNeeded);
   final authNotifier = AuthNotifier(false);
 
-  // Verify session with server
+  // Restore local session first (persistent login)
   const secureStorage = FlutterSecureStorage();
   final token = await secureStorage.read(key: 'auth_token');
   if (token != null && token.isNotEmpty) {
     authNotifier.value = true;
+
+    // Validate token using an endpoint that supports Bearer auth.
+    // Keep the user logged in unless backend explicitly says unauthorized.
     try {
-      final session = await ApiService.authGet(AuthRoutes.getSession());
-      final valid = session != null && session['session'] != null;
-      if (!valid) {
+      final me = await ApiService.authGet(UserRoutes.me());
+      final hasUser = me is Map<String, dynamic> && me['user'] != null;
+      if (!hasUser) {
         await secureStorage.delete(key: 'auth_token');
         authNotifier.value = false;
       }
@@ -69,9 +73,33 @@ void main() async {
     }
   }
 
+  final restoredLocation =
+      sanitizeRestorableRoute(prefs.getString(lastRouteStorageKey));
+  final initialLocation =
+      (authNotifier.value && !onboardingNeeded) ? restoredLocation : '/';
+
   // Create provider & router before notification init so handlers can use them
   final pillboxProvider = PillboxProvider(PillboxRepositoryImpl());
-  final router = createRouter(onboardingNotifier, authNotifier);
+  final router = createRouter(
+    onboardingNotifier,
+    authNotifier,
+    initialLocation: initialLocation,
+    restoredLocation: restoredLocation,
+  );
+
+  router.routerDelegate.addListener(() {
+    if (!authNotifier.value) return;
+    final location = router.routerDelegate.currentConfiguration.uri.toString();
+    if (isRestorableRoute(location)) {
+      prefs.setString(lastRouteStorageKey, location);
+    }
+  });
+
+  authNotifier.addListener(() {
+    if (!authNotifier.value) {
+      prefs.remove(lastRouteStorageKey);
+    }
+  });
 
   // Wire interactive notification actions
   setPillboxNotificationHandlers(
