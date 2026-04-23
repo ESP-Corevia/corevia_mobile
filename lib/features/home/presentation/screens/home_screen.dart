@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:corevia_mobile/l10n/app_localizations.dart';
 
 import '../../../../networking/api_service.dart';
 import '../../../../networking/routes/user_routes.dart';
@@ -140,7 +141,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _name.isNotEmpty ? 'Hello, $_name' : 'Hello',
+                      _name.isNotEmpty ? context.l10n.helloUser(_name) : context.l10n.tr(fr: 'Bonjour', en: 'Hello'),
                       style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
@@ -161,7 +162,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           Icon(Icons.star, size: 16, color: Color(0xFFFFBE0A)),
                           SizedBox(width: 4),
                           Text(
-                            'Pro member',
+                            'Membre Pro',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
@@ -190,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   Icon(Icons.search, color: Colors.grey[600], size: 20),
                   const SizedBox(width: 12),
                   Text(
-                    'Start a chat with DocAI',
+                    'Commencer un chat avec DocAI',
                     style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   ),
                 ],

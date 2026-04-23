@@ -66,7 +66,7 @@ class _PillboxScreenState extends State<PillboxScreen> {
                   },
                 ),
                 title: const Text(
-                  'Medication Plan',
+                  'Plan de medicaments',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
@@ -195,7 +195,7 @@ class _PillboxScreenState extends State<PillboxScreen> {
                         const SizedBox(height: 12),
                         Text(
                           _filter == _Filter.active
-                              ? 'Aucun medicament actif'
+                            ? 'Aucun medicament actif'
                               : 'Aucun medicament inactif',
                           style: TextStyle(
                             fontSize: 16,
@@ -246,8 +246,8 @@ class _PillboxScreenState extends State<PillboxScreen> {
                                       ),
                                 label: Text(
                                   provider.isLoading
-                                      ? 'Chargement...'
-                                      : 'Charger plus',
+                                  ? 'Chargement...'
+                                  : 'Charger plus',
                                   style: const TextStyle(
                                     color: Color(0xFF34C759),
                                     fontWeight: FontWeight.w700,

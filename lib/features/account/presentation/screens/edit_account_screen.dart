@@ -77,8 +77,8 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(success
-              ? 'Profile updated successfully!'
-              : 'Failed to update profile'),
+              ? 'Profil mis a jour avec succes !'
+              : 'Echec de la mise a jour du profil'),
           backgroundColor: success ? AppColors.green : Colors.red,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -121,11 +121,11 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
                       // Champs de formulaire avec nouveau style
                       _buildTextField(
                         controller: _firstNameController,
-                        label: 'First Name',
+                        label: 'Prenom',
                         icon: Icons.person_outline,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter your first name';
+                            return 'Veuillez saisir votre prenom';
                           }
                           return null;
                         },
@@ -135,11 +135,11 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
 
                       _buildTextField(
                         controller: _lastNameController,
-                        label: 'Last Name',
+                        label: 'Nom',
                         icon: Icons.person_outline,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter your last name';
+                            return 'Veuillez saisir votre nom';
                           }
                           return null;
                         },
@@ -154,10 +154,10 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
                         keyboardType: TextInputType.emailAddress,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter your email';
+                            return 'Veuillez saisir votre email';
                           }
                           if (!value.contains('@')) {
-                            return 'Please enter a valid email';
+                            return 'Veuillez saisir un email valide';
                           }
                           return null;
                         },
@@ -167,12 +167,12 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
 
                       _buildTextField(
                         controller: _phoneController,
-                        label: 'Phone',
+                        label: 'Telephone',
                         icon: LucideIcons.phone,
                         keyboardType: TextInputType.phone,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter your phone number';
+                            return 'Veuillez saisir votre numero de telephone';
                           }
                           return null;
                         },
@@ -193,7 +193,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
 
                       _buildTextField(
                         controller: _dobController,
-                        label: 'Date of Birth',
+                        label: 'Date de naissance',
                         icon: LucideIcons.cake,
                         readOnly: true,
                         onTap: () async {
@@ -224,7 +224,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
 
                       _buildTextField(
                         controller: _addressController,
-                        label: 'Address',
+                        label: 'Adresse',
                         icon: LucideIcons.mapPinHouse,
                         maxLines: 2,
                       ),
@@ -277,7 +277,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
           ),
           const SizedBox(width: 8),
           const Text(
-            'Edit Profile',
+            'Modifier le profil',
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -322,7 +322,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: const Text('Change photo functionality'),
+                  content: const Text("Fonction de changement de photo"),
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -454,7 +454,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
       child: DropdownButtonFormField<String>(
         initialValue: selectedGender,
         decoration: InputDecoration(
-          labelText: 'Gender',
+          labelText: 'Genre',
           labelStyle: TextStyle(
             color: Colors.grey.shade600,
             fontSize: 15,
@@ -487,11 +487,15 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
             borderSide: const BorderSide(color: AppColors.green, width: 2),
           ),
         ),
-        items: <String>['Male', 'Female', 'Other'].map<DropdownMenuItem<String>>((String value) {
+        items: const <String>['Male', 'Female', 'Other'].map<DropdownMenuItem<String>>((String value) {
           return DropdownMenuItem<String>(
             value: value,
             child: Text(
-              value,
+              value == 'Male'
+                  ? 'Homme'
+                  : value == 'Female'
+                      ? 'Femme'
+                      : 'Autre',
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
@@ -503,7 +507,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
         onChanged: onChanged,
         validator: (value) {
           if (value == null) {
-            return 'Please select your gender';
+            return 'Veuillez selectionner votre genre';
           }
           return null;
         },
@@ -530,7 +534,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Security',
+            'Securite',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -543,7 +547,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: const Text('Change password page'),
+                  content: const Text('Page de changement de mot de passe'),
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -571,7 +575,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
                   const SizedBox(width: 16),
                   const Expanded(
                     child: Text(
-                      'Change Password',
+                      'Changer le mot de passe',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 16,
@@ -607,7 +611,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
               ),
             ),
             child: const Text(
-              'Cancel',
+              'Annuler',
               style: TextStyle(
                 color: AppColors.green,
                 fontSize: 16,
@@ -638,7 +642,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
                     ),
                   )
                 : const Text(
-                    'Save Changes',
+                    'Enregistrer les modifications',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,

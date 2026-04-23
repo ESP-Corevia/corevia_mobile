@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:corevia_mobile/l10n/app_localizations.dart';
 
 class ActivityItem {
   final String id;
@@ -44,7 +45,7 @@ class RecentActivity extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Recent Activity',
+                context.l10n.recentActivity,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -52,7 +53,7 @@ class RecentActivity extends StatelessWidget {
               if (onViewAll != null)
                 TextButton(
                   onPressed: onViewAll,
-                  child: const Text('View All'),
+                  child: Text(context.l10n.viewAll),
                 ),
             ],
           ),
@@ -123,7 +124,7 @@ class _ActivityItemCard extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Text(
-            DateFormat('MMM d').format(activity.date),
+            DateFormat('MMM d', 'fr_FR').format(activity.date),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Colors.grey[500],
                 ),

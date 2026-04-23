@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:corevia_mobile/core/theme/colors.dart';
+import 'package:corevia_mobile/l10n/app_localizations.dart';
 import '../providers/document_provider.dart';
 import '../../domain/entities/document_entity.dart';
 
@@ -108,7 +109,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
               if (!mounted) return;
               setState(() {
                 _uploads[file.id]?.status = _UploadStatus.error;
-                _uploads[file.id]?.error = 'Confirm failed';
+                _uploads[file.id]?.error = 'Echec de la confirmation';
               });
               _checkAllDone();
             });
@@ -119,7 +120,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
             _uploads[file.id]?.error = message;
           });
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Upload failed: $message')),
+            SnackBar(content: Text(context.l10n.uploadFailed(message))),
           );
           _checkAllDone();
         default:
@@ -140,7 +141,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
       final successCount = _uploads.values.where((e) => e.status == _UploadStatus.confirmed).length;
       if (successCount > 0 && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$successCount file(s) uploaded')),
+          SnackBar(content: Text(context.l10n.filesUploaded(successCount))),
         );
       }
     }
@@ -161,7 +162,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
       if (pf.size > _maxFileSize) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${pf.name} exceeds 25 MB limit')),
+            SnackBar(content: Text(context.l10n.fileTooLarge(pf.name))),
           );
         }
         continue;
@@ -192,7 +193,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to download: $e')),
+          SnackBar(content: Text(context.l10n.failedToDownload(e.toString()))),
         );
       }
     }
@@ -206,16 +207,19 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
       context: context,
       useRootNavigator: true,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Document'),
-        content: Text('Delete "${doc.fileName}"? This action cannot be undone.'),
+        title: Text(context.l10n.deleteDocumentTitle),
+        content: Text(context.l10n.deleteDocumentConfirm(doc.fileName)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx, rootNavigator: true).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx, rootNavigator: true).pop(true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text(
+              context.l10n.delete,
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -225,13 +229,13 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
       await provider.deleteDocument(doc.id);
       if (mounted) {
         messenger.showSnackBar(
-          const SnackBar(content: Text('Document deleted')),
+          SnackBar(content: Text(context.l10n.documentDeleted)),
         );
       }
     } catch (e) {
       if (mounted) {
         messenger.showSnackBar(
-          SnackBar(content: Text('Failed to delete: $e')),
+          SnackBar(content: Text(context.l10n.failedToDelete(e.toString()))),
         );
       }
     }
@@ -303,9 +307,9 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
             padding: EdgeInsets.zero,
           ),
           const SizedBox(width: 8),
-          const Text(
-            'My Documents',
-            style: TextStyle(
+          Text(
+            context.l10n.myDocuments,
+            style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
               color: Color(0xFF1D1D1F),
@@ -340,7 +344,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
             ),
             const SizedBox(width: 12),
             Text(
-              _isUploading ? 'Uploading...' : 'Upload Documents',
+              _isUploading ? context.l10n.uploading : context.l10n.uploadDocuments,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -375,7 +379,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Uploading',
+                  'Televersement',
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                 ),
                 Text(
@@ -492,7 +496,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
             Icon(LucideIcons.fileText, size: 48, color: Colors.grey.shade300),
             const SizedBox(height: 16),
             Text(
-              'No documents yet',
+              context.l10n.noDocumentsYet,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -501,7 +505,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Upload your first document to get started',
+              context.l10n.uploadFirstDocument,
               style: TextStyle(fontSize: 14, color: Colors.grey.shade400),
             ),
           ],
@@ -524,10 +528,10 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
+          Padding(
             padding: EdgeInsets.fromLTRB(20, 20, 20, 8),
             child: Text(
-              'Your Documents',
+              context.l10n.yourDocuments,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,

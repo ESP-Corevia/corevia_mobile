@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../booking/presentation/providers/booking_provider.dart';
 
 class CalendarScreen extends StatefulWidget {
-  const CalendarScreen({super.key, this.initialTab = 'Schedule'});
+  const CalendarScreen({super.key, this.initialTab = 'Programme'});
 
   final String initialTab;
 
@@ -13,7 +13,7 @@ class CalendarScreen extends StatefulWidget {
 }
 
 class _CalendarScreenState extends State<CalendarScreen> {
-  String _selectedTab = 'Schedule';
+  String _selectedTab = 'Programme';
   final TextEditingController _searchController = TextEditingController();
 
   @override
@@ -41,7 +41,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             _buildHeader(),
             Expanded(
               child:
-                  _selectedTab == 'Schedule' ? _buildSchedule() : _buildDoctors(),
+                  _selectedTab == 'Programme' ? _buildSchedule() : _buildDoctors(),
             ),
           ],
         ),
@@ -76,7 +76,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
               const SizedBox(width: 12),
               const Text(
-                'Calendar',
+                'Calendrier',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
             ],
@@ -92,20 +92,20 @@ class _CalendarScreenState extends State<CalendarScreen> {
               children: [
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => setState(() => _selectedTab = 'Schedule'),
+                    onTap: () => setState(() => _selectedTab = 'Programme'),
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
-                        color: _selectedTab == 'Schedule'
+                        color: _selectedTab == 'Programme'
                             ? Colors.white
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        'Schedule',
+                        'Programme',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontWeight: _selectedTab == 'Schedule'
+                          fontWeight: _selectedTab == 'Programme'
                               ? FontWeight.w700
                               : FontWeight.w500,
                         ),
@@ -115,19 +115,19 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 ),
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => setState(() => _selectedTab = 'Lists'),
+                    onTap: () => setState(() => _selectedTab = 'Liste'),
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
                         color:
-                            _selectedTab == 'Lists' ? Colors.white : Colors.transparent,
+                            _selectedTab == 'Liste' ? Colors.white : Colors.transparent,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        'Lists',
+                        'Liste',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontWeight: _selectedTab == 'Lists'
+                          fontWeight: _selectedTab == 'Liste'
                               ? FontWeight.w700
                               : FontWeight.w500,
                         ),
@@ -326,7 +326,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   String _normalizeTab(String tab) {
     final value = tab.toLowerCase();
-    if (value == 'lists' || value == 'list') return 'Lists';
-    return 'Schedule';
+    if (value == 'lists' || value == 'list') return 'Liste';
+    return 'Programme';
   }
 }

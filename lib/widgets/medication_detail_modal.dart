@@ -47,7 +47,7 @@ class MedicationDetailModal extends StatelessWidget {
         children: [
           // --- CONTENU DU DIALOG ---
           Container(
-            margin: const EdgeInsets.only(top: 75), // laisse la place à l'image
+            margin: const EdgeInsets.only(top: 75), // laisse la place Ã  l'image
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: Colors.white,
@@ -93,11 +93,11 @@ class MedicationDetailModal extends StatelessWidget {
 
                   const SizedBox(height: 24),
 
-                  _buildInfoRow(LucideIcons.repeat, 'Frequency', frequency),
+                  _buildInfoRow(LucideIcons.repeat, 'Frequence', frequency),
                   const SizedBox(height: 12),
-                  _buildInfoRow(LucideIcons.calendar, 'Start', startDate),
+                  _buildInfoRow(LucideIcons.calendar, 'Debut', startDate),
                   const SizedBox(height: 8),
-                  _buildInfoRow(LucideIcons.calendarCheck, 'End', endDate),
+                  _buildInfoRow(LucideIcons.calendarCheck, 'Fin', endDate),
 
                   const SizedBox(height: 24),
                   Text('Description',
@@ -136,7 +136,7 @@ class MedicationDetailModal extends StatelessWidget {
                     child: ElevatedButton.icon(
                       icon: const Icon(LucideIcons.check, color: Colors.white),
                       label: const Text(
-                        'Mark as Taken',
+                        'Marquer comme pris',
                         style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -156,7 +156,7 @@ class MedicationDetailModal extends StatelessWidget {
                         }
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('$medicationName marked as taken!'),
+                            content: Text('$medicationName marqué comme pris !'),
                             backgroundColor: Colors.green,
                           ),
                         );
@@ -175,7 +175,7 @@ class MedicationDetailModal extends StatelessWidget {
                         }
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('$medicationName skipped'),
+                            content: Text('$medicationName ignoré'),
                             backgroundColor: Colors.orange,
                           ),
                         );
@@ -187,7 +187,7 @@ class MedicationDetailModal extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text('Skip'),
+                      child: const Text('Ignorer'),
                     ),
                   ),
                 ],
@@ -195,7 +195,7 @@ class MedicationDetailModal extends StatelessWidget {
             ),
           ),
 
-          // --- IMAGE CENTRÉE SUR LA BORDURE DU HAUT ---
+          // --- IMAGE CENTRÃ‰E SUR LA BORDURE DU HAUT ---
           Positioned(
             top: 0,
             left: 0,
@@ -255,3 +255,6 @@ class MedicationDetailModal extends StatelessWidget {
 //     instructions: "Take with food",
 //   ),
 // );
+
+
+

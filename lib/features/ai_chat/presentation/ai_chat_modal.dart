@@ -251,7 +251,7 @@ class _AiChatModalState extends State<AiChatModal> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Text(
-                  'DocAI Assistant',
+                  'Assistant DocAI',
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
@@ -291,7 +291,7 @@ class _AiChatModalState extends State<AiChatModal> {
             Icon(Icons.chat_bubble_outline_rounded, size: 48, color: Colors.grey.shade300),
             const SizedBox(height: 12),
             Text(
-              'Posez votre question a DocAI',
+              'Posez votre question à DocAI',
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey.shade500,

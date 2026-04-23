@@ -29,7 +29,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     {'name': 'Tension', 'icon': Icons.favorite, 'color': Color(0xFFFF3B30), 'unit': 'mmHg'},
     {'name': 'Glycemie', 'icon': Icons.water_drop, 'color': Color(0xFF5856D6), 'unit': 'mg/dL'},
     {'name': 'Frequence', 'icon': Icons.monitor_heart, 'color': Color(0xFFFF2D55), 'unit': 'bpm'},
-    {'name': 'Temperature', 'icon': Icons.thermostat, 'color': Color(0xFFFF9500), 'unit': 'degC'},
+    {'name': 'Température', 'icon': Icons.thermostat, 'color': Color(0xFFFF9500), 'unit': '°C'},
   ];
 
   List<Map<String, dynamic>> _getChartData() {
@@ -1177,3 +1177,7 @@ class LineChartPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
+
+
+
+

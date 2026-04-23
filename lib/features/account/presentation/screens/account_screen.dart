@@ -92,7 +92,7 @@ class _AccountScreenState extends State<AccountScreen> {
                           _buildProfileCard(),
                           const SizedBox(height: 20),
                           _buildSection(
-                            title: 'Account Information',
+                            title: 'Informations du compte',
                             children: [
                               _buildInfoTile(
                                 icon: Icons.email_outlined,
@@ -101,12 +101,12 @@ class _AccountScreenState extends State<AccountScreen> {
                               ),
                               _buildInfoTile(
                                 icon: Icons.phone_outlined,
-                                title: 'Phone',
+                                title: 'Telephone',
                                 value: _phone,
                               ),
                               _buildInfoTile(
                                 icon: Icons.cake_outlined,
-                                title: 'Date of Birth',
+                                title: 'Date de naissance',
                                 value: _dateOfBirth,
                               ),
                               _buildActionTile(
@@ -118,7 +118,7 @@ class _AccountScreenState extends State<AccountScreen> {
                           ),
                           const SizedBox(height: 20),
                           _buildSection(
-                            title: 'Settings',
+                            title: 'Parametres',
                             children: [
                               _buildActionTile(
                                 icon: Icons.notifications_outlined,
@@ -132,12 +132,12 @@ class _AccountScreenState extends State<AccountScreen> {
                               ),
                               _buildActionTile(
                                 icon: Icons.lock_outline,
-                                title: 'Privacy & Security',
+                                title: 'Confidentialite et securite',
                               ),
                               _buildActionTile(
                                 icon: Icons.language_outlined,
-                                title: 'Language',
-                                subtitle: 'English',
+                                title: 'Langue',
+                                subtitle: 'Francais',
                               ),
                             ],
                           ),
@@ -147,15 +147,15 @@ class _AccountScreenState extends State<AccountScreen> {
                             children: [
                               _buildActionTile(
                                 icon: Icons.help_outline,
-                                title: 'Help & Support',
+                                title: 'Aide et support',
                               ),
                               _buildActionTile(
                                 icon: Icons.info_outline,
-                                title: 'About',
+                                title: 'A propos',
                               ),
                               _buildActionTile(
                                 icon: Icons.logout,
-                                title: 'Logout',
+                                title: 'Deconnexion',
                                 iconColor: Colors.red,
                                 titleColor: Colors.red,
                                 onTap: () => _logout(),

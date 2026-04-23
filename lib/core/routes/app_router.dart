@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:corevia_mobile/l10n/app_localizations.dart';
 
 // Les écrans
 import '../../features/calendar/presentation/screens/calendar_screen.dart';
@@ -208,7 +209,7 @@ GoRouter createRouter(
 
     errorBuilder: (context, state) => Scaffold(
       body: Center(
-        child: Text('Page not found: ${state.uri}'),
+        child: Text(context.l10n.pageNotFound(state.uri.toString())),
       ),
     ),
   );

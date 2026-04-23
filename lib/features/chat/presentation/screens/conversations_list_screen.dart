@@ -15,8 +15,8 @@ class _ConversationsListScreenState extends State<ConversationsListScreen> {
     {
       'id': '1',
       'title': 'Dr. Ahmed Badaoui',
-      'specialty': 'Lung Specialist',
-      'lastMessage': 'Your appointment is confirmed for tomorrow at 10:30 AM',
+      'specialty': 'Specialiste des poumons',
+      'lastMessage': 'Votre rendez-vous est confirme pour demain a 10h30',
       'time': DateTime.now().subtract(const Duration(minutes: 30)),
       'unread': 2,
       'avatar': 'https://i.pravatar.cc/150?img=12',
@@ -25,8 +25,8 @@ class _ConversationsListScreenState extends State<ConversationsListScreen> {
     {
       'id': '2',
       'title': 'Dr. Sarah Johnson',
-      'specialty': 'General Practitioner',
-      'lastMessage': 'Don\'t forget to take your medication this morning',
+      'specialty': 'Medecin generaliste',
+      'lastMessage': 'N\'oubliez pas de prendre votre medicament ce matin',
       'time': DateTime.now().subtract(const Duration(hours: 2)),
       'unread': 0,
       'avatar': 'https://i.pravatar.cc/150?img=45',
@@ -35,8 +35,8 @@ class _ConversationsListScreenState extends State<ConversationsListScreen> {
     {
       'id': '3',
       'title': 'Dr. Paul Martin',
-      'specialty': 'Cardiologist',
-      'lastMessage': 'Your test results are available',
+      'specialty': 'Cardiologue',
+      'lastMessage': 'Vos resultats d\'examen sont disponibles',
       'time': DateTime.now().subtract(const Duration(days: 1)),
       'unread': 0,
       'avatar': 'https://i.pravatar.cc/150?img=33',
@@ -49,11 +49,11 @@ class _ConversationsListScreenState extends State<ConversationsListScreen> {
     final difference = now.difference(time);
 
     if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m ago';
+      return 'Il y a ${difference.inMinutes} min';
     } else if (difference.inHours < 24) {
-      return '${difference.inHours}h ago';
+      return 'Il y a ${difference.inHours} h';
     } else if (difference.inDays == 1) {
-      return 'Yesterday';
+      return 'Hier';
     } else {
       return DateFormat('dd/MM').format(time);
     }
@@ -131,7 +131,7 @@ class _ConversationsListScreenState extends State<ConversationsListScreen> {
                         Icon(Icons.search, color: Colors.grey[600], size: 20),
                         const SizedBox(width: 10),
                         Text(
-                          'Search conversations...',
+                          'Rechercher des conversations...',
                           style: TextStyle(
                             fontSize: 15,
                             color: Colors.grey[600],

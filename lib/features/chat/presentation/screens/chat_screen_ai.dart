@@ -140,7 +140,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       if (!requestedAI.supported && !_warnedUnsupportedAi) {
         _warnedUnsupportedAi = true;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Spécialité bientôt disponible.')),
+          const SnackBar(content: Text('Specialite bientot disponible.')),
         );
       }
     });
@@ -673,7 +673,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 textInputAction: TextInputAction.send,
                 onSubmitted: (supported && !_isStreaming) ? (_) => _sendCurrentMessage() : null,
                 decoration: InputDecoration(
-                  hintText: supported ? 'Type a message...' : 'Bientôt disponible...',
+                  hintText: supported ? 'Tapez un message...' : 'Bientôt disponible...',
                   hintStyle: TextStyle(
                     color: Colors.grey.withValues(alpha:0.2), 
                     fontSize: 15,
