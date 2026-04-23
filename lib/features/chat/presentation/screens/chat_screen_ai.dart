@@ -487,11 +487,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                              Text(
+                            const Text(
                               'Georges',
                               style: TextStyle(
                                 color: Colors.white,
@@ -499,7 +499,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            SizedBox(height: 2),
+                            const SizedBox(height: 2),
                             Text(
                               context.l10n.patient,
                               style: TextStyle(
