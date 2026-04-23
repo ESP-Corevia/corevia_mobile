@@ -190,15 +190,9 @@ class _AccountScreenState extends State<AccountScreen> {
           ),
         ],
       ),
-      child: Row(
+      child: const Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back, size: 24),
-            onPressed: () => context.pop(),
-            padding: EdgeInsets.zero,
-          ),
-          const SizedBox(width: 8),
-          const Text(
+          Text(
             'My Account',
             style: TextStyle(
               fontSize: 28,
