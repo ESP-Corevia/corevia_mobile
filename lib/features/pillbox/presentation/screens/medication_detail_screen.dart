@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../../../../l10n/app_localizations.dart';
 import '../../domain/entities/medication_schedule.dart';
 import '../../domain/entities/patient_medication.dart';
 import '../providers/pillbox_provider.dart';
@@ -274,7 +275,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
           _divider(),
           _infoRow(
             Icons.description_outlined,
-            'Instructions',
+            context.l10n.instructions,
             medication.instructions ?? 'Aucune instruction',
           ),
           _divider(),
@@ -753,7 +754,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                   const SizedBox(height: 14),
                   _sheetTextField(
                     controller: instructionsController,
-                    label: 'Instructions',
+                    label: context.l10n.instructions,
                     icon: Icons.description_outlined,
                     maxLines: 3,
                   ),

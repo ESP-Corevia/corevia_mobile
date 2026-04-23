@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../l10n/app_localizations.dart';
 import './pill_shadow.dart';
 
 class MedicationDetailModal extends StatelessWidget {
@@ -100,7 +101,7 @@ class MedicationDetailModal extends StatelessWidget {
                   _buildInfoRow(LucideIcons.calendarCheck, 'Fin', endDate),
 
                   const SizedBox(height: 24),
-                  Text('Description',
+                  Text(context.l10n.description,
                       style: TextStyle(
                           fontWeight: FontWeight.w700,
                           color: Colors.grey.shade800,
@@ -110,7 +111,7 @@ class MedicationDetailModal extends StatelessWidget {
                       style: TextStyle(color: Colors.grey.shade700)),
 
                   const SizedBox(height: 16),
-                  Text('Instructions',
+                  Text(context.l10n.instructions,
                       style: TextStyle(
                           fontWeight: FontWeight.w700,
                           color: Colors.grey.shade800,

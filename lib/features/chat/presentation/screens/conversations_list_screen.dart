@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../../../../l10n/app_localizations.dart';
 import 'chat_screen_ai.dart';
 import '../../../../../widgets/navigation_bar.dart';
 
@@ -90,8 +91,8 @@ class _ConversationsListScreenState extends State<ConversationsListScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Messages',
+                      Text(
+                        context.l10n.messages,
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,

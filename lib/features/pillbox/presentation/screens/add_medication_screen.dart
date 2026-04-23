@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../../../../l10n/app_localizations.dart';
 import '../../domain/entities/medication_search_result.dart';
 import '../providers/medication_search_provider.dart';
 import '../providers/pillbox_provider.dart';
@@ -421,7 +422,7 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
           const SizedBox(height: 14),
           _styledTextField(
             controller: _instructionsController,
-            label: 'Instructions',
+            label: context.l10n.instructions,
             icon: Icons.note_outlined,
             maxLines: 2,
           ),
