@@ -328,7 +328,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   context.l10n.evolution,
                   style: TextStyle(
                     fontSize: 18,
@@ -480,7 +480,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final data = provider.homeData;
 
     if (provider.isLoading && data == null) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.symmetric(horizontal: 20),
         child: Center(child: CircularProgressIndicator()),
       );
@@ -491,7 +491,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             context.l10n.appointmentsOverview,
             style: TextStyle(
               fontSize: 18,
@@ -586,7 +586,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             context.l10n.recentHistory,
             style: TextStyle(
               fontSize: 18,
@@ -608,7 +608,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               ],
             ),
             child: currentEntries.isEmpty
-                ? const Padding(
+                ? Padding(
                     padding: EdgeInsets.all(18),
                     child: Text(
                       context.l10n.noTrackingData,
@@ -837,7 +837,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        const Text(
+                        Text(
                           context.l10n.treatment,
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
@@ -876,7 +876,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                           },
                         ),
                         const SizedBox(height: 14),
-                        const Text(
+                        Text(
                           context.l10n.value,
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
@@ -921,7 +921,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                           ),
                         ),
                         const SizedBox(height: 14),
-                        const Text(
+                        Text(
                           context.l10n.measureDate,
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
@@ -992,7 +992,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                           ),
                         ),
                         const SizedBox(height: 14),
-                        const Text(
+                        Text(
                           context.l10n.notesOptional,
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
@@ -1049,7 +1049,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                                     borderRadius: BorderRadius.circular(14),
                                   ),
                                 ),
-                                child: const Row(
+                                child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Icon(Icons.close_rounded, size: 18),
@@ -1094,7 +1094,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                                   ),
                                   elevation: 0,
                                 ),
-                                child: const Text(
+                                child: Text(
                                   context.l10n.save,
                                   style: TextStyle(fontWeight: FontWeight.w700),
                                 ),

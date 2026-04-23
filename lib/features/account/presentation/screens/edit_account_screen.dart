@@ -663,7 +663,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
-                : const Text(
+                : Text(
                 context.l10n.saveChanges,
                 style: TextStyle(
                       color: Colors.white,

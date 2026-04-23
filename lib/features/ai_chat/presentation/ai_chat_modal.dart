@@ -361,7 +361,7 @@ class _AiChatModalState extends State<AiChatModal> {
                         color: const Color(0xFFEF4444),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Text(
                           context.l10n.rejectAll,
                           style: TextStyle(

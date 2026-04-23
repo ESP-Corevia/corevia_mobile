@@ -228,7 +228,7 @@ class _ToolCallCard extends StatelessWidget {
               ),
             ],
             if (isApproved)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.only(top: 6),
                 child: Text(
                   context.l10n.confirmed,
@@ -236,7 +236,7 @@ class _ToolCallCard extends StatelessWidget {
                 ),
               ),
             if (isRejected)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.only(top: 6),
                 child: Text(
                   context.l10n.cancelled,

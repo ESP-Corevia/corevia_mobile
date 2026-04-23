@@ -165,7 +165,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   size: 20, color: Color(0xFF1D1D1F)),
             ),
           ),
-          const Text(
+          Text(
             'Prendre rendez-vous',
             style: TextStyle(
               fontSize: 24,
@@ -288,7 +288,7 @@ class _BookingScreenState extends State<BookingScreen> {
           );
         }
         if (provider.availableSlots.isEmpty) {
-          return const Padding(
+          return Padding(
             padding: EdgeInsets.symmetric(horizontal: 20),
             child: Text(context.l10n.noAvailableSlotsMessage),
           );
@@ -351,7 +351,7 @@ class _BookingScreenState extends State<BookingScreen> {
             shadowColor: Colors.transparent,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           ),
-          child: const Row(
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(

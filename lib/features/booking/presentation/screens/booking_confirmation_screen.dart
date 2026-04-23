@@ -508,7 +508,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
                 borderRadius: BorderRadius.circular(20),
               ),
             ),
-            child: const Row(
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
@@ -539,7 +539,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
           style: TextButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 16),
           ),
-          child: const Row(
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(

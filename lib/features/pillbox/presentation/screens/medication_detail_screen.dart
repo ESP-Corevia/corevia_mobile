@@ -396,8 +396,8 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-              context.l10n.scheduleTimes,
+              Text(
+                context.l10n.scheduleTimes,
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
@@ -413,7 +413,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                     color: const Color(0xFFEAF9F0),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.add_rounded, size: 16, color: _green),
@@ -585,7 +585,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             context.l10n.actions,
             style: TextStyle(
               fontSize: 17,
@@ -964,7 +964,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
+                              Text(
                                 context.l10n.timeOfIntake,
                                 style: TextStyle(
                                   fontSize: 12,
@@ -992,7 +992,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                   ),
                   const SizedBox(height: 14),
                   // Intake moment chips
-                  const Text(
+                  Text(
                     context.l10n.momentOfDay,
                     style: TextStyle(
                       fontSize: 13,
