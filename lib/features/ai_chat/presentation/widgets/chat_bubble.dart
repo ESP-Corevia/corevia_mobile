@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:corevia_mobile/l10n/app_localizations.dart';
 
 import '../../domain/chat_message.dart';
 
@@ -210,7 +211,7 @@ class _ToolCallCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _ActionButton(
-                      label: 'Approuver',
+                      label: context.l10n.approveAll,
                       color: const Color(0xFF34C759),
                       onTap: onApprove,
                     ),
@@ -218,7 +219,7 @@ class _ToolCallCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: _ActionButton(
-                      label: 'Refuser',
+                      label: context.l10n.rejectAll,
                       color: const Color(0xFFEF4444),
                       onTap: onReject,
                     ),
@@ -230,16 +231,16 @@ class _ToolCallCard extends StatelessWidget {
               const Padding(
                 padding: EdgeInsets.only(top: 6),
                 child: Text(
-                  'Action approuvée',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF16A34A)),
+                  context.l10n.confirmed,
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF16A34A)),
                 ),
               ),
             if (isRejected)
               const Padding(
                 padding: EdgeInsets.only(top: 6),
                 child: Text(
-                  'Action refusée',
-                  style: TextStyle(fontSize: 12, color: Color(0xFFDC2626)),
+                  context.l10n.cancelled,
+                  style: const TextStyle(fontSize: 12, color: Color(0xFFDC2626)),
                 ),
               ),
           ],

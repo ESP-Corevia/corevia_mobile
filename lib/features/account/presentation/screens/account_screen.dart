@@ -11,6 +11,7 @@ import 'package:corevia_mobile/core/routes/route_persistence.dart';
 import '../../../../widgets/pro_member.dart';
 import 'package:corevia_mobile/core/theme/colors.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:corevia_mobile/l10n/app_localizations.dart';
 import '../providers/user_provider.dart';
 import '../../../../widgets/initials_avatar.dart';
 
@@ -92,37 +93,37 @@ class _AccountScreenState extends State<AccountScreen> {
                           _buildProfileCard(),
                           const SizedBox(height: 20),
                           _buildSection(
-                            title: 'Informations du compte',
+                            title: context.l10n.accountInformation,
                             children: [
                               _buildInfoTile(
                                 icon: Icons.email_outlined,
-                                title: 'Email',
+                                title: context.l10n.email,
                                 value: _email,
                               ),
                               _buildInfoTile(
                                 icon: Icons.phone_outlined,
-                                title: 'Telephone',
+                                title: context.l10n.phone,
                                 value: _phone,
                               ),
                               _buildInfoTile(
                                 icon: Icons.cake_outlined,
-                                title: 'Date de naissance',
+                                title: context.l10n.dateOfBirth,
                                 value: _dateOfBirth,
                               ),
                               _buildActionTile(
                                 icon: LucideIcons.fileText,
-                                title: 'Documents',
+                                title: context.l10n.documents,
                                 onTap: () => context.push('/documents'),
                               ),
                             ],
                           ),
                           const SizedBox(height: 20),
                           _buildSection(
-                            title: 'Parametres',
+                            title: context.l10n.settings,
                             children: [
                               _buildActionTile(
                                 icon: Icons.notifications_outlined,
-                                title: 'Notifications',
+                                title: context.l10n.notifications,
                                 trailing: Switch(
                                   value: isNotificationsEnabled,
                                   onChanged: (value) =>
@@ -132,30 +133,30 @@ class _AccountScreenState extends State<AccountScreen> {
                               ),
                               _buildActionTile(
                                 icon: Icons.lock_outline,
-                                title: 'Confidentialite et securite',
+                                title: context.l10n.privacySecurity,
                               ),
                               _buildActionTile(
                                 icon: Icons.language_outlined,
-                                title: 'Langue',
-                                subtitle: 'Francais',
+                                title: context.l10n.language,
+                                subtitle: context.l10n.french,
                               ),
                             ],
                           ),
                           const SizedBox(height: 20),
                           _buildSection(
-                            title: 'Actions',
+                            title: context.l10n.actions,
                             children: [
                               _buildActionTile(
                                 icon: Icons.help_outline,
-                                title: 'Aide et support',
+                                title: context.l10n.helpSupport,
                               ),
                               _buildActionTile(
                                 icon: Icons.info_outline,
-                                title: 'A propos',
+                                title: context.l10n.about,
                               ),
                               _buildActionTile(
                                 icon: Icons.logout,
-                                title: 'Deconnexion',
+                                title: context.l10n.logout,
                                 iconColor: Colors.red,
                                 titleColor: Colors.red,
                                 onTap: () => _logout(),
@@ -190,10 +191,10 @@ class _AccountScreenState extends State<AccountScreen> {
           ),
         ],
       ),
-      child: const Row(
+      child: Row(
         children: [
           Text(
-            'My Account',
+            context.l10n.myAccount,
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,

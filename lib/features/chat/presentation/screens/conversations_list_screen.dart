@@ -16,8 +16,8 @@ class _ConversationsListScreenState extends State<ConversationsListScreen> {
     {
       'id': '1',
       'title': 'Dr. Ahmed Badaoui',
-      'specialty': 'Specialiste des poumons',
-      'lastMessage': 'Votre rendez-vous est confirme pour demain a 10h30',
+      'specialty': 'Spécialiste des poumons',
+      'lastMessage': 'Votre rendez-vous est confirmé pour demain à 10h30',
       'time': DateTime.now().subtract(const Duration(minutes: 30)),
       'unread': 2,
       'avatar': 'https://i.pravatar.cc/150?img=12',
@@ -26,8 +26,8 @@ class _ConversationsListScreenState extends State<ConversationsListScreen> {
     {
       'id': '2',
       'title': 'Dr. Sarah Johnson',
-      'specialty': 'Medecin generaliste',
-      'lastMessage': 'N\'oubliez pas de prendre votre medicament ce matin',
+      'specialty': 'Médecin généraliste',
+      'lastMessage': 'N\'oubliez pas de prendre votre médicament ce matin',
       'time': DateTime.now().subtract(const Duration(hours: 2)),
       'unread': 0,
       'avatar': 'https://i.pravatar.cc/150?img=45',
@@ -37,7 +37,7 @@ class _ConversationsListScreenState extends State<ConversationsListScreen> {
       'id': '3',
       'title': 'Dr. Paul Martin',
       'specialty': 'Cardiologue',
-      'lastMessage': 'Vos resultats d\'examen sont disponibles',
+      'lastMessage': 'Vos résultats d\'examen sont disponibles',
       'time': DateTime.now().subtract(const Duration(days: 1)),
       'unread': 0,
       'avatar': 'https://i.pravatar.cc/150?img=33',
@@ -45,18 +45,18 @@ class _ConversationsListScreenState extends State<ConversationsListScreen> {
     },
   ];
 
-  String _formatTime(DateTime time) {
+  String _formatTime(BuildContext context, DateTime time) {
     final now = DateTime.now();
     final difference = now.difference(time);
 
     if (difference.inMinutes < 60) {
-      return 'Il y a ${difference.inMinutes} min';
+      return context.l10n.minutesAgo(difference.inMinutes);
     } else if (difference.inHours < 24) {
-      return 'Il y a ${difference.inHours} h';
+      return context.l10n.hoursAgo(difference.inHours);
     } else if (difference.inDays == 1) {
-      return 'Hier';
+      return context.l10n.yesterday;
     } else {
-      return DateFormat('dd/MM').format(time);
+      return context.l10n.formattedDate(DateFormat('dd/MM').format(time));
     }
   }
 
@@ -251,7 +251,7 @@ class _ConversationsListScreenState extends State<ConversationsListScreen> {
                             ),
                           ),
                           Text(
-                            _formatTime(conversation['time']),
+                            _formatTime(context, conversation['time']),
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey[600],

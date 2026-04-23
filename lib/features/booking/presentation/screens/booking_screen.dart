@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
+import 'package:corevia_mobile/l10n/app_localizations.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 import '../providers/booking_provider.dart';
@@ -21,10 +22,10 @@ class BookingScreen extends StatefulWidget {
     String? imageUrl,
     String? address,
   })  : doctorId = doctorId ?? '',
-        doctorName = doctorName ?? 'Medecin',
-        specialty = specialty ?? 'Specialite',
+        doctorName = doctorName ?? '',
+        specialty = specialty ?? '',
         imageUrl = imageUrl ?? 'https://via.placeholder.com/150',
-        address = address ?? 'Adresse non renseignee';
+        address = address ?? '';
 
   @override
   State<BookingScreen> createState() => _BookingScreenState();
@@ -65,7 +66,7 @@ class _BookingScreenState extends State<BookingScreen> {
     if (_selectedTimeSlot == null) return;
     if (widget.doctorId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Medecin invalide')),
+        SnackBar(content: Text(context.l10n.invalidDoctor)),
       );
       return;
     }
@@ -79,7 +80,7 @@ class _BookingScreenState extends State<BookingScreen> {
 
     if (appointment == null) {
       final err = context.read<BookingProvider>().error ??
-          'Erreur lors de la creation du rendez-vous';
+          context.l10n.createAppointmentFailed;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
       return;
     }
@@ -209,15 +210,17 @@ class _BookingScreenState extends State<BookingScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(widget.doctorName,
+                  Text(widget.doctorName.isNotEmpty ? widget.doctorName : context.l10n.doctor,
                       style: const TextStyle(
                           fontWeight: FontWeight.bold, fontSize: 16)),
                   const SizedBox(height: 2),
-                  Text(widget.specialty,
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
-                  const SizedBox(height: 2),
-                  Text(widget.address,
-                      style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                  if (widget.specialty.isNotEmpty)
+                    Text(widget.specialty,
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                  if (widget.specialty.isNotEmpty) const SizedBox(height: 2),
+                  if (widget.address.isNotEmpty)
+                    Text(widget.address,
+                        style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
                 ],
               ),
             ),
@@ -287,7 +290,7 @@ class _BookingScreenState extends State<BookingScreen> {
         if (provider.availableSlots.isEmpty) {
           return const Padding(
             padding: EdgeInsets.symmetric(horizontal: 20),
-            child: Text('Aucun creneau disponible pour cette date.'),
+            child: Text(context.l10n.noAvailableSlotsMessage),
           );
         }
         return Padding(
@@ -352,7 +355,7 @@ class _BookingScreenState extends State<BookingScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'Confirmer le rendez-vous',
+                context.l10n.confirmBooking,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,

@@ -1,25 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:corevia_mobile/l10n/app_localizations.dart';
 import '../../../booking/presentation/providers/booking_provider.dart';
 
-class CalendarScreen extends StatefulWidget {
-  const CalendarScreen({super.key, this.initialTab = 'Programme'});
+enum CalendarTab { programme, list }
 
-  final String initialTab;
+class CalendarScreen extends StatefulWidget {
+  const CalendarScreen({super.key, this.initialTab = CalendarTab.programme});
+
+  final CalendarTab initialTab;
 
   @override
   State<CalendarScreen> createState() => _CalendarScreenState();
 }
 
 class _CalendarScreenState extends State<CalendarScreen> {
-  String _selectedTab = 'Programme';
+  CalendarTab _selectedTab = CalendarTab.programme;
   final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _selectedTab = _normalizeTab(widget.initialTab);
+    _selectedTab = widget.initialTab;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<BookingProvider>().loadDoctors();
     });
@@ -41,7 +44,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             _buildHeader(),
             Expanded(
               child:
-                  _selectedTab == 'Programme' ? _buildSchedule() : _buildDoctors(),
+                  _selectedTab == CalendarTab.programme ? _buildSchedule() : _buildDoctors(),
             ),
           ],
         ),
@@ -75,8 +78,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
-                'Calendrier',
+              Text(
+                context.l10n.calendar,
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
             ],
@@ -92,20 +95,20 @@ class _CalendarScreenState extends State<CalendarScreen> {
               children: [
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => setState(() => _selectedTab = 'Programme'),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: _selectedTab == 'Programme'
+                    onTap: () => setState(() => _selectedTab = CalendarTab.programme),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                        color: _selectedTab == CalendarTab.programme
                             ? Colors.white
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        'Programme',
+                        context.l10n.schedule,
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontWeight: _selectedTab == 'Programme'
+                          fontWeight: _selectedTab == CalendarTab.programme
                               ? FontWeight.w700
                               : FontWeight.w500,
                         ),
@@ -115,19 +118,19 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 ),
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => setState(() => _selectedTab = 'Liste'),
+                    onTap: () => setState(() => _selectedTab = CalendarTab.list),
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
                         color:
-                            _selectedTab == 'Liste' ? Colors.white : Colors.transparent,
+                            _selectedTab == CalendarTab.list ? Colors.white : Colors.transparent,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        'Liste',
+                        context.l10n.lists,
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontWeight: _selectedTab == 'Liste'
+                          fontWeight: _selectedTab == CalendarTab.list
                               ? FontWeight.w700
                               : FontWeight.w500,
                         ),
@@ -144,9 +147,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Widget _buildSchedule() {
-    return const Center(
+    return Center(
       child: Text(
-        'Consultez la liste des medecins pour prendre rendez-vous.',
+        context.l10n.consultDoctorsToBook,
         textAlign: TextAlign.center,
       ),
     );
@@ -166,7 +169,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   provider.loadDoctors(search: value.trim().isEmpty ? null : value.trim());
                 },
                 decoration: InputDecoration(
-                  hintText: 'Rechercher un medecin...',
+                  hintText: context.l10n.searchDoctor,
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(
@@ -201,7 +204,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           ),
                         )
                   : doctors.isEmpty
-                      ? const Center(child: Text('Aucun medecin disponible'))
+                      ? Center(child: Text(context.l10n.noDoctorsAvailable))
                       : ListView.builder(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           itemCount: doctors.length,
@@ -316,7 +319,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             TextButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh_rounded, size: 16),
-              label: const Text('Reessayer'),
+              label: Text(context.l10n.retry),
             ),
           ],
         ),
@@ -324,9 +327,4 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  String _normalizeTab(String tab) {
-    final value = tab.toLowerCase();
-    if (value == 'lists' || value == 'list') return 'Liste';
-    return 'Programme';
-  }
 }

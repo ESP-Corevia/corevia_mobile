@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:corevia_mobile/features/auth/presentation/screens/register_screen.dart';
 import 'package:corevia_mobile/features/auth/presentation/screens/reset_password_screen.dart';
 import 'package:corevia_mobile/features/account/presentation/providers/user_provider.dart';
+import 'package:corevia_mobile/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import '../controllers/login_controller.dart';
 
@@ -77,8 +78,8 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
           context.go('/home');
         } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Email ou mot de passe incorrect'),
+          SnackBar(
+            content: Text(context.l10n.invalidCredentials),
             backgroundColor: Color(0xFFFF3B30),
             behavior: SnackBarBehavior.floating,
           ),
@@ -89,7 +90,7 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: ${e.toString()}'),
+            content: Text(context.l10n.genericError(e.toString())),
             backgroundColor: Color(0xFFFF3B30),
             behavior: SnackBarBehavior.floating,
           ),
@@ -156,7 +157,7 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
                           ),
                           SizedBox(height: 8),
                           Text(
-                            'Connectez-vous pour continuer',
+                            context.l10n.connectToContinue,
                             style: TextStyle(
                               fontSize: 17,
                               color: Colors.grey[600],
@@ -167,7 +168,7 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
                           
                           _buildModernTextField(
                             controller: _emailController,
-                            label: 'Email',
+                            label: context.l10n.email,
                             icon: Icons.email_outlined,
                             keyboardType: TextInputType.emailAddress,
                             validator: Validators.validateEmail,
@@ -177,7 +178,7 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
                           
                           _buildModernTextField(
                             controller: _passwordController,
-                            label: 'Mot de passe',
+                            label: context.l10n.password,
                             icon: Icons.lock_outline_rounded,
                             obscureText: _obscurePassword,
                             suffixIcon: IconButton(
@@ -192,7 +193,7 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
                             validator: (value) =>
                                 Validators.validateRequired(
                               value,
-                              fieldName: 'Le mot de passe',
+                              fieldName: context.l10n.password,
                             ),
                           ),
                           
@@ -220,9 +221,9 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
                                   ),
                                 );
                               },
-                              child: const Text(
-                                'Mot de passe oublié?',
-                                style: TextStyle(
+                              child: Text(
+                                context.l10n.forgotPassword,
+                                style: const TextStyle(
                                   color: Color(0xFF34C759),
                                   fontWeight: FontWeight.w600,
                                   fontSize: 15,

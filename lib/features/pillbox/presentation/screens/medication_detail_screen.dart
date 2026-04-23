@@ -46,7 +46,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
     setState(() {
       _medication = data;
       _loading = false;
-      if (data == null) _error = 'Medicament introuvable';
+      if (data == null) _error = context.l10n.medicationNotFound;
     });
   }
 
@@ -100,9 +100,9 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                 TextButton.icon(
                   onPressed: _load,
                   icon: const Icon(Icons.refresh_rounded, color: _green),
-                  label: const Text(
-                    'Reessayer',
-                    style: TextStyle(
+                  label: Text(
+                    context.l10n.retry,
+                    style: const TextStyle(
                       color: _green,
                       fontWeight: FontWeight.w700,
                     ),
@@ -158,9 +158,9 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
           }
         },
       ),
-      title: const Text(
-        'Detail medicament',
-        style: TextStyle(
+      title: Text(
+        context.l10n.medicationDetails,
+        style: const TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.w800,
           color: _dark,
@@ -258,9 +258,9 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Informations',
-            style: TextStyle(
+          Text(
+            context.l10n.information,
+            style: const TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w800,
               color: _dark,
@@ -269,26 +269,26 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
           const SizedBox(height: 14),
           _infoRow(
             Icons.medication_rounded,
-            'Posologie',
-            medication.dosageLabel ?? 'Non renseignee',
+            context.l10n.dosage,
+            medication.dosageLabel ?? context.l10n.notProvided,
           ),
           _divider(),
           _infoRow(
             Icons.description_outlined,
             context.l10n.instructions,
-            medication.instructions ?? 'Aucune instruction',
+            medication.instructions ?? context.l10n.noInstruction,
           ),
           _divider(),
           _infoRow(
             Icons.calendar_today_rounded,
-            'Date de debut',
+            context.l10n.start,
             _formatDateFr(medication.startDate),
           ),
           if (medication.endDate != null) ...[
             _divider(),
             _infoRow(
               Icons.event_rounded,
-              'Date de fin',
+              context.l10n.end,
               _formatDateFr(medication.endDate!),
             ),
           ],
@@ -296,7 +296,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
             _divider(),
             _infoRow(
               Icons.science_outlined,
-              'Substances actives',
+              context.l10n.activeSubstances,
               medication.activeSubstances.join(', '),
             ),
           ],
@@ -306,9 +306,9 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
             child: TextButton.icon(
               onPressed: _editMedication,
               icon: const Icon(Icons.edit_rounded, size: 16, color: _green),
-              label: const Text(
-                'Modifier',
-                style: TextStyle(
+              label: Text(
+                context.l10n.edit,
+                style: const TextStyle(
                   color: _green,
                   fontWeight: FontWeight.w700,
                   fontSize: 14,
@@ -397,7 +397,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Horaires de prise',
+              context.l10n.scheduleTimes,
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
@@ -419,8 +419,8 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                       Icon(Icons.add_rounded, size: 16, color: _green),
                       SizedBox(width: 4),
                       Text(
-                        'Ajouter',
-                        style: TextStyle(
+                        context.l10n.add,
+                        style: const TextStyle(
                           color: _green,
                           fontWeight: FontWeight.w700,
                           fontSize: 13,
@@ -447,7 +447,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                       size: 32, color: Colors.grey.shade400),
                   const SizedBox(height: 8),
                   Text(
-                    'Aucun horaire configure',
+                    context.l10n.noScheduleConfigured,
                     style: TextStyle(
                       color: Colors.grey.shade500,
                       fontWeight: FontWeight.w600,
@@ -456,7 +456,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Ajoutez un horaire pour suivre vos prises',
+                    context.l10n.addScheduleToTrack,
                     style: TextStyle(
                       color: Colors.grey.shade400,
                       fontSize: 12,
@@ -586,7 +586,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Actions',
+            context.l10n.actions,
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w800,
@@ -599,8 +599,8 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                 ? Icons.pause_circle_outline_rounded
                 : Icons.play_circle_outline_rounded,
             label: medication.isActive
-                ? 'Desactiver le medicament'
-                : 'Reactiver le medicament',
+                ? context.l10n.disableMedication
+                : context.l10n.enableMedication,
             color: medication.isActive
                 ? const Color(0xFFFF9500)
                 : _green,
@@ -612,7 +612,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
           const SizedBox(height: 10),
           _actionButton(
             icon: Icons.delete_outline_rounded,
-            label: 'Supprimer le medicament',
+            label: context.l10n.deleteMedication,
             color: const Color(0xFFEF4444),
             bgColor: const Color(0xFFFEE2E2),
             onTap: _deleteMedication,
@@ -737,9 +737,9 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Modifier le medicament',
-                    style: TextStyle(
+                  Text(
+                    context.l10n.editMedication,
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
                       color: _dark,
@@ -748,7 +748,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                   const SizedBox(height: 20),
                   _sheetTextField(
                     controller: dosageController,
-                    label: 'Posologie',
+                    label: context.l10n.dosage,
                     icon: Icons.medication_rounded,
                   ),
                   const SizedBox(height: 14),
@@ -760,7 +760,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                   ),
                   const SizedBox(height: 14),
                   _datePickerTile(
-                    label: 'Date de debut',
+                    label: context.l10n.start,
                     date: startDate,
                     onPick: () async {
                       final picked = await showDatePicker(
@@ -776,7 +776,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                   ),
                   const SizedBox(height: 10),
                   _datePickerTile(
-                    label: 'Date de fin',
+                    label: context.l10n.end,
                     date: endDate,
                     placeholder: 'Aucune',
                     onPick: () async {
@@ -808,9 +808,9 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                                 borderRadius: BorderRadius.circular(14),
                               ),
                             ),
-                            child: const Text(
-                              'Annuler',
-                              style: TextStyle(
+                            child: Text(
+                              context.l10n.cancel,
+                              style: const TextStyle(
                                 color: _grey,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -832,9 +832,9 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                                 borderRadius: BorderRadius.circular(14),
                               ),
                             ),
-                            child: const Text(
-                              'Enregistrer',
-                              style: TextStyle(fontWeight: FontWeight.w700),
+                            child: Text(
+                              context.l10n.save,
+                              style: const TextStyle(fontWeight: FontWeight.w700),
                             ),
                           ),
                         ),
@@ -927,8 +927,8 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                   const SizedBox(height: 16),
                   Text(
                     schedule == null
-                        ? 'Ajouter un horaire'
-                        : 'Modifier l\'horaire',
+                        ? context.l10n.addSchedule
+                        : context.l10n.modifySchedule,
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
@@ -965,7 +965,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text(
-                                'Heure de prise',
+                                context.l10n.timeOfIntake,
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: _grey,
@@ -993,7 +993,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                   const SizedBox(height: 14),
                   // Intake moment chips
                   const Text(
-                    'Moment de la journee',
+                    context.l10n.momentOfDay,
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -1033,7 +1033,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                       Expanded(
                         child: _sheetTextField(
                           controller: quantityController,
-                          label: 'Quantite',
+                          label: context.l10n.quantity,
                           icon: Icons.numbers_rounded,
                           keyboardType: TextInputType.number,
                         ),
@@ -1042,7 +1042,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                       Expanded(
                         child: _sheetTextField(
                           controller: unitController,
-                          label: 'Unite (mg, ml...)',
+                          label: context.l10n.unitExamples,
                           icon: Icons.straighten_rounded,
                         ),
                       ),
@@ -1051,7 +1051,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                   const SizedBox(height: 14),
                   _sheetTextField(
                     controller: notesController,
-                    label: 'Notes (optionnel)',
+                    label: context.l10n.notesOptional,
                     icon: Icons.note_outlined,
                     maxLines: 2,
                   ),
@@ -1069,9 +1069,9 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                                 borderRadius: BorderRadius.circular(14),
                               ),
                             ),
-                            child: const Text(
-                              'Annuler',
-                              style: TextStyle(
+                            child: Text(
+                              context.l10n.cancel,
+                              style: const TextStyle(
                                 color: _grey,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -1093,9 +1093,9 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                                 borderRadius: BorderRadius.circular(14),
                               ),
                             ),
-                            child: const Text(
-                              'Enregistrer',
-                              style: TextStyle(fontWeight: FontWeight.w700),
+                            child: Text(
+                              context.l10n.save,
+                              style: const TextStyle(fontWeight: FontWeight.w700),
                             ),
                           ),
                         ),
@@ -1148,20 +1148,20 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(18),
             ),
-            title: const Text(
-              'Supprimer cet horaire ?',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+            title: Text(
+              context.l10n.deleteScheduleConfirm,
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
             ),
-            content: const Text(
-              'Cette action est irreversible.',
-              style: TextStyle(color: _grey),
+            content: Text(
+              context.l10n.irreversibleAction,
+              style: const TextStyle(color: _grey),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text(
-                  'Annuler',
-                  style: TextStyle(color: _grey, fontWeight: FontWeight.w700),
+                child: Text(
+                  context.l10n.cancel,
+                  style: const TextStyle(color: _grey, fontWeight: FontWeight.w700),
                 ),
               ),
               ElevatedButton(
@@ -1174,9 +1174,9 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
-                  'Supprimer',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                child: Text(
+                  context.l10n.delete,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
             ],
@@ -1220,20 +1220,20 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(18),
             ),
-            title: const Text(
-              'Supprimer ce medicament ?',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+            title: Text(
+              context.l10n.confirmDeleteMedication,
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
             ),
-            content: const Text(
-              'Le medicament et tous ses horaires seront supprimes definitivement.',
-              style: TextStyle(color: _grey),
+            content: Text(
+              context.l10n.medicationDeleteWarning,
+              style: const TextStyle(color: _grey),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text(
-                  'Annuler',
-                  style: TextStyle(color: _grey, fontWeight: FontWeight.w700),
+                child: Text(
+                  context.l10n.cancel,
+                  style: const TextStyle(color: _grey, fontWeight: FontWeight.w700),
                 ),
               ),
               ElevatedButton(
@@ -1246,9 +1246,9 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
-                  'Supprimer',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                child: Text(
+                  context.l10n.delete,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
             ],
@@ -1475,7 +1475,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
     if (schedule.notes != null && schedule.notes!.isNotEmpty) {
       parts.add(schedule.notes!);
     }
-    return parts.isEmpty ? 'Aucun detail' : parts.join(' - ');
+    return parts.isEmpty ? context.l10n.noDetails : parts.join(' - ');
   }
 
   String _formEmoji(PatientMedication medication) {

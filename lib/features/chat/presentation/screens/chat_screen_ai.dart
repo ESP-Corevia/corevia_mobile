@@ -4,6 +4,7 @@ import 'package:corevia_mobile/features/ai_chat/data/rag_chat_storage.dart';
 import 'package:corevia_mobile/features/ai_chat/data/rag_socket_chat_service.dart';
 import 'package:corevia_mobile/features/ai_chat/data/rag_socket_config.dart';
 import 'package:corevia_mobile/features/ai_chat/domain/chat_message.dart' as rag;
+import 'package:corevia_mobile/l10n/app_localizations.dart';
 import 'package:corevia_mobile/widgets/navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as chat_core;
@@ -139,9 +140,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       if (!mounted) return;
       if (!requestedAI.supported && !_warnedUnsupportedAi) {
         _warnedUnsupportedAi = true;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Specialite bientot disponible.')),
-        );
+        _showSoonSnackBar();
       }
     });
   }
@@ -376,7 +375,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
-                                            ai.supported ? ai.specialty : '${ai.specialty} • Bientôt disponible',
+                                            ai.supported ? ai.specialty : '${ai.specialty} • ${context.l10n.soonAvailable}',
                                             style: TextStyle(
                                               fontSize: 13,
                                               color: Colors.grey[600],
@@ -600,7 +599,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 ),
               ),
               subtitle: Text(
-                ai.supported ? ai.specialty : '${ai.specialty} • Bientôt disponible',
+                ai.supported ? ai.specialty : '${ai.specialty} • ${context.l10n.soonAvailable}',
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.grey.withValues(alpha:0.2),
@@ -673,7 +672,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 textInputAction: TextInputAction.send,
                 onSubmitted: (supported && !_isStreaming) ? (_) => _sendCurrentMessage() : null,
                 decoration: InputDecoration(
-                  hintText: supported ? 'Tapez un message...' : 'Bientôt disponible...',
+                  hintText: supported ? context.l10n.writeMessage : context.l10n.soonAvailable,
                   hintStyle: TextStyle(
                     color: Colors.grey.withValues(alpha:0.2), 
                     fontSize: 15,
@@ -843,7 +842,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   void _showSoonSnackBar() {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Spécialité bientôt disponible.')),
+      SnackBar(content: Text(context.l10n.soonAvailable)),
     );
   }
 

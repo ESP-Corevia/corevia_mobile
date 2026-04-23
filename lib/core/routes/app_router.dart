@@ -136,7 +136,12 @@ GoRouter createRouter(
           GoRoute(
             path: '/calendar',
             builder: (context, state) => CalendarScreen(
-              initialTab: state.uri.queryParameters['tab'] ?? 'schedule',
+              initialTab: () {
+                final tab = (state.uri.queryParameters['tab'] ?? 'schedule').toLowerCase();
+                return (tab == 'list' || tab == 'lists')
+                    ? CalendarTab.list
+                    : CalendarTab.programme;
+              }(),
             ),
           ),
           GoRoute(
@@ -161,10 +166,10 @@ GoRouter createRouter(
           final extra = state.extra as Map<String, dynamic>? ?? {};
           return BookingScreen(
             doctorId: extra['doctorId'] as String? ?? '',
-            doctorName: extra['doctorName'] as String? ?? 'Médecin',
+            doctorName: extra['doctorName'] as String? ?? context.l10n.doctor,
             specialty: extra['specialty'] as String? ?? '',
             imageUrl: extra['imageUrl'] as String? ?? '',
-            address: extra['address'] as String? ?? 'Adresse non renseignée',
+            address: extra['address'] as String? ?? context.l10n.notProvided,
           );
         },
       ),
@@ -174,10 +179,10 @@ GoRouter createRouter(
           final extra = state.extra as Map<String, dynamic>? ?? {};
           return BookingConfirmationScreen(
             doctorId: extra['doctorId'] as String? ?? '',
-            doctorName: extra['doctorName'] as String? ?? 'Médecin',
+            doctorName: extra['doctorName'] as String? ?? context.l10n.doctor,
             specialty: extra['specialty'] as String? ?? '',
             imageUrl: extra['imageUrl'] as String? ?? '',
-            address: extra['address'] as String? ?? 'Adresse non renseignée',
+            address: extra['address'] as String? ?? context.l10n.notProvided,
             date: extra['date'] as DateTime? ?? DateTime.now(),
             timeSlot: extra['timeSlot'] as String? ?? '',
           );

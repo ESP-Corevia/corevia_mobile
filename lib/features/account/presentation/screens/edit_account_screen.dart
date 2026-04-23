@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:corevia_mobile/core/theme/colors.dart';
+import 'package:corevia_mobile/l10n/app_localizations.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../providers/user_provider.dart';
 
@@ -35,7 +36,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     _phoneController = TextEditingController(text: user?.phone ?? '');
     _dobController = TextEditingController(text: user?.dateOfBirth ?? '');
     _addressController = TextEditingController(text: user?.address ?? '');
-    _selectedGender = user?.gender;
+    _selectedGender = _normalizeGender(user?.gender);
   }
 
   @override
@@ -47,6 +48,27 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     _dobController.dispose();
     _addressController.dispose();
     super.dispose();
+  }
+
+  String? _normalizeGender(String? value) {
+    if (value == null) return null;
+    final normalized = value.trim().toLowerCase();
+    switch (normalized) {
+      case 'male':
+      case 'homme':
+      case 'm':
+        return 'Male';
+      case 'female':
+      case 'femme':
+      case 'f':
+        return 'Female';
+      case 'other':
+      case 'autre':
+      case 'o':
+        return 'Other';
+      default:
+        return ['Male', 'Female', 'Other'].contains(value) ? value : null;
+    }
   }
 
   Future<void> _saveChanges() async {
@@ -77,8 +99,8 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(success
-              ? 'Profil mis a jour avec succes !'
-              : 'Echec de la mise a jour du profil'),
+              ? context.l10n.profileUpdatedSuccessfully
+              : context.l10n.profileUpdateFailed),
           backgroundColor: success ? AppColors.green : Colors.red,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -121,11 +143,11 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
                       // Champs de formulaire avec nouveau style
                       _buildTextField(
                         controller: _firstNameController,
-                        label: 'Prenom',
+                        label: context.l10n.firstName,
                         icon: Icons.person_outline,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Veuillez saisir votre prenom';
+                            return context.l10n.pleaseEnterFirstName;
                           }
                           return null;
                         },
@@ -135,11 +157,11 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
 
                       _buildTextField(
                         controller: _lastNameController,
-                        label: 'Nom',
+                        label: context.l10n.lastName,
                         icon: Icons.person_outline,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Veuillez saisir votre nom';
+                            return context.l10n.pleaseEnterLastName;
                           }
                           return null;
                         },
@@ -149,15 +171,15 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
 
                       _buildTextField(
                         controller: _emailController,
-                        label: 'Email',
+                        label: context.l10n.email,
                         icon: LucideIcons.mail,
                         keyboardType: TextInputType.emailAddress,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Veuillez saisir votre email';
+                            return context.l10n.pleaseEnterEmail;
                           }
                           if (!value.contains('@')) {
-                            return 'Veuillez saisir un email valide';
+                            return context.l10n.pleaseEnterValidEmail;
                           }
                           return null;
                         },
@@ -167,12 +189,12 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
 
                       _buildTextField(
                         controller: _phoneController,
-                        label: 'Telephone',
+                        label: context.l10n.phone,
                         icon: LucideIcons.phone,
                         keyboardType: TextInputType.phone,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Veuillez saisir votre numero de telephone';
+                            return context.l10n.pleaseEnterPhone;
                           }
                           return null;
                         },
@@ -193,7 +215,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
 
                       _buildTextField(
                         controller: _dobController,
-                        label: 'Date de naissance',
+                        label: context.l10n.dateOfBirth,
                         icon: LucideIcons.cake,
                         readOnly: true,
                         onTap: () async {
@@ -224,7 +246,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
 
                       _buildTextField(
                         controller: _addressController,
-                        label: 'Adresse',
+                        label: context.l10n.address,
                         icon: LucideIcons.mapPinHouse,
                         maxLines: 2,
                       ),
@@ -276,8 +298,8 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
             padding: EdgeInsets.zero,
           ),
           const SizedBox(width: 8),
-          const Text(
-            'Modifier le profil',
+          Text(
+            context.l10n.editProfile,
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -322,7 +344,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: const Text("Fonction de changement de photo"),
+                  content: Text(context.l10n.changeProfilePhoto),
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -454,7 +476,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
       child: DropdownButtonFormField<String>(
         initialValue: selectedGender,
         decoration: InputDecoration(
-          labelText: 'Genre',
+          labelText: context.l10n.gender,
           labelStyle: TextStyle(
             color: Colors.grey.shade600,
             fontSize: 15,
@@ -492,10 +514,10 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
             value: value,
             child: Text(
               value == 'Male'
-                  ? 'Homme'
+                  ? context.l10n.male
                   : value == 'Female'
-                      ? 'Femme'
-                      : 'Autre',
+                      ? context.l10n.female
+                      : context.l10n.other,
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
@@ -507,7 +529,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
         onChanged: onChanged,
         validator: (value) {
           if (value == null) {
-            return 'Veuillez selectionner votre genre';
+            return context.l10n.selectGender;
           }
           return null;
         },
@@ -533,8 +555,8 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Securite',
+          Text(
+            context.l10n.security,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -547,7 +569,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: const Text('Page de changement de mot de passe'),
+                  content: Text(context.l10n.changePassword),
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -573,9 +595,9 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Changer le mot de passe',
+                      context.l10n.changePassword,
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 16,
@@ -610,8 +632,8 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
                 borderRadius: BorderRadius.circular(20),
               ),
             ),
-            child: const Text(
-              'Annuler',
+            child: Text(
+              context.l10n.cancel,
               style: TextStyle(
                 color: AppColors.green,
                 fontSize: 16,
@@ -642,8 +664,8 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
                     ),
                   )
                 : const Text(
-                    'Enregistrer les modifications',
-                    style: TextStyle(
+                context.l10n.saveChanges,
+                style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
