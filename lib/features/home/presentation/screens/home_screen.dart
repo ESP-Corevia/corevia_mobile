@@ -141,7 +141,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _name.isNotEmpty ? context.l10n.helloUser(_name) : context.l10n.tr(fr: 'Bonjour', en: 'Hello'),
+                      _name.isNotEmpty ? context.l10n.helloUser(_name) : 'Bonjour',
                       style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
