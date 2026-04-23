@@ -61,21 +61,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
       ),
       child: Column(
         children: [
-          Row(
+          const Row(
             children: [
-              GestureDetector(
-                onTap: () => context.pop(),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F7),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.arrow_back_ios_new, size: 20),
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Text(
+              Text(
                 'Calendar',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
