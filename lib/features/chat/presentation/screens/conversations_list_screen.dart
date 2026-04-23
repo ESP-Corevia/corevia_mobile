@@ -12,12 +12,12 @@ class ConversationsListScreen extends StatefulWidget {
 }
 
 class _ConversationsListScreenState extends State<ConversationsListScreen> {
-  final List<Map<String, dynamic>> _conversations = [
+  List<Map<String, dynamic>> _conversations(BuildContext context) => [
     {
       'id': '1',
       'title': 'Dr. Ahmed Badaoui',
-      'specialty': 'Spécialiste des poumons',
-      'lastMessage': 'Votre rendez-vous est confirmé pour demain à 10h30',
+      'specialty': context.l10n.lungSpecialist,
+      'lastMessage': context.l10n.appointmentConfirmedTomorrowAt1030,
       'time': DateTime.now().subtract(const Duration(minutes: 30)),
       'unread': 2,
       'avatar': 'https://i.pravatar.cc/150?img=12',
@@ -26,8 +26,8 @@ class _ConversationsListScreenState extends State<ConversationsListScreen> {
     {
       'id': '2',
       'title': 'Dr. Sarah Johnson',
-      'specialty': 'Médecin généraliste',
-      'lastMessage': 'N\'oubliez pas de prendre votre médicament ce matin',
+      'specialty': context.l10n.generalPractitioner,
+      'lastMessage': context.l10n.takeMedicationThisMorning,
       'time': DateTime.now().subtract(const Duration(hours: 2)),
       'unread': 0,
       'avatar': 'https://i.pravatar.cc/150?img=45',
@@ -36,8 +36,8 @@ class _ConversationsListScreenState extends State<ConversationsListScreen> {
     {
       'id': '3',
       'title': 'Dr. Paul Martin',
-      'specialty': 'Cardiologue',
-      'lastMessage': 'Vos résultats d\'examen sont disponibles',
+      'specialty': context.l10n.doctor,
+      'lastMessage': context.l10n.examResultsAvailable,
       'time': DateTime.now().subtract(const Duration(days: 1)),
       'unread': 0,
       'avatar': 'https://i.pravatar.cc/150?img=33',
@@ -132,7 +132,7 @@ class _ConversationsListScreenState extends State<ConversationsListScreen> {
                         Icon(Icons.search, color: Colors.grey[600], size: 20),
                         const SizedBox(width: 10),
                         Text(
-                          'Rechercher des conversations...',
+                          context.l10n.searchConversations,
                           style: TextStyle(
                             fontSize: 15,
                             color: Colors.grey[600],
@@ -148,9 +148,9 @@ class _ConversationsListScreenState extends State<ConversationsListScreen> {
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.symmetric(vertical: 10),
-                itemCount: _conversations.length,
+                itemCount: _conversations(context).length,
                 itemBuilder: (context, index) {
-                  final conversation = _conversations[index];
+                  final conversation = _conversations(context)[index];
                   return _buildConversationCard(conversation);
                 },
               ),

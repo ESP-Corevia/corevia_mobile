@@ -448,6 +448,122 @@ class AppLocalizations {
       tr(fr: 'Modifier le profil', en: 'Edit profile');
   String get profilePhotoChange =>
       tr(fr: 'Fonction de changement de photo', en: 'Profile photo change feature');
+  String get welcome => tr(fr: 'Bienvenue', en: 'Welcome');
+  String get noAccountYet =>
+      tr(fr: 'Pas encore de compte ?', en: 'No account yet?');
+  String get signUp => tr(fr: 'S\'inscrire', en: 'Sign up');
+  String get signIn => tr(fr: 'Se connecter', en: 'Sign in');
+  String get createAccount =>
+      tr(fr: 'Créer un compte', en: 'Create an account');
+  String get createMyAccount =>
+      tr(fr: 'Créer mon compte', en: 'Create my account');
+  String get next => tr(fr: 'Suivant', en: 'Next');
+  String get resetPasswordTitle =>
+      tr(fr: 'Réinitialisation', en: 'Reset password');
+  String get resetPasswordHelp => tr(
+        fr: 'Pas de souci ! Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe',
+        en: 'No worries! Enter your email address and we will send you a link to reset your password',
+      );
+  String resetEmailSentTo(String email) => tr(
+        fr: 'Nous avons envoyé un lien de réinitialisation à',
+        en: 'We have sent a reset link to',
+      ) + ' $email';
+  String get resetCheckInbox => tr(
+        fr: 'Vérifiez votre boîte de réception et cliquez sur le lien pour réinitialiser votre mot de passe',
+        en: 'Check your inbox and click the link to reset your password',
+      );
+  String get resendEmail => tr(fr: 'Renvoyer l\'email', en: 'Resend email');
+  String get sendLink =>
+      tr(fr: 'Envoyer le lien', en: 'Send the link');
+  String get chooseSpecialist =>
+      tr(fr: 'Choisir un spécialiste', en: 'Choose a specialist');
+  String get close => tr(fr: 'Fermer', en: 'Close');
+  String get clearHistory =>
+      tr(fr: 'Effacer l\'historique', en: 'Clear history');
+  String get connecting => tr(fr: 'Connexion...', en: 'Connecting...');
+  String get generalPractitioner =>
+      tr(fr: 'Médecin généraliste', en: 'General practitioner');
+  String get generalMedicine =>
+      tr(fr: 'Médecine générale', en: 'General medicine');
+  String get dermatologist =>
+      tr(fr: 'Dermatologue', en: 'Dermatologist');
+  String get dermatology =>
+      tr(fr: 'Dermatologie', en: 'Dermatology');
+  String get nutritionist =>
+      tr(fr: 'Nutritionniste', en: 'Nutritionist');
+  String get nutrition => tr(fr: 'Nutrition', en: 'Nutrition');
+  String get psychologist =>
+      tr(fr: 'Psychologue', en: 'Psychologist');
+  String get mentalHealth =>
+      tr(fr: 'Santé mentale', en: 'Mental health');
+  String get lungSpecialist =>
+      tr(fr: 'Spécialiste des poumons', en: 'Lung specialist');
+  String get appointmentConfirmedTomorrowAt1030 => tr(
+        fr: 'Votre rendez-vous est confirmé pour demain à 10h30',
+        en: 'Your appointment is confirmed for tomorrow at 10:30 AM',
+      );
+  String get takeMedicationThisMorning => tr(
+        fr: 'N\'oubliez pas de prendre votre médicament ce matin',
+        en: 'Do not forget to take your medication this morning',
+      );
+  String get examResultsAvailable => tr(
+        fr: 'Vos résultats d\'examen sont disponibles',
+        en: 'Your test results are available',
+      );
+  String get searchConversations =>
+      tr(fr: 'Rechercher des conversations...', en: 'Search conversations...');
+  String get doctorCardTimeSlot =>
+      tr(fr: '10:30 - 11:30', en: '10:30 - 11:30');
+  String get lungCheckup =>
+      tr(fr: 'Pour un contrôle pulmonaire', en: 'For a lung checkup');
+  String aiDoctorGreeting(String name, String specialty) => tr(
+        fr: 'Bonjour Georges ! Je suis $name, spécialiste en $specialty. Comment puis-je vous aider aujourd\'hui ?',
+        en: 'Hello Georges! I am $name, a specialist in $specialty. How can I help you today?',
+      );
+  String get confirmationRequired =>
+      tr(fr: 'Confirmation requise', en: 'Confirmation required');
+  String get passwordsDifferent =>
+      tr(fr: 'Mots de passe différents', en: 'Passwords do not match');
+  String get pleaseEnterEmail =>
+      tr(fr: 'Veuillez saisir votre email', en: 'Please enter your email');
+  String get pleaseEnterValidEmail => tr(
+        fr: 'Veuillez saisir un email valide',
+        en: 'Please enter a valid email',
+      );
+  String fieldRequired(String fieldName) =>
+      tr(fr: '$fieldName est requis', en: '$fieldName is required');
+  String fieldMustContainAtLeast(String fieldName, int min) => tr(
+        fr: '$fieldName doit contenir au moins $min caractères',
+        en: '$fieldName must contain at least $min characters',
+      );
+  String fieldCannotExceed(String fieldName, int max) => tr(
+        fr: '$fieldName ne peut pas dépasser $max caractères',
+        en: '$fieldName cannot exceed $max characters',
+      );
+  String get pleaseEnterPassword => tr(
+        fr: 'Veuillez saisir un mot de passe',
+        en: 'Please enter a password',
+      );
+  String get passwordMustContainLowercase => tr(
+        fr: 'Le mot de passe doit contenir au moins une minuscule',
+        en: 'Password must contain at least one lowercase letter',
+      );
+  String get passwordMustContainUppercase => tr(
+        fr: 'Le mot de passe doit contenir au moins une majuscule',
+        en: 'Password must contain at least one uppercase letter',
+      );
+  String get passwordMustContainDigit => tr(
+        fr: 'Le mot de passe doit contenir au moins un chiffre',
+        en: 'Password must contain at least one digit',
+      );
+  String get passwordMustContainSpecialCharacter => tr(
+        fr: 'Le mot de passe doit contenir au moins un caractère spécial',
+        en: 'Password must contain at least one special character',
+      );
+  String get passwordMustBeBetween8And100Characters => tr(
+        fr: 'Le mot de passe doit contenir entre 8 et 100 caractères',
+        en: 'Password must be between 8 and 100 characters long',
+      );
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -147,7 +147,7 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(
-                            'Bienvenue',
+                            context.l10n.welcome,
                             style: TextStyle(
                               fontSize: 36,
                               fontWeight: FontWeight.w800,
@@ -171,7 +171,10 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
                             label: context.l10n.email,
                             icon: Icons.email_outlined,
                             keyboardType: TextInputType.emailAddress,
-                            validator: Validators.validateEmail,
+                            validator: (value) => Validators.validateEmail(
+                              value,
+                              l10n: context.l10n,
+                            ),
                           ),
                           
                           SizedBox(height: 20),
@@ -242,7 +245,7 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                'Pas encore de compte? ',
+                                context.l10n.noAccountYet,
                                 style: TextStyle(
                                   fontSize: 15,
                                   color: Colors.grey[700],
@@ -271,7 +274,7 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
                                   );
                                 },
                                 child: Text(
-                                  'S\'inscrire',
+                                  context.l10n.signUp,
                                   style: TextStyle(
                                     fontSize: 15,
                                     color: Color(0xFF34C759),
@@ -401,7 +404,7 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
                 ),
               )
             : Text(
-                'Se connecter',
+                context.l10n.signIn,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,

@@ -70,29 +70,41 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
   }
 
   String? _validateEmail(String? value) {
-    return Validators.validateEmail(value);
+    return Validators.validateEmail(value, l10n: context.l10n);
   }
 
   String? _validatePassword(String? value) {
-    return Validators.validatePassword(value, requireStrongRules: true);
+    return Validators.validatePassword(
+      value,
+      requireStrongRules: true,
+      l10n: context.l10n,
+    );
   }
 
   String? _validateConfirmPassword(String? value) {
-    if (value == null || value.isEmpty) return 'Confirmation requise';
-    if (value != _passwordController.text) return 'Mots de passe differents';
+    if (value == null || value.isEmpty) return context.l10n.confirmationRequired;
+    if (value != _passwordController.text) return context.l10n.passwordsDifferent;
     return null;
   }
 
   Future<void> _register() async {
     final firstNameError =
-        Validators.validateUsername(_firstNameController.text, fieldName: 'Prenom');
+        Validators.validateUsername(
+          _firstNameController.text,
+          fieldName: context.l10n.firstName,
+          l10n: context.l10n,
+        );
     if (firstNameError != null) {
       _showValidationError(firstNameError);
       return;
     }
 
     final lastNameError =
-        Validators.validateUsername(_lastNameController.text, fieldName: context.l10n.lastName);
+        Validators.validateUsername(
+          _lastNameController.text,
+          fieldName: context.l10n.lastName,
+          l10n: context.l10n,
+        );
     if (lastNameError != null) {
       _showValidationError(lastNameError);
       return;
@@ -158,14 +170,22 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
   void _nextStep() {
     if (_currentStep == 0) {
       final firstNameError =
-          Validators.validateUsername(_firstNameController.text, fieldName: 'Prenom');
+          Validators.validateUsername(
+            _firstNameController.text,
+            fieldName: context.l10n.firstName,
+            l10n: context.l10n,
+          );
       if (firstNameError != null) {
         _showValidationError(firstNameError);
         return;
       }
 
       final lastNameError =
-          Validators.validateUsername(_lastNameController.text, fieldName: context.l10n.lastName);
+          Validators.validateUsername(
+            _lastNameController.text,
+            fieldName: context.l10n.lastName,
+            l10n: context.l10n,
+          );
       if (lastNameError != null) {
         _showValidationError(lastNameError);
         return;
@@ -281,7 +301,7 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
           Expanded(
             child: Center(
               child: Text(
-                'Créer un compte',
+                context.l10n.createAccount,
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
@@ -683,7 +703,7 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
                   ),
                 ),
                 child: Text(
-                  'Retour',
+                  context.l10n.back,
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
@@ -722,7 +742,7 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
                 ),
               ),
               child: Text(
-                'Suivant',
+                context.l10n.next,
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
@@ -774,7 +794,7 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Créer mon compte',
+                    context.l10n.createMyAccount,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,

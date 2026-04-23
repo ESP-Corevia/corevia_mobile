@@ -13,8 +13,8 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 // Modèle pour les IAs spécialisées
 class AIDoctor {
   final String id;
-  final String name;
-  final String specialty;
+  final String Function(AppLocalizations l10n) nameBuilder;
+  final String Function(AppLocalizations l10n) specialtyBuilder;
   final Color primaryColor;
   final Color secondaryColor;
   final bool supported;
@@ -22,48 +22,51 @@ class AIDoctor {
 
   const AIDoctor({
     required this.id,
-    required this.name,
-    required this.specialty,
+    required this.nameBuilder,
+    required this.specialtyBuilder,
     required this.primaryColor,
     required this.secondaryColor,
     required this.supported,
     required this.ragAgentId,
   });
+
+  String name(AppLocalizations l10n) => nameBuilder(l10n);
+  String specialty(AppLocalizations l10n) => specialtyBuilder(l10n);
 }
 
 // Liste des IAs disponibles
 final List<AIDoctor> availableAIs = [
-  const AIDoctor(
+  AIDoctor(
     id: 'doc_locke',
-    name: 'Médecin généraliste',
-    specialty: 'Médecine Générale',
+    nameBuilder: (l10n) => l10n.generalPractitioner,
+    specialtyBuilder: (l10n) => l10n.generalMedicine,
     primaryColor: Color(0xFF34C759),
     secondaryColor: Color(0xFF5DF394),
     supported: true,
     ragAgentId: 'medecin_generaliste',
   ),
-  const AIDoctor(
+  AIDoctor(
     id: 'dr_dermato',
-    name: 'Dermatologue',
-    specialty: 'Dermatologie',
+    nameBuilder: (l10n) => l10n.dermatologist,
+    specialtyBuilder: (l10n) => l10n.dermatology,
     primaryColor: Color(0xFFFF9500),
     secondaryColor: Color(0xFFFFB340),
     supported: true,
     ragAgentId: 'dermatologue',
   ),
-  const AIDoctor(
+  AIDoctor(
     id: 'dr_nutrition',
-    name: 'Nutritionniste',
-    specialty: 'Nutrition',
+    nameBuilder: (l10n) => l10n.nutritionist,
+    specialtyBuilder: (l10n) => l10n.nutrition,
     primaryColor: Color(0xFF0EA5E9),
     secondaryColor: Color(0xFF38BDF8),
     supported: true,
     ragAgentId: 'nutritionniste',
   ),
-  const AIDoctor(
+  AIDoctor(
     id: 'dr_psy',
-    name: 'Psychologue',
-    specialty: 'Santé mentale',
+    nameBuilder: (l10n) => l10n.psychologist,
+    specialtyBuilder: (l10n) => l10n.mentalHealth,
     primaryColor: Color(0xFF8B5CF6),
     secondaryColor: Color(0xFFA78BFA),
     supported: true,
@@ -122,7 +125,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     
     _assistant = chat_core.User(
       id: _currentAI.id,
-      name: _currentAI.name,
+      name: _currentAI.id,
     );
     
     _ragAgentId = _currentAI.ragAgentId ?? 'medecin_generaliste';
@@ -174,10 +177,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     });
 
     if (initial.isEmpty && mounted) {
-      setState(() {
-        _addSystemMessage(
-          'Bonjour Georges ! Je suis ${_currentAI.name}, spécialiste en ${_currentAI.specialty}. '
-          'Comment puis-je vous aider aujourd\'hui ?',
+        setState(() {
+          _addSystemMessage(
+          context.l10n.aiDoctorGreeting(
+            _currentAI.name(context.l10n),
+            _currentAI.specialty(context.l10n),
+          ),
         );
       });
     }
@@ -259,8 +264,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                       children: [
                         const Icon(Icons.auto_awesome_rounded, color: Color(0xFF6C63FF), size: 28),
                         const SizedBox(width: 12),
-                        const Text(
-                          'Choisir un spécialiste',
+                        Text(
+                          context.l10n.chooseSpecialist,
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -323,7 +328,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                     _currentAI = ai;
                                     _assistant = chat_core.User(
                                       id: _currentAI.id,
-                                      name: _currentAI.name,
+                                      name: _currentAI.id,
                                     );
                                     _ragAgentId = _currentAI.ragAgentId ?? 'medecin_generaliste';
                                     _isTyping = false;
@@ -366,7 +371,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            ai.name,
+                                            ai.name(context.l10n),
                                             style: const TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.w600,
@@ -375,7 +380,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
-                                            ai.supported ? ai.specialty : '${ai.specialty} • ${context.l10n.soonAvailable}',
+                                            ai.supported
+                                                ? ai.specialty(context.l10n)
+                                                : '${ai.specialty(context.l10n)} • ${context.l10n.soonAvailable}',
                                             style: TextStyle(
                                               fontSize: 13,
                                               color: Colors.grey[600],
@@ -429,9 +436,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                           side: const BorderSide(color: Color(0xFF6C63FF), width: 1.5),
                         ),
                       ),
-                      child: const Text(
-                        'Fermer',
-                        style: TextStyle(
+                      child: Text(
+                        context.l10n.close,
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
@@ -484,7 +491,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                              Text(
                               'Georges',
                               style: TextStyle(
                                 color: Colors.white,
@@ -494,7 +501,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                             ),
                             SizedBox(height: 2),
                             Text(
-                              'Patient',
+                              context.l10n.patient,
                               style: TextStyle(
                                 color: Colors.white70,
                                 fontSize: 13,
@@ -538,7 +545,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                       Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 20),
                       SizedBox(width: 8),
                       Text(
-                        'Choisir une spécialité',
+                        context.l10n.chooseSpecialty,
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
@@ -557,7 +564,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               child: Row(
                 children: [
                   Text(
-                    'Spécialités',
+                    context.l10n.specialties,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -587,7 +594,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 ),
               ),
               title: Text(
-                ai.name,
+                ai.name(context.l10n),
                 style: TextStyle(
                   fontWeight: ai.id == _currentAI.id ? FontWeight.bold : FontWeight.w500,
                   fontSize: 14,
@@ -599,7 +606,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 ),
               ),
               subtitle: Text(
-                ai.supported ? ai.specialty : '${ai.specialty} • ${context.l10n.soonAvailable}',
+                ai.supported
+                    ? ai.specialty(context.l10n)
+                    : '${ai.specialty(context.l10n)} • ${context.l10n.soonAvailable}',
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.grey.withValues(alpha:0.2),
@@ -867,8 +876,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     if (mounted) {
       setState(() {
         _addSystemMessage(
-          'Bonjour Georges ! Je suis ${_currentAI.name}, spécialiste en ${_currentAI.specialty}. '
-          'Comment puis-je vous aider aujourd\'hui ?',
+          context.l10n.aiDoctorGreeting(
+            _currentAI.name(context.l10n),
+            _currentAI.specialty(context.l10n),
+          ),
         );
       });
     }
@@ -1007,7 +1018,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      doctor['specialty'] ?? 'Lung Specialist',
+                      doctor['specialty'] ?? context.l10n.lungSpecialist,
                       style: TextStyle(
                         fontSize: 13,
                         color: Colors.grey.withValues(alpha:0.2),
@@ -1067,7 +1078,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 Icon(Icons.access_time, color: Colors.white, size: 18),
                 SizedBox(width: 8),
                 Text(
-                  '10:30 - 11:30 AM',
+                  context.l10n.doctorCardTimeSlot,
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
@@ -1080,7 +1091,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           const SizedBox(height: 8),
           Center(
             child: Text(
-              'For a Lung Checkup',
+              context.l10n.lungCheckup,
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey.withValues(alpha:0.2),
@@ -1144,7 +1155,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                     children: [
                       Flexible(
                         child: Text(
-                          _currentAI.name,
+                          _currentAI.name(context.l10n),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 17,
@@ -1161,8 +1172,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                           color: const Color(0xFFF5F2C1),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Text(
-                          'PRO',
+                        child: Text(
+                          context.l10n.proMember.toUpperCase(),
                           style: TextStyle(
                             fontSize: 9,
                             fontWeight: FontWeight.bold,
@@ -1175,7 +1186,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    _currentAI.specialty,
+                    _currentAI.specialty(context.l10n),
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey.withValues(alpha:0.2),
@@ -1186,10 +1197,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   const SizedBox(height: 2),
                   Text(
                     _isStreaming
-                        ? 'En train d\'écrire...'
+                        ? context.l10n.writingStatus
                         : _isConnected
-                            ? 'En ligne'
-                            : 'Connexion...',
+                            ? context.l10n.online
+                            : context.l10n.connecting,
                     style: TextStyle(
                       fontSize: 11,
                       color: _isStreaming
@@ -1274,8 +1285,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                             ),
                             child: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 22),
                           ),
-                          title: const Text(
-                            'Effacer l\'historique',
+                          title: Text(
+                            context.l10n.clearHistory,
                             style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                           onTap: () {

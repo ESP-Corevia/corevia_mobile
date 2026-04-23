@@ -155,7 +155,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> with TickerPr
           Expanded(
             child: Center(
               child: Text(
-                'Réinitialisation',
+                context.l10n.resetPasswordTitle,
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
@@ -285,7 +285,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> with TickerPr
           ),
           SizedBox(height: 12),
           Text(
-            'Pas de souci ! Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe',
+            context.l10n.resetPasswordHelp,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 16,
@@ -300,7 +300,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> with TickerPr
             label: context.l10n.email,
             icon: Icons.email_outlined,
             keyboardType: TextInputType.emailAddress,
-            validator: Validators.validateEmail,
+            validator: (value) => Validators.validateEmail(
+              value,
+              l10n: context.l10n,
+            ),
           ),
           SizedBox(height: 32),
           _buildGradientButton(),
@@ -401,7 +404,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> with TickerPr
               ),
               SizedBox(height: 16),
               Text(
-                'Nous avons envoyé un lien de réinitialisation à',
+                context.l10n.resetEmailSentTo(_emailController.text),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 15,
@@ -410,19 +413,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> with TickerPr
                   height: 1.5,
                 ),
               ),
-              SizedBox(height: 8),
-              Text(
-                _emailController.text,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF007AFF),
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
               SizedBox(height: 16),
               Text(
-                'Vérifiez votre boîte de réception et cliquez sur le lien pour réinitialiser votre mot de passe',
+                context.l10n.resetCheckInbox,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
@@ -485,7 +478,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> with TickerPr
                   ),
                 )
               : Text(
-                  'Renvoyer l\'email',
+                  context.l10n.resendEmail,
                   style: TextStyle(
                     fontSize: 15,
                     color: Color(0xFF007AFF),
@@ -599,7 +592,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> with TickerPr
                   Icon(Icons.email_outlined, color: Colors.white, size: 22),
                   SizedBox(width: 12),
                   Text(
-                    'Envoyer le lien',
+                    context.l10n.sendLink,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
