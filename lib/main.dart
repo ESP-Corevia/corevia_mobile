@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
@@ -31,6 +32,8 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     await dotenv.load(fileName: ".env");
+    await initializeDateFormatting('fr_FR', null);
+    await initializeDateFormatting('en_US', null);
   } catch (e) {
     // Keep boot resilient in dev setups where `.env` isn't present yet.
     debugPrint('⚠️  Unable to load .env (continuing): $e');
@@ -172,7 +175,6 @@ class MyApp extends StatelessWidget {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'CoreVia Mobile',
-      locale: const Locale('fr'),
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: const [
         AppLocalizations.delegate,
@@ -180,6 +182,15 @@ class MyApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      localeResolutionCallback: (deviceLocale, supportedLocales) {
+        if (deviceLocale == null) return const Locale('fr');
+        for (final supportedLocale in supportedLocales) {
+          if (supportedLocale.languageCode == deviceLocale.languageCode) {
+            return supportedLocale;
+          }
+        }
+        return const Locale('fr');
+      },
       theme: AppTheme.lightTheme,
       routerConfig: router,
     );

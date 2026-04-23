@@ -32,6 +32,10 @@ class RecentActivity extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localeName = Localizations.localeOf(context).languageCode == 'fr'
+        ? 'fr_FR'
+        : 'en_US';
+
     if (activities.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -67,7 +71,10 @@ class RecentActivity extends StatelessWidget {
           separatorBuilder: (_, __) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
             final activity = activities[index];
-            return _ActivityItemCard(activity: activity);
+            return _ActivityItemCard(
+              activity: activity,
+              localeName: localeName,
+            );
           },
         ),
       ],
@@ -77,9 +84,11 @@ class RecentActivity extends StatelessWidget {
 
 class _ActivityItemCard extends StatelessWidget {
   final ActivityItem activity;
+  final String localeName;
 
   const _ActivityItemCard({
     required this.activity,
+    required this.localeName,
   });
 
   @override
@@ -124,7 +133,7 @@ class _ActivityItemCard extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Text(
-            DateFormat('MMM d', 'fr_FR').format(activity.date),
+            DateFormat('d MMM', localeName).format(activity.date),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Colors.grey[500],
                 ),

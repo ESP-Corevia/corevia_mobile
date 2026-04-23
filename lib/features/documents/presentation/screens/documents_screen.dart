@@ -67,7 +67,9 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
             return UploadParameters(
               method: 'PUT',
               url: result['uploadUrl']!,
-              headers: {'Content-Type': file.type ?? 'application/octet-stream'},
+              headers: {
+                'Content-Type': file.type ?? 'application/octet-stream'
+              },
             );
           },
           createMultipartUpload: (_) async =>
@@ -109,7 +111,8 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
               if (!mounted) return;
               setState(() {
                 _uploads[file.id]?.status = _UploadStatus.error;
-                _uploads[file.id]?.error = 'Echec de la confirmation';
+                _uploads[file.id]?.error =
+                    context.l10n.confirmUploadFailed(e.toString());
               });
               _checkAllDone();
             });
@@ -134,11 +137,15 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
 
   void _checkAllDone() {
     final allTerminal = _uploads.values.every(
-      (e) => e.status == _UploadStatus.confirmed || e.status == _UploadStatus.error,
+      (e) =>
+          e.status == _UploadStatus.confirmed ||
+          e.status == _UploadStatus.error,
     );
     if (allTerminal && _isUploading) {
       setState(() => _isUploading = false);
-      final successCount = _uploads.values.where((e) => e.status == _UploadStatus.confirmed).length;
+      final successCount = _uploads.values
+          .where((e) => e.status == _UploadStatus.confirmed)
+          .length;
       if (successCount > 0 && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.l10n.filesUploaded(successCount))),
@@ -326,10 +333,14 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: _isUploading ? Colors.grey.shade100 : AppColors.green.withValues(alpha: 0.1),
+          color: _isUploading
+              ? Colors.grey.shade100
+              : AppColors.green.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: _isUploading ? Colors.grey.shade300 : AppColors.green.withValues(alpha: 0.3),
+            color: _isUploading
+                ? Colors.grey.shade300
+                : AppColors.green.withValues(alpha: 0.3),
             width: 1.5,
             strokeAlign: BorderSide.strokeAlignInside,
           ),
@@ -344,7 +355,9 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
             ),
             const SizedBox(width: 12),
             Text(
-              _isUploading ? context.l10n.uploading : context.l10n.uploadDocuments,
+              _isUploading
+                  ? context.l10n.uploading
+                  : context.l10n.uploadDocuments,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -378,9 +391,10 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Televersement',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                Text(
+                  context.l10n.uploadingTitle,
+                  style: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w600),
                 ),
                 Text(
                   '${(_overallProgress * 100).round()}%',
@@ -398,13 +412,15 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
               child: LinearProgressIndicator(
                 value: _overallProgress,
                 backgroundColor: Colors.grey.shade200,
-                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.green),
+                valueColor:
+                    const AlwaysStoppedAnimation<Color>(AppColors.green),
                 minHeight: 6,
               ),
             ),
             const SizedBox(height: 12),
           ],
-          ..._uploads.entries.map((entry) => _buildUploadItem(entry.key, entry.value)),
+          ..._uploads.entries
+              .map((entry) => _buildUploadItem(entry.key, entry.value)),
         ],
       ),
     );
@@ -441,7 +457,8 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
               children: [
                 Text(
                   entry.name,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w500),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -453,7 +470,8 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                       child: LinearProgressIndicator(
                         value: entry.progress,
                         backgroundColor: Colors.grey.shade200,
-                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+                        valueColor:
+                            const AlwaysStoppedAnimation<Color>(Colors.blue),
                         minHeight: 3,
                       ),
                     ),
@@ -559,7 +577,8 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                 color: const Color(0xFFF5F5F7),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(_mimeIcon(doc.mimeType), color: AppColors.green, size: 22),
+              child: Icon(_mimeIcon(doc.mimeType),
+                  color: AppColors.green, size: 22),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -585,7 +604,8 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
               ),
             ),
             IconButton(
-              icon: Icon(LucideIcons.trash2, size: 18, color: Colors.red.shade300),
+              icon: Icon(LucideIcons.trash2,
+                  size: 18, color: Colors.red.shade300),
               onPressed: () => _deleteDocument(doc),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 36, minHeight: 36),

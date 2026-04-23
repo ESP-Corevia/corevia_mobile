@@ -141,7 +141,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _name.isNotEmpty ? context.l10n.helloUser(_name) : 'Bonjour',
+                      _name.isNotEmpty
+                          ? context.l10n.helloUser(_name)
+                          : context.l10n.hello,
                       style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
@@ -156,13 +158,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         color: const Color(0xFFF5F2C1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.star, size: 16, color: Color(0xFFFFBE0A)),
                           SizedBox(width: 4),
                           Text(
-                            'Membre Pro',
+                            context.l10n.proMember,
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
@@ -191,7 +193,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   Icon(Icons.search, color: Colors.grey[600], size: 20),
                   const SizedBox(width: 12),
                   Text(
-                    'Commencer un chat avec DocAI',
+                    context.l10n.startChatDocAi,
                     style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   ),
                 ],
@@ -420,8 +422,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Prises du jour',
+                    Text(
+                      context.l10n.todayIntakes,
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -433,7 +435,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(
-                          '$takenCount/$total prises effectuees',
+                          context.l10n.todayIntakeProgress(takenCount, total),
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -458,7 +460,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                       ),
                       icon: const Icon(Icons.history_rounded, size: 16),
-                      label: const Text('Historique'),
+                      label: Text(context.l10n.history),
                     ),
                     TextButton.icon(
                       onPressed: () => context.push('/pillbox'),
@@ -470,7 +472,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                       ),
                       icon: const Icon(Icons.arrow_forward, size: 16),
-                      label: const Text('Voir tout'),
+                      label: Text(context.l10n.viewAll),
                     ),
                   ],
                 ),
@@ -534,8 +536,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           const Icon(Icons.check_circle_outline_rounded,
               size: 40, color: Color(0xFF34C759)),
           const SizedBox(height: 10),
-          const Text(
-            'Aucune prise prevue aujourd\'hui',
+          Text(
+            context.l10n.noIntakesToday,
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
@@ -544,7 +546,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
           const SizedBox(height: 4),
           Text(
-            'Ajoutez des medicaments avec des horaires',
+            context.l10n.addMedicationsWithSchedules,
             style: TextStyle(
               fontSize: 13,
               color: Colors.grey.shade500,
@@ -564,9 +566,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ),
               ),
               icon: const Icon(Icons.add_rounded, size: 18),
-              label: const Text(
-                'Ajouter un medicament',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+              label: Text(
+                context.l10n.addMedicationShort,
+                style:
+                    const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
               ),
             ),
           ),
