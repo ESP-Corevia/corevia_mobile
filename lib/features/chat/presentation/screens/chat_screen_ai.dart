@@ -539,7 +539,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                       ),
                     ],
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 20),
@@ -1072,7 +1072,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               color: _currentAI.primaryColor,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Row(
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.access_time, color: Colors.white, size: 18),

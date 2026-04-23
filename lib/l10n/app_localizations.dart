@@ -524,12 +524,6 @@ class AppLocalizations {
       tr(fr: 'Confirmation requise', en: 'Confirmation required');
   String get passwordsDifferent =>
       tr(fr: 'Mots de passe différents', en: 'Passwords do not match');
-  String get pleaseEnterEmail =>
-      tr(fr: 'Veuillez saisir votre email', en: 'Please enter your email');
-  String get pleaseEnterValidEmail => tr(
-        fr: 'Veuillez saisir un email valide',
-        en: 'Please enter a valid email',
-      );
   String fieldRequired(String fieldName) =>
       tr(fr: '$fieldName est requis', en: '$fieldName is required');
   String fieldMustContainAtLeast(String fieldName, int min) => tr(
