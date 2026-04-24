@@ -567,7 +567,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ),
               icon: const Icon(Icons.add_rounded, size: 18),
               label: Text(
-                context.l10n.addMedicationShort,
+                context.l10n.addMedication,
                 style:
                     const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
               ),
