@@ -21,10 +21,7 @@ class AppLocalizations {
       localizations != null,
       'AppLocalizations is not available in the widget tree.',
     );
-    if (localizations == null) {
-      throw StateError('AppLocalizations is not available in the widget tree.');
-    }
-    return localizations;
+    return localizations!;
   }
 
   bool get isFrench => locale.languageCode == 'fr';
@@ -95,7 +92,7 @@ class AppLocalizations {
   String get approved => tr(fr: 'Approuvé', en: 'Approved');
   String get rejected => tr(fr: 'Refusé', en: 'Rejected');
   String get back => tr(fr: 'Retour', en: 'Back');
-  String get loading => tr(fr: 'Chargement...', en: 'Loading...');
+  String get loading => tr(fr: 'Chargement…', en: 'Loading…');
   String get email => tr(fr: 'Email', en: 'Email');
   String get password => tr(fr: 'Mot de passe', en: 'Password');
   String get connectToContinue =>
@@ -197,9 +194,8 @@ class AppLocalizations {
   String hoursAgo(int hours) =>
       tr(fr: 'Il y a $hours h', en: '$hours h ago');
   String get yesterday => tr(fr: 'Hier', en: 'Yesterday');
-  String formattedDate(String date) => tr(fr: date, en: date);
   String get searchDoctor =>
-      tr(fr: 'Rechercher un médecin...', en: 'Search for a doctor...');
+      tr(fr: 'Rechercher un médecin…', en: 'Search for a doctor…');
   String get consultDoctorsToBook =>
       tr(fr: 'Consultez la liste des médecins pour prendre rendez-vous.', en: 'Browse the doctor list to book an appointment.');
   String get noDoctorsAvailable =>
@@ -262,7 +258,7 @@ class AppLocalizations {
   String get addMeasure => tr(fr: 'Ajouter une donnée', en: 'Add measurement');
   String get today => tr(fr: "Aujourd'hui", en: 'Today');
   String get confirmed => tr(fr: 'Confirmé', en: 'Confirmed');
-  String get appName => tr(fr: 'CoreVia Mobile', en: 'CoreVia Mobile');
+  static const String appName = 'CoreVia Mobile';
   String get exampleValue => tr(fr: 'Ex: 120', en: 'Ex: 120');
   String get editing => tr(fr: 'Modifier', en: 'Edit');
   String get appointmentDate => tr(fr: 'Date', en: 'Date');
@@ -290,7 +286,7 @@ class AppLocalizations {
   String get messages => tr(fr: 'Messages', en: 'Messages');
   String get calendar => tr(fr: 'Calendrier', en: 'Calendar');
   String get schedule => tr(fr: 'Programme', en: 'Schedule');
-  String get lists => tr(fr: 'Liste', en: 'Lists');
+  String get lists => tr(fr: 'Listes', en: 'Lists');
   String get upcoming => tr(fr: 'À venir', en: 'Upcoming');
   String get past => tr(fr: 'Passés', en: 'Past');
   String get cancelled => tr(fr: 'Annulés', en: 'Cancelled');
@@ -301,7 +297,7 @@ class AppLocalizations {
   String get loadMore => tr(fr: 'Charger plus', en: 'Load more');
   String get myDocuments => tr(fr: 'Mes documents', en: 'My Documents');
   String get yourDocuments => tr(fr: 'Vos documents', en: 'Your Documents');
-  String get uploading => tr(fr: 'Téléversement...', en: 'Uploading...');
+  String get uploading => tr(fr: 'Téléversement…', en: 'Uploading…');
   String get uploadingTitle => tr(fr: 'Téléversement', en: 'Uploading');
   String get uploadDocuments =>
       tr(fr: 'Téléverser des documents', en: 'Upload documents');
@@ -396,7 +392,7 @@ class AppLocalizations {
   String get rejectAll =>
       tr(fr: 'Tout refuser', en: 'Reject all');
   String get soonAvailable =>
-      tr(fr: 'Bientôt disponible…', en: 'Coming soon...');
+      tr(fr: 'Bientôt disponible…', en: 'Coming soon…');
   String get chooseSpecialty =>
       tr(fr: 'Choisir une spécialité', en: 'Choose a specialty');
   String get specialties => tr(fr: 'Spécialités', en: 'Specialties');
@@ -480,7 +476,7 @@ class AppLocalizations {
   String get close => tr(fr: 'Fermer', en: 'Close');
   String get clearHistory =>
       tr(fr: 'Effacer l\'historique', en: 'Clear history');
-  String get connecting => tr(fr: 'Connexion...', en: 'Connecting...');
+  String get connecting => tr(fr: 'Connexion…', en: 'Connecting…');
   String get generalPractitioner =>
       tr(fr: 'Médecin généraliste', en: 'General practitioner');
   String get generalMedicine =>
@@ -511,7 +507,7 @@ class AppLocalizations {
         en: 'Your test results are available',
       );
   String get searchConversations =>
-      tr(fr: 'Rechercher des conversations...', en: 'Search conversations...');
+      tr(fr: 'Rechercher des conversations…', en: 'Search conversations…');
   String get lungCheckup =>
       tr(fr: 'Pour un contrôle pulmonaire', en: 'For a lung checkup');
   String aiDoctorGreeting(String patientName, String name, String specialty) => tr(
