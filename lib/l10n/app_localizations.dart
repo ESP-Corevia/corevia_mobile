@@ -465,9 +465,9 @@ class AppLocalizations {
         en: 'No worries! Enter your email address and we will send you a link to reset your password',
       );
   String resetEmailSentTo(String email) => tr(
-        fr: 'Nous avons envoyé un lien de réinitialisation à',
-        en: 'We have sent a reset link to',
-      ) + ' $email';
+        fr: 'Nous avons envoyé un lien de réinitialisation à $email',
+        en: 'We have sent a reset link to $email',
+      );
   String get resetCheckInbox => tr(
         fr: 'Vérifiez votre boîte de réception et cliquez sur le lien pour réinitialiser votre mot de passe',
         en: 'Check your inbox and click the link to reset your password',
