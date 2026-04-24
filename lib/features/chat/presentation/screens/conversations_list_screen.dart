@@ -56,7 +56,7 @@ class _ConversationsListScreenState extends State<ConversationsListScreen> {
     } else if (difference.inDays == 1) {
       return context.l10n.yesterday;
     } else {
-      return context.l10n.formattedDate(DateFormat('dd/MM').format(time));
+      return DateFormat('dd/MM').format(time);
     }
   }
 
