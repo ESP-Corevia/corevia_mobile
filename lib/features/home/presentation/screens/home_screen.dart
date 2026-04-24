@@ -419,36 +419,44 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      context.l10n.todayIntakes,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF1D1D1F),
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    if (total > 0)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          context.l10n.todayIntakeProgress(takenCount, total),
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: takenCount == total
-                                ? const Color(0xFF34C759)
-                                : Colors.grey.shade500,
-                          ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.l10n.todayIntakes,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1D1D1F),
+                          letterSpacing: -0.5,
                         ),
                       ),
-                  ],
+                      if (total > 0)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            context.l10n.todayIntakeProgress(takenCount, total),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: takenCount == total
+                                  ? const Color(0xFF34C759)
+                                  : Colors.grey.shade500,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
+                const SizedBox(width: 8),
+                Wrap(
+                  spacing: 0,
+                  runSpacing: 0,
                   children: [
                     TextButton.icon(
                       onPressed: () => context.push('/pillbox/history'),
@@ -462,6 +470,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       icon: const Icon(Icons.history_rounded, size: 16),
                       label: Text(context.l10n.history),
                     ),
+                    const SizedBox(width: 4),
                     TextButton.icon(
                       onPressed: () => context.push('/pillbox'),
                       style: TextButton.styleFrom(
