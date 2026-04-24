@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:corevia_mobile/l10n/app_localizations.dart';
 
 import '../../pillbox/presentation/providers/pillbox_provider.dart';
 import '../data/ai_chat_service.dart';
@@ -250,8 +251,8 @@ class _AiChatModalState extends State<AiChatModal> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text(
-                  'DocAI Assistant',
+                Text(
+                  context.l10n.docAiAssistant,
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
@@ -259,7 +260,7 @@ class _AiChatModalState extends State<AiChatModal> {
                   ),
                 ),
                 Text(
-                  _isStreaming ? 'En train d\'ecrire...' : 'En ligne',
+                  _isStreaming ? context.l10n.writingStatus : context.l10n.online,
                   style: TextStyle(
                     fontSize: 13,
                     color: _isStreaming ? const Color(0xFF34C759) : Colors.grey.shade500,
@@ -291,7 +292,7 @@ class _AiChatModalState extends State<AiChatModal> {
             Icon(Icons.chat_bubble_outline_rounded, size: 48, color: Colors.grey.shade300),
             const SizedBox(height: 12),
             Text(
-              'Posez votre question a DocAI',
+              context.l10n.askDocAi,
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey.shade500,
@@ -338,7 +339,7 @@ class _AiChatModalState extends State<AiChatModal> {
                       ),
                       child: Center(
                         child: Text(
-                          'Tout approuver ($pendingCount)',
+                          '${context.l10n.approveAll} ($pendingCount)',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 14,
@@ -360,9 +361,9 @@ class _AiChatModalState extends State<AiChatModal> {
                         color: const Color(0xFFEF4444),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Text(
-                          'Tout refuser',
+                          context.l10n.rejectAll,
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 14,
@@ -400,11 +401,11 @@ class _AiChatModalState extends State<AiChatModal> {
                   onSubmitted: (_) => _sendMessage(),
                   maxLines: 4,
                   minLines: 1,
-                  decoration: const InputDecoration(
-                    hintText: 'Votre message...',
-                    hintStyle: TextStyle(color: Color(0xFF9CA3AF)),
+                  decoration: InputDecoration(
+                    hintText: context.l10n.writeMessage,
+                    hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   ),
                   style: const TextStyle(fontSize: 15, color: Color(0xFF1D1D1F)),
                 ),

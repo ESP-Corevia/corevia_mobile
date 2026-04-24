@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:corevia_mobile/core/theme/colors.dart';
+import 'package:corevia_mobile/l10n/app_localizations.dart';
 import '../providers/document_provider.dart';
 import '../../domain/entities/document_entity.dart';
 
@@ -66,7 +67,9 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
             return UploadParameters(
               method: 'PUT',
               url: result['uploadUrl']!,
-              headers: {'Content-Type': file.type ?? 'application/octet-stream'},
+              headers: {
+                'Content-Type': file.type ?? 'application/octet-stream'
+              },
             );
           },
           createMultipartUpload: (_) async =>
@@ -108,18 +111,22 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
               if (!mounted) return;
               setState(() {
                 _uploads[file.id]?.status = _UploadStatus.error;
-                _uploads[file.id]?.error = 'Confirm failed';
+                _uploads[file.id]?.error =
+                    context.l10n.confirmUploadFailed(
+                      _localizedUploadError(context, e.toString()),
+                    );
               });
               _checkAllDone();
             });
           }
         case UploadError(:final file, :final message):
+          final localizedMessage = _localizedUploadError(context, message);
           setState(() {
             _uploads[file.id]?.status = _UploadStatus.error;
-            _uploads[file.id]?.error = message;
+            _uploads[file.id]?.error = localizedMessage;
           });
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Upload failed: $message')),
+            SnackBar(content: Text(localizedMessage)),
           );
           _checkAllDone();
         default:
@@ -133,17 +140,38 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
 
   void _checkAllDone() {
     final allTerminal = _uploads.values.every(
-      (e) => e.status == _UploadStatus.confirmed || e.status == _UploadStatus.error,
+      (e) =>
+          e.status == _UploadStatus.confirmed ||
+          e.status == _UploadStatus.error,
     );
     if (allTerminal && _isUploading) {
       setState(() => _isUploading = false);
-      final successCount = _uploads.values.where((e) => e.status == _UploadStatus.confirmed).length;
+      final successCount = _uploads.values
+          .where((e) => e.status == _UploadStatus.confirmed)
+          .length;
       if (successCount > 0 && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$successCount file(s) uploaded')),
+          SnackBar(content: Text(context.l10n.filesUploaded(successCount))),
         );
       }
     }
+  }
+
+  String _localizedUploadError(BuildContext context, String message) {
+    final lower = message.toLowerCase();
+    if (lower.contains('too large') ||
+        lower.contains('file size') ||
+        lower.contains('larger than') ||
+        lower.contains('size limit')) {
+      return context.l10n.uploadFailedFileTooLarge;
+    }
+    if (lower.contains('network') ||
+        lower.contains('socket') ||
+        lower.contains('timeout') ||
+        lower.contains('connection')) {
+      return context.l10n.uploadFailedNetwork;
+    }
+    return message;
   }
 
   Future<void> _pickAndUpload() async {
@@ -161,7 +189,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
       if (pf.size > _maxFileSize) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${pf.name} exceeds 25 MB limit')),
+            SnackBar(content: Text(context.l10n.fileTooLarge(pf.name))),
           );
         }
         continue;
@@ -192,7 +220,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to download: $e')),
+          SnackBar(content: Text(context.l10n.failedToDownload(e.toString()))),
         );
       }
     }
@@ -206,16 +234,19 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
       context: context,
       useRootNavigator: true,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Document'),
-        content: Text('Delete "${doc.fileName}"? This action cannot be undone.'),
+        title: Text(context.l10n.deleteDocumentTitle),
+        content: Text(context.l10n.deleteDocumentConfirm(doc.fileName)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx, rootNavigator: true).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx, rootNavigator: true).pop(true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text(
+              context.l10n.delete,
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -225,13 +256,13 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
       await provider.deleteDocument(doc.id);
       if (mounted) {
         messenger.showSnackBar(
-          const SnackBar(content: Text('Document deleted')),
+          SnackBar(content: Text(context.l10n.documentDeleted)),
         );
       }
     } catch (e) {
       if (mounted) {
         messenger.showSnackBar(
-          SnackBar(content: Text('Failed to delete: $e')),
+          SnackBar(content: Text(context.l10n.failedToDelete(e.toString()))),
         );
       }
     }
@@ -303,9 +334,9 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
             padding: EdgeInsets.zero,
           ),
           const SizedBox(width: 8),
-          const Text(
-            'My Documents',
-            style: TextStyle(
+          Text(
+            context.l10n.myDocuments,
+            style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
               color: Color(0xFF1D1D1F),
@@ -322,10 +353,14 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: _isUploading ? Colors.grey.shade100 : AppColors.green.withValues(alpha: 0.1),
+          color: _isUploading
+              ? Colors.grey.shade100
+              : AppColors.green.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: _isUploading ? Colors.grey.shade300 : AppColors.green.withValues(alpha: 0.3),
+            color: _isUploading
+                ? Colors.grey.shade300
+                : AppColors.green.withValues(alpha: 0.3),
             width: 1.5,
             strokeAlign: BorderSide.strokeAlignInside,
           ),
@@ -340,7 +375,9 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
             ),
             const SizedBox(width: 12),
             Text(
-              _isUploading ? 'Uploading...' : 'Upload Documents',
+              _isUploading
+                  ? context.l10n.uploading
+                  : context.l10n.uploadDocuments,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -374,9 +411,10 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Uploading',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                Text(
+                  context.l10n.uploadingTitle,
+                  style: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w600),
                 ),
                 Text(
                   '${(_overallProgress * 100).round()}%',
@@ -394,13 +432,15 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
               child: LinearProgressIndicator(
                 value: _overallProgress,
                 backgroundColor: Colors.grey.shade200,
-                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.green),
+                valueColor:
+                    const AlwaysStoppedAnimation<Color>(AppColors.green),
                 minHeight: 6,
               ),
             ),
             const SizedBox(height: 12),
           ],
-          ..._uploads.entries.map((entry) => _buildUploadItem(entry.key, entry.value)),
+          ..._uploads.entries
+              .map((entry) => _buildUploadItem(entry.key, entry.value)),
         ],
       ),
     );
@@ -437,7 +477,8 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
               children: [
                 Text(
                   entry.name,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w500),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -449,7 +490,8 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                       child: LinearProgressIndicator(
                         value: entry.progress,
                         backgroundColor: Colors.grey.shade200,
-                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+                        valueColor:
+                            const AlwaysStoppedAnimation<Color>(Colors.blue),
                         minHeight: 3,
                       ),
                     ),
@@ -492,7 +534,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
             Icon(LucideIcons.fileText, size: 48, color: Colors.grey.shade300),
             const SizedBox(height: 16),
             Text(
-              'No documents yet',
+              context.l10n.noDocumentsYet,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -501,7 +543,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Upload your first document to get started',
+              context.l10n.uploadFirstDocument,
               style: TextStyle(fontSize: 14, color: Colors.grey.shade400),
             ),
           ],
@@ -524,10 +566,10 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
+          Padding(
             padding: EdgeInsets.fromLTRB(20, 20, 20, 8),
             child: Text(
-              'Your Documents',
+              context.l10n.yourDocuments,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -555,7 +597,8 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                 color: const Color(0xFFF5F5F7),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(_mimeIcon(doc.mimeType), color: AppColors.green, size: 22),
+              child: Icon(_mimeIcon(doc.mimeType),
+                  color: AppColors.green, size: 22),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -581,7 +624,8 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
               ),
             ),
             IconButton(
-              icon: Icon(LucideIcons.trash2, size: 18, color: Colors.red.shade300),
+              icon: Icon(LucideIcons.trash2,
+                  size: 18, color: Colors.red.shade300),
               onPressed: () => _deleteDocument(doc),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 36, minHeight: 36),

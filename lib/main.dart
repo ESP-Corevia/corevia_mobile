@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
@@ -21,6 +23,7 @@ import 'features/booking/presentation/providers/booking_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
+import 'l10n/app_localizations.dart';
 import 'core/providers/notifiers.dart';
 import 'networking/api_service.dart';
 import 'networking/routes/user_routes.dart';
@@ -29,6 +32,8 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     await dotenv.load(fileName: ".env");
+    await initializeDateFormatting('fr_FR', null);
+    await initializeDateFormatting('en_US', null);
   } catch (e) {
     // Keep boot resilient in dev setups where `.env` isn't present yet.
     debugPrint('⚠️  Unable to load .env (continuing): $e');
@@ -54,6 +59,7 @@ void main() async {
 
   final onboardingNotifier = OnboardingNotifier(onboardingNeeded);
   final authNotifier = AuthNotifier(false);
+  final localeNotifier = LocaleNotifier(await LocaleNotifier.load());
 
   // Restore local session first (persistent login)
   const secureStorage = FlutterSecureStorage();
@@ -154,6 +160,9 @@ void main() async {
         ChangeNotifierProvider<AuthNotifier>.value(
           value: authNotifier,
         ),
+        ChangeNotifierProvider<LocaleNotifier>.value(
+          value: localeNotifier,
+        ),
       ],
       child: MyApp(router: router),
     ),
@@ -167,9 +176,20 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localeNotifier = context.watch<LocaleNotifier>();
+    final locale = localeNotifier.value;
+
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      title: 'CoreVia Mobile',
+      onGenerateTitle: (context) => AppLocalizations.appName,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      locale: locale,
       theme: AppTheme.lightTheme,
       routerConfig: router,
     );
