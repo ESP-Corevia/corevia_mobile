@@ -75,16 +75,6 @@ class AppLocalizations {
         en: 'Page not found: $uri',
       );
 
-  String invalidNumericValue() => tr(
-        fr: 'Valeur numérique invalide.',
-        en: 'Invalid numeric value.',
-      );
-
-  String dataSaved() => tr(
-        fr: 'Donnée enregistrée.',
-        en: 'Data saved.',
-      );
-
   String get retry => tr(fr: 'Réessayer', en: 'Retry');
   String get cancel => tr(fr: 'Annuler', en: 'Cancel');
   String get save => tr(fr: 'Enregistrer', en: 'Save');
@@ -311,22 +301,14 @@ class AppLocalizations {
         fr: 'Échec de la confirmation du téléversement : $message',
         en: 'Upload confirmation failed: $message',
       );
-  String get noAvailableSlots => tr(
-        fr: 'Aucun créneau disponible pour cette date.',
-        en: 'No available slots for this date.',
-      );
   String get bookAppointment =>
       tr(fr: 'Prendre rendez-vous', en: 'Book an appointment');
-  String get confirmAppointment =>
-      tr(fr: 'Confirmer le rendez-vous', en: 'Confirm appointment');
   String get addMedication =>
       tr(fr: 'Ajouter un médicament', en: 'Add medication');
   String get addMedicationsWithSchedules => tr(
         fr: 'Ajoutez des médicaments avec des horaires',
         en: 'Add medications with schedules',
       );
-  String get addMedicationShort =>
-      tr(fr: 'Ajouter un médicament', en: 'Add medication');
   String get addToPillbox =>
       tr(fr: 'Ajouter au pilulier', en: 'Add to pillbox');
   String get medicationPlan =>
@@ -446,8 +428,6 @@ class AppLocalizations {
       tr(fr: 'Échec de la confirmation', en: 'Confirmation failed');
   String get editProfile =>
       tr(fr: 'Modifier le profil', en: 'Edit profile');
-  String get profilePhotoChange =>
-      tr(fr: 'Fonction de changement de photo', en: 'Profile photo change feature');
   String get welcome => tr(fr: 'Bienvenue', en: 'Welcome');
   String get noAccountYet =>
       tr(fr: 'Pas encore de compte ?', en: 'No account yet?');
@@ -512,8 +492,6 @@ class AppLocalizations {
       );
   String get searchConversations =>
       tr(fr: 'Rechercher des conversations...', en: 'Search conversations...');
-  String get doctorCardTimeSlot =>
-      tr(fr: '10:30 - 11:30', en: '10:30 - 11:30');
   String get lungCheckup =>
       tr(fr: 'Pour un contrôle pulmonaire', en: 'For a lung checkup');
   String aiDoctorGreeting(String patientName, String name, String specialty) => tr(

@@ -1090,7 +1090,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 Icon(Icons.access_time, color: Colors.white, size: 18),
                 SizedBox(width: 8),
                 Text(
-                  context.l10n.doctorCardTimeSlot,
+                  '10:30 - 11:30',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
