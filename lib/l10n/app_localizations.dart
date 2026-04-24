@@ -39,10 +39,18 @@ class AppLocalizations {
         fr: 'Erreur : $message',
         en: 'Error: $message',
       );
+  String get genericErrorNoDetails =>
+      tr(fr: 'Une erreur est survenue.', en: 'Something went wrong.');
 
   String uploadFailed(String message) => tr(
         fr: 'Échec du téléversement : $message',
         en: 'Upload failed: $message',
+      );
+  String get uploadFailedNetwork =>
+      tr(fr: 'Échec du téléversement réseau', en: 'Network upload failed');
+  String get uploadFailedFileTooLarge => tr(
+        fr: 'Le fichier dépasse la taille autorisée',
+        en: 'The file is too large',
       );
 
   String filesUploaded(int count) => tr(
@@ -92,6 +100,10 @@ class AppLocalizations {
   String get delete => tr(fr: 'Supprimer', en: 'Delete');
   String get edit => tr(fr: 'Modifier', en: 'Edit');
   String get add => tr(fr: 'Ajouter', en: 'Add');
+  String get approve => tr(fr: 'Approuver', en: 'Approve');
+  String get reject => tr(fr: 'Refuser', en: 'Reject');
+  String get approved => tr(fr: 'Approuvé', en: 'Approved');
+  String get rejected => tr(fr: 'Refusé', en: 'Rejected');
   String get back => tr(fr: 'Retour', en: 'Back');
   String get loading => tr(fr: 'Chargement...', en: 'Loading...');
   String get email => tr(fr: 'Email', en: 'Email');
@@ -184,6 +196,12 @@ class AppLocalizations {
       tr(fr: 'Minimum 3 caractères', en: 'Minimum 3 characters');
   String get noResultsFound =>
       tr(fr: 'Aucun résultat. Essayez un nom de molécule (ex: paracétamol).', en: 'No results. Try a molecule name (e.g. paracetamol).');
+  String get none => tr(fr: 'Aucune', en: 'None');
+  String get custom => tr(fr: 'Autre', en: 'Custom');
+  String get morning => tr(fr: 'Matin', en: 'Morning');
+  String get noon => tr(fr: 'Midi', en: 'Noon');
+  String get evening => tr(fr: 'Soir', en: 'Evening');
+  String get bedtime => tr(fr: 'Coucher', en: 'Bedtime');
   String minutesAgo(int minutes) =>
       tr(fr: 'Il y a $minutes min', en: '$minutes min ago');
   String hoursAgo(int hours) =>
@@ -420,6 +438,8 @@ class AppLocalizations {
         fr: 'Aucune prise prévue aujourd\'hui',
         en: 'No intakes scheduled today',
       );
+  String get noMedicationsScheduled =>
+      tr(fr: 'Pas de médicaments programmés', en: 'No medications scheduled');
   String get startChatDocAi =>
       tr(fr: 'Commencer un chat avec DocAI', en: 'Start a chat with DocAI');
   String intakeAlreadyTaken(String medicationName) =>

@@ -71,6 +71,19 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     }
   }
 
+  String? _denormalizeGender(String? value) {
+    switch (value) {
+      case 'Male':
+        return 'male';
+      case 'Female':
+        return 'female';
+      case 'Other':
+        return 'other';
+      default:
+        return null;
+    }
+  }
+
   Future<void> _saveChanges() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
@@ -83,7 +96,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
         'name': fullName,
         'email': _emailController.text.trim(),
         'phone': _phoneController.text.trim(),
-        'gender': _selectedGender,
+        'gender': _denormalizeGender(_selectedGender),
         'dateOfBirth': _dobController.text.trim(),
         'address': _addressController.text.trim(),
       };

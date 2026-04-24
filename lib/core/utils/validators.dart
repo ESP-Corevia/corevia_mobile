@@ -66,12 +66,12 @@ class Validators {
 
     if (value.length < 8) {
       return l10n?.passwordMustBeBetween8And100Characters ??
-          'Password must be at least 8 characters long';
+          'Password must be between 8 and 100 characters long';
     }
 
     if (value.length > 100) {
       return l10n?.passwordMustBeBetween8And100Characters ??
-          'Password cannot exceed 100 characters';
+          'Password must be between 8 and 100 characters long';
     }
 
     if (requireStrongRules && !_lowercaseRegex.hasMatch(value)) {

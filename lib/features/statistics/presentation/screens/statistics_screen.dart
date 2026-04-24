@@ -384,7 +384,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         children: [
           Expanded(
             child: _buildStatCard(
-              'Minimum',
+              context.l10n.minimum,
               stats['min']!.toStringAsFixed(1),
               metric['unit'] as String,
               const Color(0xFF5856D6),
@@ -394,7 +394,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: _buildStatCard(
-              'Moyenne',
+              context.l10n.average,
               stats['avg']!.toStringAsFixed(1),
               metric['unit'] as String,
               const Color(0xFF34C759),
@@ -404,7 +404,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: _buildStatCard(
-              'Maximum',
+              context.l10n.maximum,
               stats['max']!.toStringAsFixed(1),
               metric['unit'] as String,
               const Color(0xFFFF3B30),
@@ -623,6 +623,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     children: List.generate(currentEntries.length, (index) {
                       final entry = currentEntries[index];
                       return _buildHistoryItem(
+                        context,
                         entry['value'].toStringAsFixed(1),
                         metric['unit'] as String,
                         entry['date'] as DateTime,
@@ -639,6 +640,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildHistoryItem(
+    BuildContext context,
     String value,
     String unit,
     DateTime date,
@@ -648,7 +650,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }) {
     final now = DateTime.now();
     final isToday = date.year == now.year && date.month == now.month && date.day == now.day;
-    final dateStr = isToday ? "Aujourd'hui" : "${date.day}/${date.month}/${date.year}";
+    final dateStr = isToday ? context.l10n.today : "${date.day}/${date.month}/${date.year}";
     final timeStr = "${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
 
     return Column(

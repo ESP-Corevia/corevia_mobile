@@ -79,11 +79,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> with TickerPr
           ),
         );
       }
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('Reset password error: $e');
+      debugPrintStack(stackTrace: st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(context.l10n.genericError(e.toString())),
+            content: Text(context.l10n.genericErrorNoDetails),
             backgroundColor: Color(0xFFFF3B30),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

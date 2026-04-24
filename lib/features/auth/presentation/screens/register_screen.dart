@@ -150,11 +150,13 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
           );
         }
       }
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('Register error: $e');
+      debugPrintStack(stackTrace: st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(context.l10n.genericError(e.toString())),
+            content: Text(context.l10n.pleaseTryAgain),
             backgroundColor: Color(0xFFFF3B30),
             behavior: SnackBarBehavior.floating,
           ),

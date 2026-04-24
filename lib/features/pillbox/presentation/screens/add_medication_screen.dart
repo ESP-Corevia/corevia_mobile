@@ -463,7 +463,7 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
           _datePickerTile(
             label: context.l10n.end,
             date: _endDate,
-            placeholder: 'Aucune',
+            placeholder: context.l10n.none,
             onPick: _pickEndDate,
             onClear: _endDate != null ? () => setState(() => _endDate = null) : null,
           ),
@@ -481,10 +481,10 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _momentChip('MORNING', 'Matin', Icons.wb_sunny_rounded),
-              _momentChip('NOON', 'Midi', Icons.wb_twilight_rounded),
-              _momentChip('EVENING', 'Soir', Icons.nights_stay_rounded),
-              _momentChip('BEDTIME', 'Coucher', Icons.bedtime_rounded),
+              _momentChip('MORNING', context.l10n.morning, Icons.wb_sunny_rounded),
+              _momentChip('NOON', context.l10n.noon, Icons.wb_twilight_rounded),
+              _momentChip('EVENING', context.l10n.evening, Icons.nights_stay_rounded),
+              _momentChip('BEDTIME', context.l10n.bedtime, Icons.bedtime_rounded),
               _momentChip('CUSTOM', context.l10n.other, Icons.more_horiz_rounded),
             ],
           ),

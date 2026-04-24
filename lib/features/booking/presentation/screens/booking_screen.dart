@@ -42,7 +42,6 @@ class _BookingScreenState extends State<BookingScreen> {
   @override
   void initState() {
     super.initState();
-    initializeDateFormatting('fr_FR', null);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadSlots();
     });
@@ -52,6 +51,11 @@ class _BookingScreenState extends State<BookingScreen> {
     final month = date.month.toString().padLeft(2, '0');
     final day = date.day.toString().padLeft(2, '0');
     return '${date.year}-$month-$day';
+  }
+
+  String _dateLocaleName(BuildContext context) {
+    final locale = Localizations.localeOf(context);
+    return locale.languageCode == 'fr' ? 'fr_FR' : 'en_US';
   }
 
   Future<void> _loadSlots() async {
@@ -166,7 +170,7 @@ class _BookingScreenState extends State<BookingScreen> {
             ),
           ),
           Text(
-            'Prendre rendez-vous',
+            context.l10n.bookAppointment,
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -231,6 +235,7 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   Widget _buildDateSelection() {
+    final localeName = _dateLocaleName(context);
     return SizedBox(
       height: 90,
       child: ListView.builder(
@@ -259,13 +264,13 @@ class _BookingScreenState extends State<BookingScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(DateFormat('EEE', 'fr_FR').format(date),
+                  Text(DateFormat('EEE', localeName).format(date),
                       style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: isSelected ? Colors.white : Colors.grey.shade600)),
                   const SizedBox(height: 8),
-                  Text(DateFormat('dd').format(date),
+                  Text(DateFormat('dd', localeName).format(date),
                       style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,

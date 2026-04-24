@@ -515,7 +515,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _momentLabel(schedule.intakeMoment),
+                  _momentLabel(context, schedule.intakeMoment),
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
@@ -681,7 +681,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
           ),
           const SizedBox(width: 6),
           Text(
-            isActive ? 'Actif' : 'Inactif',
+            isActive ? context.l10n.active : context.l10n.inactive,
             style: TextStyle(
               fontWeight: FontWeight.w700,
               fontSize: 13,
@@ -760,6 +760,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                   ),
                   const SizedBox(height: 14),
                   _datePickerTile(
+                    context: context,
                     label: context.l10n.start,
                     date: startDate,
                     onPick: () async {
@@ -776,9 +777,10 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                   ),
                   const SizedBox(height: 10),
                   _datePickerTile(
+                    context: context,
                     label: context.l10n.end,
                     date: endDate,
-                    placeholder: 'Aucune',
+                    placeholder: context.l10n.none,
                     onPick: () async {
                       final picked = await showDatePicker(
                         context: context,
@@ -1005,23 +1007,23 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      _momentChip('MORNING', 'Matin', Icons.wb_sunny_rounded,
+                      _momentChip('MORNING', context.l10n.morning, Icons.wb_sunny_rounded,
                           intakeMoment, (v) {
                         setModalState(() => intakeMoment = v);
                       }),
-                      _momentChip('NOON', 'Midi',
+                      _momentChip('NOON', context.l10n.noon,
                           Icons.wb_twilight_rounded, intakeMoment, (v) {
                         setModalState(() => intakeMoment = v);
                       }),
-                      _momentChip('EVENING', 'Soir',
+                      _momentChip('EVENING', context.l10n.evening,
                           Icons.nights_stay_rounded, intakeMoment, (v) {
                         setModalState(() => intakeMoment = v);
                       }),
-                      _momentChip('BEDTIME', 'Coucher',
+                      _momentChip('BEDTIME', context.l10n.bedtime,
                           Icons.bedtime_rounded, intakeMoment, (v) {
                         setModalState(() => intakeMoment = v);
                       }),
-                      _momentChip('CUSTOM', 'Autre',
+                      _momentChip('CUSTOM', context.l10n.custom,
                           Icons.more_horiz_rounded, intakeMoment, (v) {
                         setModalState(() => intakeMoment = v);
                       }),
@@ -1308,6 +1310,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
   }
 
   Widget _datePickerTile({
+    required BuildContext context,
     required String label,
     DateTime? date,
     String? placeholder,
@@ -1344,7 +1347,7 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
                   Text(
                     date != null
                         ? _formatDateFr(date)
-                        : (placeholder ?? 'Aucune'),
+                        : (placeholder ?? context.l10n.none),
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -1434,18 +1437,18 @@ class _MedicationDetailScreenState extends State<MedicationDetailScreen> {
     );
   }
 
-  String _momentLabel(String moment) {
+  String _momentLabel(BuildContext context, String moment) {
     switch (moment.toUpperCase()) {
       case 'MORNING':
-        return 'Matin';
+        return context.l10n.morning;
       case 'NOON':
-        return 'Midi';
+        return context.l10n.noon;
       case 'EVENING':
-        return 'Soir';
+        return context.l10n.evening;
       case 'BEDTIME':
-        return 'Coucher';
+        return context.l10n.bedtime;
       default:
-        return 'Personnalise';
+        return context.l10n.custom;
     }
   }
 

@@ -211,7 +211,7 @@ class _ToolCallCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _ActionButton(
-                      label: context.l10n.approveAll,
+                      label: context.l10n.approve,
                       color: const Color(0xFF34C759),
                       onTap: onApprove,
                     ),
@@ -219,7 +219,7 @@ class _ToolCallCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: _ActionButton(
-                      label: context.l10n.rejectAll,
+                      label: context.l10n.reject,
                       color: const Color(0xFFEF4444),
                       onTap: onReject,
                     ),
@@ -231,7 +231,7 @@ class _ToolCallCard extends StatelessWidget {
               Padding(
                 padding: EdgeInsets.only(top: 6),
                 child: Text(
-                  context.l10n.confirmed,
+                  context.l10n.approved,
                   style: const TextStyle(fontSize: 12, color: Color(0xFF16A34A)),
                 ),
               ),
@@ -239,7 +239,7 @@ class _ToolCallCard extends StatelessWidget {
               Padding(
                 padding: EdgeInsets.only(top: 6),
                 child: Text(
-                  context.l10n.cancelled,
+                  context.l10n.rejected,
                   style: const TextStyle(fontSize: 12, color: Color(0xFFDC2626)),
                 ),
               ),

@@ -112,18 +112,21 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
               setState(() {
                 _uploads[file.id]?.status = _UploadStatus.error;
                 _uploads[file.id]?.error =
-                    context.l10n.confirmUploadFailed(e.toString());
+                    context.l10n.confirmUploadFailed(
+                      _localizedUploadError(context, e.toString()),
+                    );
               });
               _checkAllDone();
             });
           }
         case UploadError(:final file, :final message):
+          final localizedMessage = _localizedUploadError(context, message);
           setState(() {
             _uploads[file.id]?.status = _UploadStatus.error;
-            _uploads[file.id]?.error = message;
+            _uploads[file.id]?.error = localizedMessage;
           });
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(context.l10n.uploadFailed(message))),
+            SnackBar(content: Text(localizedMessage)),
           );
           _checkAllDone();
         default:
@@ -152,6 +155,23 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
         );
       }
     }
+  }
+
+  String _localizedUploadError(BuildContext context, String message) {
+    final lower = message.toLowerCase();
+    if (lower.contains('too large') ||
+        lower.contains('file size') ||
+        lower.contains('larger than') ||
+        lower.contains('size limit')) {
+      return context.l10n.uploadFailedFileTooLarge;
+    }
+    if (lower.contains('network') ||
+        lower.contains('socket') ||
+        lower.contains('timeout') ||
+        lower.contains('connection')) {
+      return context.l10n.uploadFailedNetwork;
+    }
+    return message;
   }
 
   Future<void> _pickAndUpload() async {
