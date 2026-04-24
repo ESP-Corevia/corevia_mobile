@@ -1,19 +1,20 @@
+import 'package:corevia_mobile/core/providers/notifiers.dart';
+import 'package:corevia_mobile/core/routes/route_persistence.dart';
+import 'package:corevia_mobile/core/theme/colors.dart';
+import 'package:corevia_mobile/features/ai_chat/data/rag_chat_storage.dart';
+import 'package:corevia_mobile/l10n/app_localizations.dart';
+import 'package:corevia_mobile/networking/api_service.dart';
+import 'package:corevia_mobile/networking/routes/user_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-import 'package:corevia_mobile/core/providers/notifiers.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:corevia_mobile/features/ai_chat/data/rag_chat_storage.dart';
-import 'package:corevia_mobile/networking/api_service.dart';
-import 'package:corevia_mobile/networking/routes/user_routes.dart';
-import 'package:corevia_mobile/core/routes/route_persistence.dart';
-import '../../../../widgets/pro_member.dart';
-import 'package:corevia_mobile/core/theme/colors.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:corevia_mobile/l10n/app_localizations.dart';
-import '../providers/user_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../../widgets/initials_avatar.dart';
+import '../../../../widgets/pro_member.dart';
+import '../providers/user_provider.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -87,40 +88,47 @@ class _AccountScreenState extends State<AccountScreen> {
 
     await showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       showDragHandle: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (sheetContext) {
+        final mediaQuery = MediaQuery.of(sheetContext);
+        final bottomInset = mediaQuery.padding.bottom + kBottomNavigationBarHeight;
         return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.language_outlined),
-                title: Text(context.l10n.language),
-              ),
-              RadioListTile<String>(
-                value: 'fr',
-                groupValue: selectedLanguageCode,
-                title: Text(context.l10n.french),
-                onChanged: (_) async {
-                  await localeNotifier.updateLocale(const Locale('fr'));
-                  if (sheetContext.mounted) Navigator.pop(sheetContext);
-                },
-              ),
-              RadioListTile<String>(
-                value: 'en',
-                groupValue: selectedLanguageCode,
-                title: Text(context.l10n.english),
-                onChanged: (_) async {
-                  await localeNotifier.updateLocale(const Locale('en'));
-                  if (sheetContext.mounted) Navigator.pop(sheetContext);
-                },
-              ),
-              const SizedBox(height: 12),
-            ],
+          top: false,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.only(bottom: bottomInset),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.language_outlined),
+                  title: Text(context.l10n.language),
+                ),
+                RadioListTile<String>(
+                  value: 'fr',
+                  groupValue: selectedLanguageCode,
+                  title: Text(context.l10n.french),
+                  onChanged: (_) async {
+                    await localeNotifier.updateLocale(const Locale('fr'));
+                    if (sheetContext.mounted) Navigator.pop(sheetContext);
+                  },
+                ),
+                RadioListTile<String>(
+                  value: 'en',
+                  groupValue: selectedLanguageCode,
+                  title: Text(context.l10n.english),
+                  onChanged: (_) async {
+                    await localeNotifier.updateLocale(const Locale('en'));
+                    if (sheetContext.mounted) Navigator.pop(sheetContext);
+                  },
+                ),
+                const SizedBox(height: 12),
+              ],
+            ),
           ),
         );
       },
