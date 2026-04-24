@@ -59,6 +59,7 @@ void main() async {
 
   final onboardingNotifier = OnboardingNotifier(onboardingNeeded);
   final authNotifier = AuthNotifier(false);
+  final localeNotifier = LocaleNotifier(await LocaleNotifier.load());
 
   // Restore local session first (persistent login)
   const secureStorage = FlutterSecureStorage();
@@ -159,6 +160,9 @@ void main() async {
         ChangeNotifierProvider<AuthNotifier>.value(
           value: authNotifier,
         ),
+        ChangeNotifierProvider<LocaleNotifier>.value(
+          value: localeNotifier,
+        ),
       ],
       child: MyApp(router: router),
     ),
@@ -172,9 +176,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localeNotifier = context.watch<LocaleNotifier>();
+    final locale = localeNotifier.value;
+
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      title: AppLocalizations(Locale('fr')).appName,
+      title: AppLocalizations(
+        locale ?? WidgetsBinding.instance.platformDispatcher.locale,
+      ).appName,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: const [
         AppLocalizations.delegate,
@@ -182,15 +191,7 @@ class MyApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      localeResolutionCallback: (deviceLocale, supportedLocales) {
-        if (deviceLocale == null) return const Locale('fr');
-        for (final supportedLocale in supportedLocales) {
-          if (supportedLocale.languageCode == deviceLocale.languageCode) {
-            return supportedLocale;
-          }
-        }
-        return const Locale('fr');
-      },
+      locale: locale,
       theme: AppTheme.lightTheme,
       routerConfig: router,
     );

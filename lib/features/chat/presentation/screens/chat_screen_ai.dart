@@ -4,11 +4,13 @@ import 'package:corevia_mobile/features/ai_chat/data/rag_chat_storage.dart';
 import 'package:corevia_mobile/features/ai_chat/data/rag_socket_chat_service.dart';
 import 'package:corevia_mobile/features/ai_chat/data/rag_socket_config.dart';
 import 'package:corevia_mobile/features/ai_chat/domain/chat_message.dart' as rag;
+import 'package:corevia_mobile/features/account/presentation/providers/user_provider.dart';
 import 'package:corevia_mobile/l10n/app_localizations.dart';
 import 'package:corevia_mobile/widgets/navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as chat_core;
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:provider/provider.dart';
 
 // Modèle pour les IAs spécialisées
 class AIDoctor {
@@ -93,7 +95,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   late chat_core.User _assistant;
   final chat_core.User _currentUser = const chat_core.User(
     id: 'user',
-    name: 'Georges',
+    name: 'Patient',
   );
   chat_core.InMemoryChatController? _chatController;
   bool _isTyping = false;
@@ -109,6 +111,14 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   final TextEditingController _messageController = TextEditingController();
   final FocusNode _messageFocusNode = FocusNode();
   late AnimationController _typingAnimationController;
+
+  String _patientName(BuildContext context) {
+    final userName = context.read<UserProvider>().user?.name.trim();
+    if (userName != null && userName.isNotEmpty) {
+      return userName;
+    }
+    return context.l10n.patient;
+  }
 
   @override
   void initState() {
@@ -179,11 +189,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     if (initial.isEmpty && mounted) {
         setState(() {
           _addSystemMessage(
-          context.l10n.aiDoctorGreeting(
-            _currentAI.name(context.l10n),
-            _currentAI.specialty(context.l10n),
-          ),
-        );
+            context.l10n.aiDoctorGreeting(
+              _patientName(context),
+              _currentAI.name(context.l10n),
+              _currentAI.specialty(context.l10n),
+            ),
+          );
       });
     }
   }
@@ -491,8 +502,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Georges',
+                            Text(
+                              _patientName(context),
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 18,
@@ -877,6 +888,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       setState(() {
         _addSystemMessage(
           context.l10n.aiDoctorGreeting(
+            _patientName(context),
             _currentAI.name(context.l10n),
             _currentAI.specialty(context.l10n),
           ),

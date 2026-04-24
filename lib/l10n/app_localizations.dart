@@ -423,9 +423,9 @@ class AppLocalizations {
   String get startChatDocAi =>
       tr(fr: 'Commencer un chat avec DocAI', en: 'Start a chat with DocAI');
   String intakeAlreadyTaken(String medicationName) =>
-      tr(fr: 'Prise déjà effectuée', en: 'Already taken');
+      tr(fr: '$medicationName : prise déjà effectuée', en: '$medicationName: already taken');
   String intakeSkipped(String medicationName) =>
-      tr(fr: 'Prise ignorée', en: 'Skipped');
+      tr(fr: '$medicationName : prise ignorée', en: '$medicationName: skipped');
   String markedAsTaken(String medicationName) =>
       tr(fr: '$medicationName marqué comme pris !', en: '$medicationName marked as taken!');
   String skippedMedication(String medicationName) =>
@@ -516,9 +516,9 @@ class AppLocalizations {
       tr(fr: '10:30 - 11:30', en: '10:30 - 11:30');
   String get lungCheckup =>
       tr(fr: 'Pour un contrôle pulmonaire', en: 'For a lung checkup');
-  String aiDoctorGreeting(String name, String specialty) => tr(
-        fr: 'Bonjour Georges ! Je suis $name, spécialiste en $specialty. Comment puis-je vous aider aujourd\'hui ?',
-        en: 'Hello Georges! I am $name, a specialist in $specialty. How can I help you today?',
+  String aiDoctorGreeting(String patientName, String name, String specialty) => tr(
+        fr: 'Bonjour $patientName ! Je suis $name, spécialiste en $specialty. Comment puis-je vous aider aujourd\'hui ?',
+        en: 'Hello $patientName! I am $name, a specialist in $specialty. How can I help you today?',
       );
   String get confirmationRequired =>
       tr(fr: 'Confirmation requise', en: 'Confirmation required');

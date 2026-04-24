@@ -30,7 +30,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     {'id': 'bloodPressure', 'icon': Icons.favorite, 'color': Color(0xFFFF3B30), 'unit': 'mmHg'},
     {'id': 'bloodGlucose', 'icon': Icons.water_drop, 'color': Color(0xFF5856D6), 'unit': 'mg/dL'},
     {'id': 'heartRate', 'icon': Icons.monitor_heart, 'color': Color(0xFFFF2D55), 'unit': 'bpm'},
-    {'name': 'Température', 'icon': Icons.thermostat, 'color': Color(0xFFFF9500), 'unit': '°C'},
+    {'id': 'temperature', 'icon': Icons.thermostat, 'color': Color(0xFFFF9500), 'unit': '°C'},
   ];
 
   List<Map<String, dynamic>> _getChartData() {

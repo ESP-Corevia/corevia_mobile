@@ -73,6 +73,60 @@ class _AccountScreenState extends State<AccountScreen> {
   String get _phone => _patientProfile?['phone'] as String? ?? '—';
   String get _dateOfBirth => _patientProfile?['dateOfBirth'] as String? ?? '—';
 
+  String _languageLabel(BuildContext context, Locale? locale) {
+    final languageCode = locale?.languageCode ??
+        Localizations.localeOf(context).languageCode;
+    return languageCode == 'en' ? context.l10n.english : context.l10n.french;
+  }
+
+  Future<void> _showLanguageSelector() async {
+    final localeNotifier = context.read<LocaleNotifier>();
+    final currentLocale = localeNotifier.value;
+    final selectedLanguageCode =
+        currentLocale?.languageCode ?? Localizations.localeOf(context).languageCode;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.language_outlined),
+                title: Text(context.l10n.language),
+              ),
+              RadioListTile<String>(
+                value: 'fr',
+                groupValue: selectedLanguageCode,
+                title: Text(context.l10n.french),
+                onChanged: (_) async {
+                  await localeNotifier.updateLocale(const Locale('fr'));
+                  if (sheetContext.mounted) Navigator.pop(sheetContext);
+                },
+              ),
+              RadioListTile<String>(
+                value: 'en',
+                groupValue: selectedLanguageCode,
+                title: Text(context.l10n.english),
+                onChanged: (_) async {
+                  await localeNotifier.updateLocale(const Locale('en'));
+                  if (sheetContext.mounted) Navigator.pop(sheetContext);
+                },
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -138,7 +192,11 @@ class _AccountScreenState extends State<AccountScreen> {
                               _buildActionTile(
                                 icon: Icons.language_outlined,
                                 title: context.l10n.language,
-                                subtitle: context.l10n.french,
+                                subtitle: _languageLabel(
+                                  context,
+                                  context.watch<LocaleNotifier>().value,
+                                ),
+                                onTap: _showLanguageSelector,
                               ),
                             ],
                           ),
