@@ -1,8 +1,13 @@
+import 'package:corevia_mobile/core/providers/notifiers.dart';
+import 'package:corevia_mobile/core/utils/validators.dart';
 import 'package:flutter/material.dart';
-import 'package:corevia_mobile/features/auth/domain/models/login_model.dart';
-import 'package:corevia_mobile/features/auth/presentation/screens/register_screen.dart';
-import 'dart:math' as math;
 import 'package:go_router/go_router.dart';
+import 'package:corevia_mobile/features/auth/presentation/screens/register_screen.dart';
+import 'package:corevia_mobile/features/auth/presentation/screens/reset_password_screen.dart';
+import 'package:corevia_mobile/features/account/presentation/providers/user_provider.dart';
+import 'package:corevia_mobile/l10n/app_localizations.dart';
+import 'package:provider/provider.dart';
+import '../controllers/login_controller.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,41 +17,16 @@ class LoginScreen extends StatefulWidget {
 }
 
 class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin {
+  late final LoginController _controller;
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final PageController _pageController = PageController();
   bool _obscurePassword = true;
   bool _isLoading = false;
-  int _currentPage = 0;
   
   late AnimationController _floatingController;
   late AnimationController _rotationController;
-  late Animation<double> _floatingAnimation;
-
-  final List<Map<String, dynamic>> _onboardingData = [
-    {
-      'title': 'Suivez vos médicaments',
-      'subtitle': 'Ne manquez plus jamais une dose',
-      'icon': Icons.medication_rounded,
-      'color': Color(0xFF34C759),
-      'gradient': [Color(0xFF34C759), Color(0xFF30D158)],
-    },
-    {
-      'title': 'Rappels intelligents',
-      'subtitle': 'Notifications personnalisées pour vous',
-      'icon': Icons.notifications_active_rounded,
-      'color': Color(0xFF5856D6),
-      'gradient': [Color(0xFF5856D6), Color(0xFF7B79FF)],
-    },
-    {
-      'title': 'DocAI à votre service',
-      'subtitle': 'Assistant médical intelligent 24/7',
-      'icon': Icons.psychology_rounded,
-      'color': Color(0xFFFF9500),
-      'gradient': [Color(0xFFFF9500), Color(0xFFFFB340)],
-    },
-  ];
 
   @override
   void initState() {
@@ -60,10 +40,8 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
       duration: const Duration(seconds: 20),
       vsync: this,
     )..repeat();
-    
-    _floatingAnimation = Tween<double>(begin: -10, end: 10).animate(
-      CurvedAnimation(parent: _floatingController, curve: Curves.easeInOut),
-    );
+
+    _controller = LoginController();
   }
 
   @override
@@ -83,44 +61,47 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
     setState(() => _isLoading = true);
 
     try {
-      final loginData = LoginModel(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
+      final success = await _controller.login(
+        _emailController.text.trim(),
+        _passwordController.text,
       );
-      
-      debugPrint('Logging in user: ${loginData.email}');
-      await Future.delayed(const Duration(seconds: 2));
-      
+
       if (mounted) {
+        if (success) {
+          final authNotifier = Provider.of<AuthNotifier>(context, listen: false);
+          authNotifier.value = true;
+
+          final userProvider = context.read<UserProvider>();
+          await userProvider.loadUser();
+
+          if (!mounted) return;
+          context.go('/home');
+        } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 12),
-                Text('Connexion réussie!', style: TextStyle(fontWeight: FontWeight.w600)),
-              ],
-            ),
-            backgroundColor: Color(0xFF34C759),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            margin: EdgeInsets.all(16),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur: ${e.toString()}'),
+            content: Text(context.l10n.invalidCredentials),
             backgroundColor: Color(0xFFFF3B30),
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+        );
+        }
+      }
+    } catch (e, st) {
+      debugPrint('Login error: $e');
+      debugPrintStack(stackTrace: st);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.l10n.genericErrorNoDetails),
+            backgroundColor: Color(0xFFFF3B30),
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -142,36 +123,6 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
         child: SafeArea(
           child: Column(
             children: [
-              Expanded(
-                flex: 5,
-                child: Stack(
-                  children: [
-                    // Animated background shapes
-                    _buildBackgroundShapes(),
-                    
-                    // Carousel
-                    Column(
-                      children: [
-                        Expanded(
-                          child: PageView.builder(
-                            controller: _pageController,
-                            onPageChanged: (index) {
-                              setState(() => _currentPage = index);
-                            },
-                            itemCount: _onboardingData.length,
-                            itemBuilder: (context, index) {
-                              return _buildOnboardingPage(_onboardingData[index]);
-                            },
-                          ),
-                        ),
-                        _buildPageIndicator(),
-                        SizedBox(height: 20),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              
               // Form section
               Expanded(
                 flex: 6,
@@ -198,7 +149,7 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(
-                            'Bienvenue',
+                            context.l10n.welcome,
                             style: TextStyle(
                               fontSize: 36,
                               fontWeight: FontWeight.w800,
@@ -208,7 +159,7 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
                           ),
                           SizedBox(height: 8),
                           Text(
-                            'Connectez-vous pour continuer',
+                            context.l10n.connectToContinue,
                             style: TextStyle(
                               fontSize: 17,
                               color: Colors.grey[600],
@@ -219,25 +170,20 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
                           
                           _buildModernTextField(
                             controller: _emailController,
-                            label: 'Email',
+                            label: context.l10n.email,
                             icon: Icons.email_outlined,
                             keyboardType: TextInputType.emailAddress,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Veuillez entrer votre email';
-                              }
-                              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                                return 'Email invalide';
-                              }
-                              return null;
-                            },
+                            validator: (value) => Validators.validateEmail(
+                              value,
+                              l10n: context.l10n,
+                            ),
                           ),
                           
                           SizedBox(height: 20),
                           
                           _buildModernTextField(
                             controller: _passwordController,
-                            label: 'Mot de passe',
+                            label: context.l10n.password,
                             icon: Icons.lock_outline_rounded,
                             obscureText: _obscurePassword,
                             suffixIcon: IconButton(
@@ -249,24 +195,40 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
                                 setState(() => _obscurePassword = !_obscurePassword);
                               },
                             ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Veuillez entrer votre mot de passe';
-                              }
-                              if (value.length < 6) {
-                                return 'Minimum 6 caractères';
-                              }
-                              return null;
-                            },
+                            validator: (value) =>
+                                Validators.validateRequired(
+                              value,
+                              fieldName: context.l10n.password,
+                            ),
                           ),
                           
                           Align(
                             alignment: Alignment.centerRight,
                             child: TextButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  PageRouteBuilder(
+                                    pageBuilder: (context, animation, secondaryAnimation) => const ResetPasswordScreen(),
+                                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                      return SlideTransition(
+                                        position: Tween<Offset>(
+                                          begin: const Offset(1.0, 0.0),
+                                          end: Offset.zero,
+                                        ).animate(CurvedAnimation(
+                                          parent: animation,
+                                          curve: Curves.easeOutCubic,
+                                        )),
+                                        child: child,
+                                      );
+                                    },
+                                    transitionDuration: const Duration(milliseconds: 400),
+                                  ),
+                                );
+                              },
                               child: Text(
-                                'Mot de passe oublié?',
-                                style: TextStyle(
+                                context.l10n.forgotPassword,
+                                style: const TextStyle(
                                   color: Color(0xFF34C759),
                                   fontWeight: FontWeight.w600,
                                   fontSize: 15,
@@ -285,7 +247,7 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                'Pas encore de compte? ',
+                                context.l10n.noAccountYet,
                                 style: TextStyle(
                                   fontSize: 15,
                                   color: Colors.grey[700],
@@ -314,7 +276,7 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
                                   );
                                 },
                                 child: Text(
-                                  'S\'inscrire',
+                                  context.l10n.signUp,
                                   style: TextStyle(
                                     fontSize: 15,
                                     color: Color(0xFF34C759),
@@ -331,146 +293,6 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBackgroundShapes() {
-    return Stack(
-      children: [
-        AnimatedBuilder(
-          animation: _rotationController,
-          builder: (context, child) {
-            return Positioned(
-              top: -50,
-              right: -50,
-              child: Transform.rotate(
-                angle: _rotationController.value * 2 * math.pi,
-                child: Container(
-                  width: 200,
-                  height: 200,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        Color(0xFF34C759).withValues(alpha: 0.3),
-                        Color(0xFF34C759).withValues(alpha: 0.0),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-        AnimatedBuilder(
-          animation: _floatingAnimation,
-          builder: (context, child) {
-            return Positioned(
-              bottom: 50 + _floatingAnimation.value,
-              left: -30,
-              child: Container(
-                width: 150,
-                height: 150,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      Color(0xFF5856D6).withValues(alpha: 0.2),
-                      Color(0xFF5856D6).withValues(alpha: 0.0),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildOnboardingPage(Map<String, dynamic> data) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 32),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          AnimatedBuilder(
-            animation: _floatingAnimation,
-            builder: (context, child) {
-              return Transform.translate(
-                offset: Offset(0, _floatingAnimation.value),
-                child: Container(
-                  width: 140,
-                  height: 140,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: data['gradient'],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: data['color'].withValues(alpha: 0.4),
-                        blurRadius: 30,
-                        offset: Offset(0, 15),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    data['icon'],
-                    size: 70,
-                    color: Colors.white,
-                  ),
-                ),
-              );
-            },
-          ),
-          SizedBox(height: 40),
-          Text(
-            data['title'],
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF1D1D1F),
-              letterSpacing: -1,
-            ),
-          ),
-          SizedBox(height: 16),
-          Text(
-            data['subtitle'],
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-              height: 1.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPageIndicator() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(
-        _onboardingData.length,
-        (index) => AnimatedContainer(
-          duration: Duration(milliseconds: 300),
-          margin: EdgeInsets.symmetric(horizontal: 4),
-          width: _currentPage == index ? 32 : 8,
-          height: 8,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(4),
-            color: _currentPage == index
-                ? _onboardingData[index]['color']
-                : Colors.grey[300],
           ),
         ),
       ),
@@ -566,9 +388,6 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
               ? null
               : () async {
               await _login();
-              if (mounted){
-              context.go('/home'); // 🔥 Redirection temporaire
-              }
           },
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
@@ -587,7 +406,7 @@ class LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin 
                 ),
               )
             : Text(
-                'Se connecter',
+                context.l10n.signIn,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,

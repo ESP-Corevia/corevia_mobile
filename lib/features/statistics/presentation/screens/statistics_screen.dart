@@ -1,5 +1,9 @@
-import 'package:flutter/material.dart';
 import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
+import 'package:corevia_mobile/l10n/app_localizations.dart';
+import 'package:provider/provider.dart';
+import '../../../home/presentation/providers/home_provider.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -9,53 +13,101 @@ class StatisticsScreen extends StatefulWidget {
 }
 
 class _StatisticsScreenState extends State<StatisticsScreen> {
-  String selectedPeriod = 'Semaine';
-  String selectedMetric = 'Tension';
-  
-  final List<String> periods = ['Jour', 'Semaine', 'Mois', 'Année'];
+  String selectedPeriod = 'week';
+  String selectedMetric = 'bloodPressure';
+
+  final List<String> periods = ['day', 'week', 'month', 'year'];
+  final List<String> treatments = [
+    'Metformine',
+    'Insuline',
+    'Amlodipine',
+    'Levothyrox',
+    'Paracétamol',
+  ];
+  final List<Map<String, dynamic>> measureEntries = [];
+
   final List<Map<String, dynamic>> metrics = [
-    {'name': 'Tension', 'icon': Icons.favorite, 'color': Color(0xFFFF3B30), 'unit': 'mmHg'},
-    {'name': 'Glycémie', 'icon': Icons.water_drop, 'color': Color(0xFF5856D6), 'unit': 'mg/dL'},
-    {'name': 'Fréquence', 'icon': Icons.monitor_heart, 'color': Color(0xFFFF2D55), 'unit': 'bpm'},
-    {'name': 'Température', 'icon': Icons.thermostat, 'color': Color(0xFFFF9500), 'unit': '°C'},
+    {'id': 'bloodPressure', 'icon': Icons.favorite, 'color': Color(0xFFFF3B30), 'unit': 'mmHg'},
+    {'id': 'bloodGlucose', 'icon': Icons.water_drop, 'color': Color(0xFF5856D6), 'unit': 'mg/dL'},
+    {'id': 'heartRate', 'icon': Icons.monitor_heart, 'color': Color(0xFFFF2D55), 'unit': 'bpm'},
+    {'id': 'temperature', 'icon': Icons.thermostat, 'color': Color(0xFFFF9500), 'unit': '°C'},
   ];
 
-  // Générer des données simulées pour les graphiques
   List<Map<String, dynamic>> _getChartData() {
     final random = math.Random();
-    List<Map<String, dynamic>> data = [];
-    
-    int points = selectedPeriod == 'Jour' ? 24 : 
-                 selectedPeriod == 'Semaine' ? 7 : 
-                 selectedPeriod == 'Mois' ? 30 : 12;
-    
+    final data = <Map<String, dynamic>>[];
+
+    final points = selectedPeriod == 'day'
+        ? 24
+        : selectedPeriod == 'week'
+            ? 7
+            : selectedPeriod == 'month'
+                ? 30
+                : 12;
+
     for (int i = 0; i < points; i++) {
       double value;
-      if (selectedMetric == 'Tension') {
+      if (selectedMetric == 'bloodPressure') {
         value = 110 + random.nextDouble() * 30;
-      } else if (selectedMetric == 'Glycémie') {
+      } else if (selectedMetric == 'bloodGlucose') {
         value = 80 + random.nextDouble() * 40;
-      } else if (selectedMetric == 'Fréquence') {
+      } else if (selectedMetric == 'heartRate') {
         value = 60 + random.nextDouble() * 40;
       } else {
         value = 36.5 + random.nextDouble() * 1.5;
       }
-      
+
       data.add({'index': i, 'value': value});
     }
     return data;
   }
 
-  // Calculer les statistiques
   Map<String, double> _getStatistics() {
     final data = _getChartData();
     final values = data.map((d) => d['value'] as double).toList();
-    
-    double min = values.reduce(math.min);
-    double max = values.reduce(math.max);
-    double avg = values.reduce((a, b) => a + b) / values.length;
-    
+
+    final min = values.reduce(math.min);
+    final max = values.reduce(math.max);
+    final avg = values.reduce((a, b) => a + b) / values.length;
+
     return {'min': min, 'max': max, 'avg': avg};
+  }
+
+  String _metricLabel(BuildContext context, String id) {
+    switch (id) {
+      case 'bloodPressure':
+        return context.l10n.bloodPressure;
+      case 'bloodGlucose':
+        return context.l10n.bloodGlucose;
+      case 'heartRate':
+        return context.l10n.heartRate;
+      default:
+        return context.l10n.temperature;
+    }
+  }
+
+  String _periodLabel(BuildContext context, String id) {
+    switch (id) {
+      case 'day':
+        return context.l10n.day;
+      case 'week':
+        return context.l10n.week;
+      case 'month':
+        return context.l10n.month;
+      default:
+        return context.l10n.year;
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<HomeProvider>();
+      if (provider.homeData == null && !provider.isLoading) {
+        provider.loadHomeData();
+      }
+    });
   }
 
   @override
@@ -76,20 +128,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               _buildChartSection(),
               const SizedBox(height: 30),
               _buildStatisticsCards(),
-              const SizedBox(height: 30),
+              const SizedBox(height: 20),
+              _buildDashboardSummary(),
+              const SizedBox(height: 24),
+              _buildAddDataButton(),
+              const SizedBox(height: 20),
               _buildHistorySection(),
               const SizedBox(height: 100),
             ],
           ),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showAddMeasureDialog,
-        backgroundColor: const Color(0xFF34C759),
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          'Nouvelle mesure',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
       ),
     );
@@ -114,24 +161,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       ),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () => _showSnackBar('Retour'),
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF5F5F7),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.arrow_back, size: 24),
-            ),
-          ),
-          const SizedBox(width: 16),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Statistiques',
+                  context.l10n.statisticsTitle,
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -140,7 +175,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  'Suivez vos mesures de santé',
+                  context.l10n.trackYourHealth,
                   style: TextStyle(
                     fontSize: 14,
                     color: Color(0xFF8E8E93),
@@ -175,11 +210,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             final isSelected = period == selectedPeriod;
             return Expanded(
               child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    selectedPeriod = period;
-                  });
-                },
+                onTap: () => setState(() => selectedPeriod = period),
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   decoration: BoxDecoration(
@@ -187,7 +218,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    period,
+                    _periodLabel(context, period),
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
@@ -206,30 +237,26 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   Widget _buildMetricSelector() {
     return SizedBox(
-      height: 100, // Augmenté de 90 à 100 pour plus d'espace
+      height: 100,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         itemCount: metrics.length,
         itemBuilder: (context, index) {
           final metric = metrics[index];
-          final isSelected = metric['name'] == selectedMetric;
-          
+          final isSelected = metric['id'] == selectedMetric;
+
           return GestureDetector(
-            onTap: () {
-              setState(() {
-                selectedMetric = metric['name'];
-              });
-            },
+            onTap: () => setState(() => selectedMetric = metric['id'] as String),
             child: Container(
-              width: 95, // Légèrement augmenté pour éviter le débordement
+              width: 95,
               margin: const EdgeInsets.only(right: 12),
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4), // Ajustement du padding
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: isSelected ? metric['color'] : Colors.transparent,
+                  color: isSelected ? metric['color'] as Color : Colors.transparent,
                   width: 2,
                 ),
                 boxShadow: [
@@ -241,31 +268,30 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 ],
               ),
               child: Column(
-                mainAxisSize: MainAxisSize.min, // Pour que la colonne prenne seulement l'espace nécessaire
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8), // Réduit le padding
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: (metric['color'] as Color).withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      metric['icon'],
-                      color: metric['color'],
-                      size: 20, // Légèrement réduit la taille de l'icône
+                      metric['icon'] as IconData,
+                      color: metric['color'] as Color,
+                      size: 20,
                     ),
                   ),
-                  const SizedBox(height: 6), // Espacement réduit
+                  const SizedBox(height: 6),
                   Text(
-                    metric['name'],
+                    _metricLabel(context, metric['id'] as String),
                     textAlign: TextAlign.center,
-                    maxLines: 2, // Permet le retour à la ligne si nécessaire
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                      color: isSelected ? metric['color'] : const Color(0xFF1D1D1F),
+                      color: isSelected ? metric['color'] as Color : const Color(0xFF1D1D1F),
                     ),
                   ),
                 ],
@@ -279,8 +305,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   Widget _buildChartSection() {
     final data = _getChartData();
-    final metric = metrics.firstWhere((m) => m['name'] == selectedMetric);
-    
+    final metric = metrics.firstWhere((m) => m['id'] == selectedMetric);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
@@ -302,8 +328,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Évolution',
+                Text(
+                  context.l10n.evolution,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -317,11 +343,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    metric['unit'],
+                    metric['unit'] as String,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: metric['color'],
+                      color: metric['color'] as Color,
                     ),
                   ),
                 ),
@@ -330,7 +356,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             const SizedBox(height: 20),
             SizedBox(
               height: 200,
-              child: _buildLineChart(data, metric['color']),
+              child: _buildLineChart(data, metric['color'] as Color),
             ),
           ],
         ),
@@ -350,17 +376,17 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   Widget _buildStatisticsCards() {
     final stats = _getStatistics();
-    final metric = metrics.firstWhere((m) => m['name'] == selectedMetric);
-    
+    final metric = metrics.firstWhere((m) => m['id'] == selectedMetric);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
           Expanded(
             child: _buildStatCard(
-              'Minimum',
+              context.l10n.minimum,
               stats['min']!.toStringAsFixed(1),
-              metric['unit'],
+              metric['unit'] as String,
               const Color(0xFF5856D6),
               Icons.arrow_downward,
             ),
@@ -368,9 +394,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: _buildStatCard(
-              'Moyenne',
+              context.l10n.average,
               stats['avg']!.toStringAsFixed(1),
-              metric['unit'],
+              metric['unit'] as String,
               const Color(0xFF34C759),
               Icons.analytics,
             ),
@@ -378,9 +404,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: _buildStatCard(
-              'Maximum',
+              context.l10n.maximum,
               stats['max']!.toStringAsFixed(1),
-              metric['unit'],
+              metric['unit'] as String,
               const Color(0xFFFF3B30),
               Icons.arrow_upward,
             ),
@@ -449,16 +475,119 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
-  Widget _buildHistorySection() {
-    final metric = metrics.firstWhere((m) => m['name'] == selectedMetric);
-    
+  Widget _buildDashboardSummary() {
+    final provider = context.watch<HomeProvider>();
+    final data = provider.homeData;
+
+    if (provider.isLoading && data == null) {
+      return Padding(
+        padding: EdgeInsets.symmetric(horizontal: 20),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Historique récent',
+          Text(
+            context.l10n.appointmentsOverview,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1D1D1F),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  context.l10n.appointmentsPerMonth,
+                  '${data?.appointmentsThisMonth ?? 0}',
+                  '',
+                  const Color(0xFF007AFF),
+                  Icons.calendar_month,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  context.l10n.completed,
+                  '${data?.completedAppointments ?? 0}',
+                  '',
+                  const Color(0xFF34C759),
+                  Icons.check_circle,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  context.l10n.pending,
+                  '${data?.pendingAppointments ?? 0}',
+                  '',
+                  const Color(0xFFFF9500),
+                  Icons.hourglass_bottom,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  context.l10n.adherence,
+                  '${data?.medicationAdherenceRate ?? 0}',
+                  '%',
+                  const Color(0xFF5856D6),
+                  Icons.monitor_heart,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddDataButton() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: _showAddMeasureDialog,
+          icon: const Icon(Icons.add_chart),
+          label: Text(context.l10n.addData),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF34C759),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHistorySection() {
+    final metric = metrics.firstWhere((m) => m['id'] == selectedMetric);
+    final currentEntries = measureEntries
+        .where((entry) => entry['metric'] == selectedMetric)
+        .toList()
+      ..sort((a, b) => (b['date'] as DateTime).compareTo(a['date'] as DateTime));
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.l10n.recentHistory,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -478,44 +607,52 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 ),
               ],
             ),
-            child: Column(
-              children: List.generate(5, (index) {
-                final random = math.Random(index);
-                double value;
-                if (selectedMetric == 'Tension') {
-                  value = 110 + random.nextDouble() * 30;
-                } else if (selectedMetric == 'Glycémie') {
-                  value = 80 + random.nextDouble() * 40;
-                } else if (selectedMetric == 'Fréquence') {
-                  value = 60 + random.nextDouble() * 40;
-                } else {
-                  value = 36.5 + random.nextDouble() * 1.5;
-                }
-                
-                final now = DateTime.now();
-                final date = now.subtract(Duration(days: index));
-                
-                return _buildHistoryItem(
-                  value.toStringAsFixed(1),
-                  metric['unit'],
-                  date,
-                  metric['color'],
-                  index < 4,
-                );
-              }),
-            ),
+            child: currentEntries.isEmpty
+                ? Padding(
+                    padding: EdgeInsets.all(18),
+                    child: Text(
+                      context.l10n.noTrackingData,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF8E8E93),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  )
+                : Column(
+                    children: List.generate(currentEntries.length, (index) {
+                      final entry = currentEntries[index];
+                      return _buildHistoryItem(
+                        context,
+                        entry['value'].toStringAsFixed(1),
+                        metric['unit'] as String,
+                        entry['date'] as DateTime,
+                        metric['color'] as Color,
+                        index < currentEntries.length - 1,
+                        treatment: entry['treatment'] as String,
+                      );
+                    }),
+                  ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildHistoryItem(String value, String unit, DateTime date, Color color, bool showDivider) {
+  Widget _buildHistoryItem(
+    BuildContext context,
+    String value,
+    String unit,
+    DateTime date,
+    Color color,
+    bool showDivider, {
+    String? treatment,
+  }) {
     final now = DateTime.now();
     final isToday = date.year == now.year && date.month == now.month && date.day == now.day;
-    final dateStr = isToday ? "Aujourd'hui" : "${date.day}/${date.month}/${date.year}";
+    final dateStr = isToday ? context.l10n.today : "${date.day}/${date.month}/${date.year}";
     final timeStr = "${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
-    
+
     return Column(
       children: [
         Padding(
@@ -555,6 +692,17 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         color: Color(0xFF8E8E93),
                       ),
                     ),
+                    if (treatment != null) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        treatment,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: color,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -591,68 +739,381 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   void _showAddMeasureDialog() {
-    final metric = metrics.firstWhere((m) => m['name'] == selectedMetric);
-    
-    showDialog(
+    final metric = metrics.firstWhere((m) => m['id'] == selectedMetric);
+    final metricColor = metric['color'] as Color;
+    final metricIcon = metric['icon'] as IconData;
+    final valueController = TextEditingController();
+    final noteController = TextEditingController();
+    var selectedTreatment = treatments.first;
+    var selectedDate = DateTime.now();
+
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: Row(
-          children: [
-            Icon(metric['icon'], color: metric['color']),
-            const SizedBox(width: 12),
-            const Text('Nouvelle mesure'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: '${metric['name']} (${metric['unit']})',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+              child: FractionallySizedBox(
+                heightFactor: 0.92,
+                alignment: Alignment.bottomCenter,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF8F9FC),
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+                  ),
+                  child: SafeArea(
+                    top: false,
+                    bottom: false,
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 2),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: Container(
+                            height: 5,
+                            width: 52,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFD4D8E2),
+                              borderRadius: BorderRadius.circular(99),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(18),
+                            gradient: LinearGradient(
+                              colors: [
+                                metricColor.withValues(alpha: 0.18),
+                                metricColor.withValues(alpha: 0.08),
+                              ],
+                            ),
+                            border: Border.all(
+                              color: metricColor.withValues(alpha: 0.2),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 42,
+                                height: 42,
+                                decoration: BoxDecoration(
+                                  color: metricColor,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(metricIcon, color: Colors.white),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      context.l10n.newTrackingData,
+                                      style: TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w800,
+                                        color: Color(0xFF1D1D1F),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${_metricLabel(context, metric['id'] as String)} - ${metric['unit']}',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: metricColor.withValues(alpha: 0.85),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          context.l10n.treatment,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1D1D1F),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        DropdownButtonFormField<String>(
+                          initialValue: selectedTreatment,
+                          icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                          borderRadius: BorderRadius.circular(16),
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(color: metricColor.withValues(alpha: 0.22)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(color: metricColor.withValues(alpha: 0.22)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(color: metricColor.withValues(alpha: 0.5), width: 1.4),
+                            ),
+                          ),
+                          items: treatments
+                              .map((t) => DropdownMenuItem<String>(value: t, child: Text(t)))
+                              .toList(),
+                          onChanged: (value) {
+                            if (value != null) {
+                              setModalState(() => selectedTreatment = value);
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          context.l10n.value,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1D1D1F),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [
+                              BoxShadow(
+                                color: metricColor.withValues(alpha: 0.08),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: TextField(
+                            controller: valueController,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: InputDecoration(
+                              hintText: context.l10n.exampleValue,
+                              prefixIcon: Icon(metricIcon, color: metricColor),
+                              suffixText: metric['unit'] as String,
+                              filled: true,
+                              fillColor: Colors.white,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: BorderSide(color: metricColor.withValues(alpha: 0.22)),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: BorderSide(color: metricColor.withValues(alpha: 0.22)),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: BorderSide(color: metricColor.withValues(alpha: 0.5), width: 1.4),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          context.l10n.measureDate,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1D1D1F),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        InkWell(
+                          borderRadius: BorderRadius.circular(14),
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: selectedDate,
+                              firstDate: DateTime.now(),
+                              lastDate: DateTime.now().add(const Duration(days: 365)),
+                            );
+                            if (picked != null) {
+                              setModalState(() => selectedDate = picked);
+                            }
+                          },
+                          child: Ink(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: metricColor.withValues(alpha: 0.22)),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: metricColor.withValues(alpha: 0.08),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 34,
+                                  height: 34,
+                                  decoration: BoxDecoration(
+                                    color: metricColor.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(
+                                    Icons.calendar_month_rounded,
+                                    color: metricColor,
+                                    size: 19,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    '${selectedDate.day.toString().padLeft(2, '0')}/${selectedDate.month.toString().padLeft(2, '0')}/${selectedDate.year}',
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF1D1D1F),
+                                    ),
+                                  ),
+                                ),
+                                const Icon(
+                                  Icons.chevron_right_rounded,
+                                  color: Color(0xFF9CA3AF),
+                                  size: 22,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          context.l10n.notesOptional,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1D1D1F),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [
+                              BoxShadow(
+                                color: metricColor.withValues(alpha: 0.08),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: TextField(
+                            controller: noteController,
+                            maxLines: 3,
+                            decoration: InputDecoration(
+                              hintText: context.l10n.contextField,
+                              filled: true,
+                              fillColor: Colors.white,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: BorderSide(color: metricColor.withValues(alpha: 0.22)),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: BorderSide(color: metricColor.withValues(alpha: 0.22)),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: BorderSide(color: metricColor.withValues(alpha: 0.5), width: 1.4),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () => Navigator.pop(context),
+                                style: ElevatedButton.styleFrom(
+                                  minimumSize: const Size.fromHeight(50),
+                                  elevation: 0,
+                                  backgroundColor: const Color(0xFFE9EDF5),
+                                  foregroundColor: const Color(0xFF344054),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.close_rounded, size: 18),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      context.l10n.cancel,
+                                      style: TextStyle(fontWeight: FontWeight.w700),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  final parsedValue = double.tryParse(
+                                    valueController.text.trim().replaceAll(',', '.'),
+                                  );
+                                  if (parsedValue == null) {
+                                    _showSnackBar(context.l10n.valueFormatInvalid);
+                                    return;
+                                  }
+                                  setState(() {
+                                    measureEntries.add({
+                                      'metric': selectedMetric,
+                                      'value': parsedValue,
+                                      'treatment': selectedTreatment,
+                                      'date': selectedDate,
+                                      'note': noteController.text.trim(),
+                                    });
+                                  });
+                                  Navigator.pop(context);
+                                  _showSnackBar(context.l10n.dataSavedMessage);
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  minimumSize: const Size.fromHeight(50),
+                                  backgroundColor: metricColor,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                child: Text(
+                                  context.l10n.save,
+                                  style: TextStyle(fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                prefixIcon: Icon(metric['icon'], color: metric['color']),
               ),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              decoration: InputDecoration(
-                labelText: 'Note (optionnel)',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                prefixIcon: const Icon(Icons.note),
-              ),
-              maxLines: 3,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Annuler'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _showSnackBar('Mesure enregistrée avec succès!');
-              setState(() {});
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF34C759),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: const Text('Enregistrer'),
-          ),
-        ],
-      ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -670,7 +1131,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 }
 
-// Custom painter pour le graphique en ligne
 class LineChartPainter extends CustomPainter {
   final List<Map<String, dynamic>> data;
   final Color color;
@@ -702,14 +1162,15 @@ class LineChartPainter extends CustomPainter {
     final minValue = values.reduce(math.min);
     final maxValue = values.reduce(math.max);
     final range = maxValue - minValue;
+    final safeRange = range == 0 ? 1.0 : range;
 
     final path = Path();
     final fillPath = Path();
 
     for (int i = 0; i < data.length; i++) {
-      final x = (size.width / (data.length - 1)) * i;
+      final x = data.length == 1 ? size.width / 2 : (size.width / (data.length - 1)) * i;
       final value = data[i]['value'] as double;
-      final y = size.height - ((value - minValue) / range) * size.height;
+      final y = size.height - ((value - minValue) / safeRange) * size.height;
 
       if (i == 0) {
         path.moveTo(x, y);
@@ -720,15 +1181,12 @@ class LineChartPainter extends CustomPainter {
         fillPath.lineTo(x, y);
       }
 
-      // Dessiner les points
       canvas.drawCircle(Offset(x, y), 4, dotPaint);
     }
 
-    // Compléter le chemin de remplissage
     fillPath.lineTo(size.width, size.height);
     fillPath.close();
 
-    // Dessiner le remplissage puis la ligne
     canvas.drawPath(fillPath, fillPaint);
     canvas.drawPath(path, paint);
   }

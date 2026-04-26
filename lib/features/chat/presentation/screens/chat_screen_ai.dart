@@ -1,72 +1,80 @@
+import 'dart:async';
+
+import 'package:corevia_mobile/features/ai_chat/data/rag_chat_storage.dart';
+import 'package:corevia_mobile/features/ai_chat/data/rag_socket_chat_service.dart';
+import 'package:corevia_mobile/features/ai_chat/data/rag_socket_config.dart';
+import 'package:corevia_mobile/features/ai_chat/domain/chat_message.dart' as rag;
+import 'package:corevia_mobile/features/account/presentation/providers/user_provider.dart';
+import 'package:corevia_mobile/l10n/app_localizations.dart';
 import 'package:corevia_mobile/widgets/navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as chat_core;
+import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:provider/provider.dart';
 
 // Modèle pour les IAs spécialisées
 class AIDoctor {
   final String id;
-  final String name;
-  final String specialty;
+  final String Function(AppLocalizations l10n) nameBuilder;
+  final String Function(AppLocalizations l10n) specialtyBuilder;
   final Color primaryColor;
   final Color secondaryColor;
+  final bool supported;
+  final String? ragAgentId;
 
   const AIDoctor({
     required this.id,
-    required this.name,
-    required this.specialty,
+    required this.nameBuilder,
+    required this.specialtyBuilder,
     required this.primaryColor,
     required this.secondaryColor,
+    required this.supported,
+    required this.ragAgentId,
   });
+
+  String name(AppLocalizations l10n) => nameBuilder(l10n);
+  String specialty(AppLocalizations l10n) => specialtyBuilder(l10n);
 }
 
 // Liste des IAs disponibles
 final List<AIDoctor> availableAIs = [
-  const AIDoctor(
+  AIDoctor(
     id: 'doc_locke',
-    name: 'Doc Locke.AI',
-    specialty: 'Médecine Générale',
+    nameBuilder: (l10n) => l10n.generalPractitioner,
+    specialtyBuilder: (l10n) => l10n.generalMedicine,
     primaryColor: Color(0xFF34C759),
     secondaryColor: Color(0xFF5DF394),
+    supported: true,
+    ragAgentId: 'medecin_generaliste',
   ),
-  const AIDoctor(
-    id: 'dr_cardio',
-    name: 'Dr. CardioIA',
-    specialty: 'Cardiologie',
-    primaryColor: Color(0xFFFF3B30),
-    secondaryColor: Color(0xFFFF6B6B),
-  ),
-  const AIDoctor(
-    id: 'dr_neuro',
-    name: 'Dr. NeuroBot',
-    specialty: 'Neurologie',
-    primaryColor: Color(0xFF5856D6),
-    secondaryColor: Color(0xFF8E8CD8),
-  ),
-  const AIDoctor(
+  AIDoctor(
     id: 'dr_dermato',
-    name: 'Dr. DermaAI',
-    specialty: 'Dermatologie',
+    nameBuilder: (l10n) => l10n.dermatologist,
+    specialtyBuilder: (l10n) => l10n.dermatology,
     primaryColor: Color(0xFFFF9500),
     secondaryColor: Color(0xFFFFB340),
+    supported: true,
+    ragAgentId: 'dermatologue',
+  ),
+  AIDoctor(
+    id: 'dr_nutrition',
+    nameBuilder: (l10n) => l10n.nutritionist,
+    specialtyBuilder: (l10n) => l10n.nutrition,
+    primaryColor: Color(0xFF0EA5E9),
+    secondaryColor: Color(0xFF38BDF8),
+    supported: true,
+    ragAgentId: 'nutritionniste',
+  ),
+  AIDoctor(
+    id: 'dr_psy',
+    nameBuilder: (l10n) => l10n.psychologist,
+    specialtyBuilder: (l10n) => l10n.mentalHealth,
+    primaryColor: Color(0xFF8B5CF6),
+    secondaryColor: Color(0xFFA78BFA),
+    supported: true,
+    ragAgentId: 'psychologue',
   ),
 ];
-
-// Modèle pour les conversations
-class Conversation {
-  final String id;
-  final String aiDoctorId;
-  final String title;
-  final DateTime lastMessageDate;
-  final String preview;
-
-  Conversation({
-    required this.id,
-    required this.aiDoctorId,
-    required this.title,
-    required this.lastMessageDate,
-    required this.preview,
-  });
-}
 
 class ChatScreen extends StatefulWidget {
   final String conversationId;
@@ -87,90 +95,140 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   late chat_core.User _assistant;
   final chat_core.User _currentUser = const chat_core.User(
     id: 'user',
-    name: 'Georges',
+    name: 'Patient',
   );
-  late final chat_core.InMemoryChatController _chatController;
+  chat_core.InMemoryChatController? _chatController;
   bool _isTyping = false;
+  final RagChatStorage _ragStorage = RagChatStorage();
+  late final RagSocketChatService _ragSocket;
+  String _ragAgentId = 'medecin_generaliste';
+  String? _ragUserId;
+  bool _isConnected = false;
+  bool _isStreaming = false;
+  chat_core.TextMessage? _assistantMessage;
+  String _assistantBuffer = '';
+  bool _warnedUnsupportedAi = false;
   final TextEditingController _messageController = TextEditingController();
   final FocusNode _messageFocusNode = FocusNode();
   late AnimationController _typingAnimationController;
 
-  // Liste des conversations (mock data)
-  final List<Conversation> _conversations = [
-    Conversation(
-      id: 'conv_1',
-      aiDoctorId: 'doc_locke',
-      title: 'Consultation poumons',
-      lastMessageDate: DateTime.now().subtract(const Duration(hours: 2)),
-      preview: 'Hey Georges! Of course, I think you should...',
-    ),
-    Conversation(
-      id: 'conv_2',
-      aiDoctorId: 'dr_cardio',
-      title: 'Douleurs thoraciques',
-      lastMessageDate: DateTime.now().subtract(const Duration(days: 1)),
-      preview: 'Les douleurs que vous décrivez peuvent...',
-    ),
-    Conversation(
-      id: 'conv_3',
-      aiDoctorId: 'dr_neuro',
-      title: 'Migraines fréquentes',
-      lastMessageDate: DateTime.now().subtract(const Duration(days: 3)),
-      preview: 'Pour vos migraines, je recommande...',
-    ),
-  ];
+  String _patientName(BuildContext context) {
+    final userName = context.read<UserProvider>().user?.name.trim();
+    if (userName != null && userName.isNotEmpty) {
+      return userName;
+    }
+    return context.l10n.patient;
+  }
 
   @override
   void initState() {
     super.initState();
     
     // Initialiser l'IA actuelle
-    final aiId = widget.aiDoctorId ?? 'doc_locke';
-    _currentAI = availableAIs.firstWhere(
-      (ai) => ai.id == aiId,
+    final requestedId = widget.aiDoctorId ?? 'doc_locke';
+    final requestedAI = availableAIs.firstWhere(
+      (ai) => ai.id == requestedId,
       orElse: () => availableAIs[0],
     );
+    final fallbackAI = availableAIs.firstWhere((ai) => ai.id == 'doc_locke');
+    _currentAI = requestedAI.supported ? requestedAI : fallbackAI;
     
     _assistant = chat_core.User(
       id: _currentAI.id,
-      name: _currentAI.name,
+      name: _currentAI.id,
     );
     
-    _chatController = chat_core.InMemoryChatController();
+    _ragAgentId = _currentAI.ragAgentId ?? 'medecin_generaliste';
+    _ragSocket = RagSocketChatService(url: RagSocketConfig.resolveUrl());
+
+    _initChatController();
     _typingAnimationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat();
-    
-    // S'assurer que le widget est monté avant d'effectuer des opérations asynchrones
+
+    _bootstrapRagChat();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        if (widget.conversationId != 'new') {
-          _loadConversation(widget.conversationId);
-        } else {
-          _addSystemMessage(
-            'Bonjour Georges ! Je suis ${_currentAI.name}, spécialiste en ${_currentAI.specialty}. ' 
-            'Comment puis-je vous aider aujourd\'hui ?'
-          );
-        }
+      if (!mounted) return;
+      if (!requestedAI.supported && !_warnedUnsupportedAi) {
+        _warnedUnsupportedAi = true;
+        _showSoonSnackBar();
       }
     });
   }
   
-  void _loadConversation(String conversationId) {
-    _addSystemMessage(
-      'Reprise de la conversation. Comment puis-je vous aider aujourd\'hui ?'
-    );
+  void _initChatController({List<chat_core.Message>? initialMessages}) {
+    _chatController?.dispose();
+    _chatController = chat_core.InMemoryChatController(messages: initialMessages);
+  }
+    
+  Future<void> _bootstrapRagChat() async {
+    if (!_currentAI.supported || _currentAI.ragAgentId == null) return;
+
+    final agentId = _currentAI.ragAgentId!;
+    final userId = await _ragStorage.getOrCreateUserId();
+    final history = await _ragStorage.loadUserHistory(agentId);
+
+    final initial = _toCoreUserMessages(history);
+    if (!mounted) return;
+
+    setState(() {
+      _ragAgentId = agentId;
+      _ragUserId = userId;
+      _initChatController(initialMessages: initial);
+    });
+
+    _ragSocket.connect(onConnectionChanged: (connected) {
+      if (!mounted) return;
+      setState(() {
+        _isConnected = connected;
+      });
+    });
+
+    if (initial.isEmpty && mounted) {
+        setState(() {
+          _addSystemMessage(
+            context.l10n.aiDoctorGreeting(
+              _patientName(context),
+              _currentAI.name(context.l10n),
+              _currentAI.specialty(context.l10n),
+            ),
+          );
+      });
+    }
+  }
+
+  List<chat_core.Message> _toCoreUserMessages(List<rag.ChatMessage> history) {
+    final messages = <chat_core.Message>[];
+    for (var i = 0; i < history.length; i++) {
+      final item = history[i];
+      final createdAt = item.timestamp;
+      messages.add(chat_core.Message.text(
+        id: 'rag_u_${createdAt.millisecondsSinceEpoch}_$i',
+        authorId: _currentUser.id,
+        createdAt: createdAt,
+        text: item.content,
+      ));
+    }
+
+    messages.sort((a, b) {
+      final aDate = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final bDate = b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      return bDate.compareTo(aDate);
+    });
+
+    return messages;
   }
 
   void _addSystemMessage(String text) {
-    final message = _buildTextMessage(author: _assistant, text: text);
-    _chatController.insertMessage(message, index: 0);
+    if (_chatController != null) {
+      final message = _buildTextMessage(author: _assistant, text: text);
+      _chatController?.insertMessage(message, index: 0);
+    }
   }
 
   void _showAISelectionDialog() {
-    AIDoctor selectedAI = _currentAI;  // Garder une référence locale de l'IA sélectionnée
-    
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -187,7 +245,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha:0.1),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -207,7 +265,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha:0.05),
                           blurRadius: 5,
                           offset: const Offset(0, 2),
                         ),
@@ -217,8 +275,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                       children: [
                         const Icon(Icons.auto_awesome_rounded, color: Color(0xFF6C63FF), size: 28),
                         const SizedBox(width: 12),
-                        const Text(
-                          'Choisir un spécialiste',
+                        Text(
+                          context.l10n.chooseSpecialist,
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -247,61 +305,52 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                           duration: const Duration(milliseconds: 200),
                           margin: const EdgeInsets.only(bottom: 8),
                           decoration: BoxDecoration(
-                            color: selectedAI.id == ai.id 
-                                ? ai.primaryColor.withOpacity(0.1) 
-                                : Colors.grey.withOpacity(0.05),
+                            color: _currentAI.id == ai.id 
+                                ? ai.primaryColor.withValues(alpha:0.1) 
+                                : Colors.grey.withValues(alpha:0.05),
                             borderRadius: BorderRadius.circular(16),
-                            border: selectedAI.id == ai.id
+                            border: _currentAI.id == ai.id
                                 ? Border.all(color: ai.primaryColor, width: 1.5)
                                 : null,
-                            boxShadow: selectedAI.id == ai.id ? [
+                            boxShadow: _currentAI.id == ai.id ? [
                               BoxShadow(
-                                color: ai.primaryColor.withOpacity(0.1),
+                                color: ai.primaryColor.withValues(alpha:0.1),
                                 blurRadius: 8,
                                 spreadRadius: 2,
                               )
                             ] : null,
                           ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: () {
-                                // Mettre à jour la sélection visuelle immédiatement
-                                setDialogState(() {
-                                  selectedAI = ai;
-                                });
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () async {
+                                  // Fermer la boîte de dialogue immédiatement
+                                  Navigator.of(context).pop();
 
-                                // Détruire l'ancien contrôleur s'il existe
-                                _chatController.dispose();
-                                
-                                // Mettre à jour l'état principal
-                                setState(() {
-                                  _currentAI = ai;
-                                  _assistant = chat_core.User(
-                                    id: _currentAI.id,
-                                    name: _currentAI.name,
-                                  );
-                                  _chatController = chat_core.InMemoryChatController();
-                                  _isTyping = false;
-                                  
-                                  // Ajouter le message de bienvenue
-                                  _addSystemMessage(
-                                    'Bonjour Georges ! Je suis ${ai.name}, spécialiste en ${ai.specialty}. ' 
-                                    'Comment puis-je vous aider aujourd\'hui ?'
-                                  );
-                                });
-                                
-                                // Fermer la boîte de dialogue après un court délai pour un meilleur retour visuel
-                                Future.delayed(const Duration(milliseconds: 200), () {
-                                  if (mounted) {
-                                    Navigator.of(context).pop();
+                                  if (!ai.supported) {
+                                    _showSoonSnackBar();
+                                    return;
                                   }
-                                });
-                              },
-                              borderRadius: BorderRadius.circular(16),
-                              child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Row(
+
+                                  if (ai.id == _currentAI.id) return;
+
+                                  _stopStreaming();
+                                  setState(() {
+                                    _currentAI = ai;
+                                    _assistant = chat_core.User(
+                                      id: _currentAI.id,
+                                      name: _currentAI.id,
+                                    );
+                                    _ragAgentId = _currentAI.ragAgentId ?? 'medecin_generaliste';
+                                    _isTyping = false;
+                                  });
+
+                                  await _bootstrapRagChat();
+                                },
+                                borderRadius: BorderRadius.circular(16),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Row(
                                   children: [
                                     // Avatar
                                     Container(
@@ -314,7 +363,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                         borderRadius: BorderRadius.circular(12),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: ai.primaryColor.withOpacity(0.3),
+                                            color: ai.primaryColor.withValues(alpha:0.3),
                                             blurRadius: 8,
                                             offset: const Offset(0, 3),
                                           ),
@@ -333,7 +382,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            ai.name,
+                                            ai.name(context.l10n),
                                             style: const TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.w600,
@@ -342,7 +391,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
-                                            ai.specialty,
+                                            ai.supported
+                                                ? ai.specialty(context.l10n)
+                                                : '${ai.specialty(context.l10n)} • ${context.l10n.soonAvailable}',
                                             style: TextStyle(
                                               fontSize: 13,
                                               color: Colors.grey[600],
@@ -356,7 +407,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                       Container(
                                         padding: const EdgeInsets.all(4),
                                         decoration: BoxDecoration(
-                                          color: ai.primaryColor.withOpacity(0.1),
+                                          color: ai.primaryColor.withValues(alpha:0.1),
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(
@@ -364,6 +415,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                           color: ai.primaryColor,
                                           size: 20,
                                         ),
+                                      ),
+                                    if (_currentAI.id != ai.id && !ai.supported)
+                                      Icon(
+                                        Icons.lock_outline_rounded,
+                                        color: Colors.grey.shade500,
+                                        size: 18,
                                       ),
                                   ],
                                 ),
@@ -390,9 +447,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                           side: const BorderSide(color: Color(0xFF6C63FF), width: 1.5),
                         ),
                       ),
-                      child: const Text(
-                        'Fermer',
-                        style: TextStyle(
+                      child: Text(
+                        context.l10n.close,
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
@@ -431,7 +488,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                         width: 50,
                         height: 50,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha:0.3),
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: const Icon(
@@ -441,21 +498,21 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Georges',
+                              _patientName(context),
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            SizedBox(height: 2),
+                            const SizedBox(height: 2),
                             Text(
-                              'Patient',
+                              context.l10n.patient,
                               style: TextStyle(
                                 color: Colors.white70,
                                 fontSize: 13,
@@ -487,19 +544,19 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: _currentAI.primaryColor.withOpacity(0.3),
+                        color: _currentAI.primaryColor.withValues(alpha:0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
                     ],
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.add_rounded, color: Colors.white, size: 20),
+                      Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 20),
                       SizedBox(width: 8),
                       Text(
-                        'Nouvelle conversation',
+                        context.l10n.chooseSpecialty,
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
@@ -518,11 +575,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               child: Row(
                 children: [
                   Text(
-                    'IAs Spécialisées',
+                    context.l10n.specialties,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey.withOpacity(0.2),
+                      color: Colors.grey.withValues(alpha:0.2),
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -548,25 +605,37 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 ),
               ),
               title: Text(
-                ai.name,
+                ai.name(context.l10n),
                 style: TextStyle(
                   fontWeight: ai.id == _currentAI.id ? FontWeight.bold : FontWeight.w500,
                   fontSize: 14,
-                  color: ai.id == _currentAI.id ? ai.primaryColor : const Color(0xFF1D1D1F),
+                  color: !ai.supported
+                      ? Colors.grey.shade500
+                      : ai.id == _currentAI.id
+                          ? ai.primaryColor
+                          : const Color(0xFF1D1D1F),
                 ),
               ),
               subtitle: Text(
-                ai.specialty,
+                ai.supported
+                    ? ai.specialty(context.l10n)
+                    : '${ai.specialty(context.l10n)} • ${context.l10n.soonAvailable}',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey.withOpacity(0.2),
+                  color: Colors.grey.withValues(alpha:0.2),
                 ),
               ),
               trailing: ai.id == _currentAI.id
                   ? Icon(Icons.check_circle, color: ai.primaryColor, size: 20)
-                  : null,
+                  : ai.supported
+                      ? null
+                      : Icon(Icons.lock_outline_rounded, color: Colors.grey.shade500, size: 18),
               onTap: () {
                 Navigator.pop(context);
+                if (!ai.supported) {
+                  _showSoonSnackBar();
+                  return;
+                }
                 if (ai.id != _currentAI.id) {
                   Navigator.pushReplacement(
                     context,
@@ -579,144 +648,22 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   );
                 }
               },
-            )).toList(),
-
-            const Divider(height: 32),
-            
-            // Section historique
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  Text(
-                    'Historique',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey.withOpacity(0.2),
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
-            // Liste des conversations
-            Expanded(
-              child: ListView.builder(
-                padding: EdgeInsets.zero,
-                itemCount: _conversations.length,
-                itemBuilder: (context, index) {
-                  final conversation = _conversations[index];
-                  final ai = availableAIs.firstWhere(
-                    (a) => a.id == conversation.aiDoctorId,
-                    orElse: () => availableAIs[0],
-                  );
-                  
-                  final uniqueKey = ValueKey('ai_${ai.id}_${conversation.id}');
-                  
-                  return ListTile(
-                    key: uniqueKey,
-                    leading: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [ai.secondaryColor, ai.primaryColor],
-                        ),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        Icons.chat_bubble_outline,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                    ),
-                    title: Text(
-                      conversation.title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          conversation.preview,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey.withOpacity(0.2),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          _formatDate(conversation.lastMessageDate),
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Colors.grey.withOpacity(0.2),
-                          ),
-                        ),
-                      ],
-                    ),
-                    trailing: IconButton(
-                      icon: Icon(Icons.close, size: 18, color: Colors.grey.withOpacity(0.2)),
-                      onPressed: () {
-                        // Supprimer la conversation
-                        setState(() {
-                          _conversations.removeAt(index);
-                        });
-                      },
-                    ),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ChatScreen(
-                            conversationId: conversation.id,
-                            aiDoctorId: conversation.aiDoctorId,
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
+            )),
           ],
         ),
       ),
     );
   }
 
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final diff = now.difference(date);
-    
-    if (diff.inHours < 1) {
-      return 'Il y a ${diff.inMinutes}min';
-    } else if (diff.inHours < 24) {
-      return 'Il y a ${diff.inHours}h';
-    } else if (diff.inDays < 7) {
-      return 'Il y a ${diff.inDays}j';
-    } else {
-      return '${date.day}/${date.month}/${date.year}';
-    }
-  }
-
   Widget _buildComposer() {
+    final supported = _currentAI.supported && _currentAI.ragAgentId != null;
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha:0.05),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -725,17 +672,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFFF5F5F7),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: IconButton(
-              icon: Icon(Icons.add, color: Colors.grey.withOpacity(0.7), size: 22),
-              onPressed: () {},
-            ),
-          ),
-          const SizedBox(width: 12),
           Expanded(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -746,6 +682,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               child: TextField(
                 controller: _messageController,
                 focusNode: _messageFocusNode,
+                enabled: supported && !_isStreaming,
                 minLines: 1,
                 maxLines: 4,
                 style: const TextStyle(
@@ -753,11 +690,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   fontSize: 15,
                 ),
                 textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _sendCurrentMessage(),
+                onSubmitted: (supported && !_isStreaming) ? (_) => _sendCurrentMessage() : null,
                 decoration: InputDecoration(
-                  hintText: 'Type a message...',
+                  hintText: supported ? context.l10n.writeMessage : context.l10n.soonAvailable,
                   hintStyle: TextStyle(
-                    color: Colors.grey.withOpacity(0.2), 
+                    color: Colors.grey.withValues(alpha:0.2), 
                     fontSize: 15,
                   ),
                   isDense: true,
@@ -770,25 +707,28 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           const SizedBox(width: 12),
           Container(
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [_currentAI.secondaryColor, _currentAI.primaryColor],
-              ),
+              color: _isStreaming ? const Color(0xFFEF4444) : null,
+              gradient: _isStreaming
+                  ? null
+                  : LinearGradient(
+                      colors: [_currentAI.secondaryColor, _currentAI.primaryColor],
+                    ),
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
-                  color: _currentAI.primaryColor.withOpacity(0.3),
+                  color: (_isStreaming ? const Color(0xFFEF4444) : _currentAI.primaryColor).withValues(alpha:0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
               ],
             ),
             child: IconButton(
-              icon: const Icon(
-                Icons.arrow_upward_rounded, 
-                color: Colors.white, 
+              icon: Icon(
+                _isStreaming ? Icons.stop_rounded : Icons.arrow_upward_rounded,
+                color: Colors.white,
                 size: 22,
               ),
-              onPressed: _sendCurrentMessage,
+              onPressed: _isStreaming ? _stopStreaming : (supported ? _sendCurrentMessage : _showSoonSnackBar),
             ),
           ),
         ],
@@ -797,80 +737,173 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   void _sendCurrentMessage() {
+    if (_isStreaming) return;
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
 
-    // Créer et envoyer le message utilisateur
-    final message = _buildTextMessage(
-      author: _currentUser,
-      text: text,
-    );
-    _chatController.insertMessage(message, index: 0);
-    
     // Effacer le champ de texte et donner le focus
     _messageController.clear();
     _messageFocusNode.requestFocus();
-    
-    // Simuler une réponse de l'IA
-    _simulateAIReply(text);
+
+    unawaited(_sendRagQuery(text));
   }
 
-  void _simulateAIReply(String userMessage) {
-    setState(() {
-      _isTyping = true;
-    });
-
-    // Simuler un délai de frappe
-    Future.delayed(const Duration(seconds: 1), () {
-      if (!mounted) return;
-      
-      final response = _generateMockResponse(userMessage);
-      
-      setState(() {
-        _isTyping = false;
-        _addSystemMessage(response);
-        
-        // Si la réponse contient une carte médecin, l'ajouter
-        if (userMessage.toLowerCase().contains('trouv') || 
-            userMessage.toLowerCase().contains('spécialiste') ||
-            userMessage.toLowerCase().contains('médecin')) {
-          _addSystemMessage(_generateDoctorCardMessage());
-        }
-      });
-    });
-  }
-
-  String _generateMockResponse(String message) {
-    // Logique de génération de réponse factice
-    if (message.toLowerCase().contains('bonjour') || 
-        message.toLowerCase().contains('salut') ||
-        message.toLowerCase().contains('coucou')) {
-      return 'Bonjour Georges ! Comment puis-je vous aider aujourd\'hui ?';
-    } else if (message.toLowerCase().contains('santé') || 
-               message.toLowerCase().contains('souci') ||
-               message.toLowerCase().contains('problème')) {
-      return 'Je vois que vous avez un problème de santé. Pouvez-vous me décrire vos symptômes plus en détail ?';
-    } else if (message.toLowerCase().contains('merci')) {
-      return 'Je vous en prie ! N\'hésitez pas si vous avez d\'autres questions.';
-    } else {
-      return 'Je comprends que vous dites : "$message". En tant que ${_currentAI.specialty}, je peux vous aider avec des questions liées à ce domaine.';
+  Future<void> _sendRagQuery(String text) async {
+    if (!_currentAI.supported || _currentAI.ragAgentId == null) {
+      _showSoonSnackBar();
+      return;
     }
+
+    final controller = _chatController;
+    if (controller == null) return;
+
+    final now = DateTime.now();
+    final userMessage = chat_core.Message.text(
+      id: 'u_${now.microsecondsSinceEpoch}',
+      authorId: _currentUser.id,
+      createdAt: now,
+      text: text,
+    );
+
+    if (!mounted) return;
+    setState(() {
+      _isStreaming = true;
+      _isTyping = true;
+      _assistantMessage = null;
+      _assistantBuffer = '';
+      unawaited(controller.insertMessage(userMessage, index: 0));
+    });
+
+    try {
+      await _ragStorage.appendUserMessage(
+        _ragAgentId,
+        rag.ChatMessage(role: rag.ChatRole.user, content: text, timestamp: now),
+      );
+    } catch (_) {}
+
+    _ragUserId ??= await _ragStorage.getOrCreateUserId();
+    final userId = _ragUserId!;
+
+    await _ragSocket.sendQuery(
+      agentId: _ragAgentId,
+      query: text,
+      userId: userId,
+      onDelta: (delta) {
+        if (!mounted) return;
+        setState(() {
+          if (_assistantMessage == null) {
+            _assistantBuffer = delta;
+            final msg = chat_core.Message.text(
+              id: 'a_${DateTime.now().microsecondsSinceEpoch}',
+              authorId: _assistant.id,
+              createdAt: DateTime.now(),
+              text: _assistantBuffer,
+            ) as chat_core.TextMessage;
+            _assistantMessage = msg;
+            _isTyping = false;
+            unawaited(controller.insertMessage(msg, index: 0));
+          } else {
+            _assistantBuffer += delta;
+            final updated = _assistantMessage!.copyWith(
+              text: _assistantBuffer,
+              updatedAt: DateTime.now(),
+            );
+            unawaited(controller.updateMessage(_assistantMessage!, updated));
+            _assistantMessage = updated;
+          }
+        });
+      },
+      onDone: () {
+        if (!mounted) return;
+        setState(() {
+          _isStreaming = false;
+          _isTyping = false;
+          _assistantMessage = null;
+          _assistantBuffer = '';
+        });
+      },
+      onError: (message) {
+        if (!mounted) return;
+        setState(() {
+          _isStreaming = false;
+          _isTyping = false;
+
+          if (_assistantMessage == null) {
+            final err = chat_core.Message.text(
+              id: 'err_${DateTime.now().microsecondsSinceEpoch}',
+              authorId: _assistant.id,
+              createdAt: DateTime.now(),
+              text: message,
+            );
+            unawaited(controller.insertMessage(err, index: 0));
+          } else {
+            final updated = _assistantMessage!.copyWith(
+              text: '${_assistantBuffer}\n\n$message',
+              updatedAt: DateTime.now(),
+            );
+            unawaited(controller.updateMessage(_assistantMessage!, updated));
+            _assistantMessage = updated;
+          }
+        });
+      },
+    );
   }
 
-  String _generateDoctorCardMessage() {
-    return 'Voici un médecin qui pourrait vous aider :\n\n'
-           '👨‍⚕️ Dr. Dupont\n'
-           '📍 Hôpital de la Pitié-Salpêtrière, Paris\n'
-           '📞 01 45 67 89 00\n\n'
-           'Spécialiste reconnu dans son domaine avec plus de 15 ans d\'expérience.';
+  void _stopStreaming() {
+    _ragSocket.disconnect();
+    setState(() {
+      _isStreaming = false;
+      _isTyping = false;
+      _assistantMessage = null;
+      _assistantBuffer = '';
+    });
+  }
+
+  void _showSoonSnackBar() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.l10n.soonAvailable)),
+    );
+  }
+
+  Future<void> _clearHistory() async {
+    if (!_currentAI.supported || _currentAI.ragAgentId == null) return;
+
+    _stopStreaming();
+
+    try {
+      await _ragStorage.clearUserHistory(_ragAgentId);
+      await _ragStorage.resetUserId();
+    } catch (_) {}
+
+    if (!mounted) return;
+    setState(() {
+      _ragUserId = null;
+      _assistantMessage = null;
+      _assistantBuffer = '';
+      _initChatController(initialMessages: []);
+    });
+
+    if (mounted) {
+      setState(() {
+        _addSystemMessage(
+          context.l10n.aiDoctorGreeting(
+            _patientName(context),
+            _currentAI.name(context.l10n),
+            _currentAI.specialty(context.l10n),
+          ),
+        );
+      });
+    }
   }
 
   @override
   void dispose() {
-    _chatController.dispose();
-    _typingAnimationController.dispose();
+    _ragSocket.dispose();
     _messageController.dispose();
     _messageFocusNode.dispose();
+    _typingAnimationController.dispose();
+    _chatController?.dispose();
     super.dispose();
   }
 
@@ -880,7 +913,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }) {
     final now = DateTime.now();
     return chat_core.Message.text(
-      id: now.millisecondsSinceEpoch.toString(),
+      id: now.microsecondsSinceEpoch.toString(),
       authorId: author.id,
       createdAt: now,
       text: text,
@@ -896,7 +929,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha:0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -925,11 +958,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           width: 8,
           height: 8,
           decoration: BoxDecoration(
-            color: _currentAI.primaryColor.withOpacity(0.4 + (opacity * 0.6)),
+            color: _currentAI.primaryColor.withValues(alpha:0.4 + (opacity * 0.6)),
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: _currentAI.primaryColor.withOpacity(opacity * 0.3),
+                color: _currentAI.primaryColor.withValues(alpha:opacity * 0.3),
                 blurRadius: 4,
                 spreadRadius: 1,
               ),
@@ -949,7 +982,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha:0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -967,7 +1000,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   color: const Color(0xFFF5F5F7),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(Icons.person, size: 28, color: Colors.grey.withOpacity(0.7)),
+                child: Icon(Icons.person, size: 28, color: Colors.grey.withValues(alpha:0.7)),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -997,10 +1030,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      doctor['specialty'] ?? 'Lung Specialist',
+                      doctor['specialty'] ?? context.l10n.lungSpecialist,
                       style: TextStyle(
                         fontSize: 13,
-                        color: Colors.grey.withOpacity(0.2),
+                        color: Colors.grey.withValues(alpha:0.2),
                       ),
                     ),
                   ],
@@ -1026,13 +1059,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.location_on, color: Colors.grey.withOpacity(0.2), size: 12),
+                      Icon(Icons.location_on, color: Colors.grey.withValues(alpha:0.2), size: 12),
                       const SizedBox(width: 2),
                       Text(
                         doctor['distance'] ?? '2km',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey.withOpacity(0.2),
+                          color: Colors.grey.withValues(alpha:0.2),
                         ),
                       ),
                     ],
@@ -1042,7 +1075,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             ],
           ),
           const SizedBox(height: 12),
-          Divider(height: 1, color: Colors.grey.withOpacity(0.2)),
+          Divider(height: 1, color: Colors.grey.withValues(alpha:0.2)),
           const SizedBox(height: 12),
           Container(
             width: double.infinity,
@@ -1051,13 +1084,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               color: _currentAI.primaryColor,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Row(
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.access_time, color: Colors.white, size: 18),
                 SizedBox(width: 8),
                 Text(
-                  '10:30 - 11:30 AM',
+                  '10:30 - 11:30',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
@@ -1070,10 +1103,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           const SizedBox(height: 8),
           Center(
             child: Text(
-              'For a Lung Checkup',
+              context.l10n.lungCheckup,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey.withOpacity(0.2),
+                color: Colors.grey.withValues(alpha:0.2),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -1134,7 +1167,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                     children: [
                       Flexible(
                         child: Text(
-                          _currentAI.name,
+                          _currentAI.name(context.l10n),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 17,
@@ -1151,8 +1184,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                           color: const Color(0xFFF5F2C1),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Text(
-                          'PRO',
+                        child: Text(
+                          context.l10n.proMember.toUpperCase(),
                           style: TextStyle(
                             fontSize: 9,
                             fontWeight: FontWeight.bold,
@@ -1165,10 +1198,28 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    _currentAI.specialty,
+                    _currentAI.specialty(context.l10n),
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey.withOpacity(0.2),
+                      color: Colors.grey.withValues(alpha:0.2),
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _isStreaming
+                        ? context.l10n.writingStatus
+                        : _isConnected
+                            ? context.l10n.online
+                            : context.l10n.connecting,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: _isStreaming
+                          ? _currentAI.primaryColor
+                          : _isConnected
+                              ? _currentAI.primaryColor.withValues(alpha:0.8)
+                              : Colors.grey.shade500,
                       fontWeight: FontWeight.w500,
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -1185,7 +1236,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha:0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -1241,22 +1292,18 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                           leading: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Colors.red.withOpacity(0.1),
+                              color: Colors.red.withValues(alpha:0.1),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 22),
                           ),
-                          title: const Text(
-                            'Effacer l\'historique',
+                          title: Text(
+                            context.l10n.clearHistory,
                             style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                           onTap: () {
-                            setState(() {
-                              _chatController.dispose();
-                              _chatController = chat_core.InMemoryChatController();
-                            });
                             Navigator.pop(context);
-                            _addSystemMessage('Historique effacé. Comment puis-je vous aider ?');
+                            unawaited(_clearHistory());
                           },
                         ),
                       ],
@@ -1278,7 +1325,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 // Messages list
                 Expanded(
                   child: StreamBuilder<List<chat_core.Message>>(
-                    stream: Stream.value(_chatController.messages),
+                    stream: Stream.value(_chatController?.messages ?? []),
+                    initialData: _chatController?.messages ?? [],
                     builder: (context, snapshot) {
                       final messages = snapshot.data ?? [];
                       
@@ -1324,20 +1372,25 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                   borderRadius: BorderRadius.circular(20),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
+                                      color: Colors.black.withValues(alpha:0.05),
                                       blurRadius: 8,
                                       offset: const Offset(0, 2),
                                     ),
                                   ],
                                 ),
-                                child: Text(
-                                  message.text,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: isUser ? Colors.white : const Color(0xFF1D1D1F),
-                                    height: 1.5,
-                                  ),
-                                ),
+                                child: isUser
+                                    ? Text(
+                                        message.text,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.white,
+                                          height: 1.5,
+                                        ),
+                                      )
+                                    : _AssistantMarkdown(
+                                        data: message.text,
+                                        primaryColor: _currentAI.primaryColor,
+                                      ),
                               ),
                             );
                           }
@@ -1368,6 +1421,59 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             child: BottomNavBar(currentLocation: '/chat/ai/new'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AssistantMarkdown extends StatelessWidget {
+  final String data;
+  final Color primaryColor;
+
+  const _AssistantMarkdown({
+    required this.data,
+    required this.primaryColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const textColor = Color(0xFF1D1D1F);
+
+    return MarkdownBody(
+      data: data,
+      selectable: true,
+      shrinkWrap: true,
+      styleSheet: MarkdownStyleSheet(
+        p: TextStyle(fontSize: 14, height: 1.5, color: textColor),
+        strong: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          color: textColor,
+        ),
+        em: TextStyle(
+          fontSize: 14,
+          fontStyle: FontStyle.italic,
+          color: textColor,
+        ),
+        h1: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: textColor),
+        h2: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: textColor),
+        h3: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: textColor),
+        code: TextStyle(
+          fontSize: 13,
+          color: textColor,
+          backgroundColor: Colors.black.withValues(alpha: 0.05),
+          fontFamily: 'monospace',
+        ),
+        codeblockDecoration: BoxDecoration(
+          color: const Color(0xFF1D1D1F),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        codeblockPadding: const EdgeInsets.all(12),
+        listBullet: TextStyle(fontSize: 14, color: textColor.withValues(alpha: 0.9)),
+        blockquoteDecoration: BoxDecoration(
+          border: Border(left: BorderSide(color: primaryColor.withValues(alpha: 0.6), width: 3)),
+        ),
+        blockquotePadding: const EdgeInsets.only(left: 12, top: 4, bottom: 4),
       ),
     );
   }
