@@ -71,17 +71,13 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     }
   }
 
-  String? _denormalizeGender(String? value) {
-    switch (value) {
-      case 'Male':
-        return 'male';
-      case 'Female':
-        return 'female';
-      case 'Other':
-        return 'other';
-      default:
-        return null;
-    }
+  String _toIsoDate(String ddmmyyyy) {
+    final parts = ddmmyyyy.split('/');
+    if (parts.length != 3) return ddmmyyyy;
+    final d = parts[0].padLeft(2, '0');
+    final m = parts[1].padLeft(2, '0');
+    final y = parts[2];
+    return '$y-$m-$d';
   }
 
   Future<void> _saveChanges() async {
@@ -91,14 +87,16 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
       });
 
       final fullName = '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}'.trim();
+      final dob = _dobController.text.trim();
+      final address = _addressController.text.trim();
 
-      final data = {
-        'name': fullName,
+      final data = <String, dynamic>{
+        if (fullName.isNotEmpty) 'name': fullName,
         'email': _emailController.text.trim(),
         'phone': _phoneController.text.trim(),
-        'gender': _denormalizeGender(_selectedGender),
-        'dateOfBirth': _dobController.text.trim(),
-        'address': _addressController.text.trim(),
+        if (_selectedGender != null) 'gender': _selectedGender,
+        if (dob.isNotEmpty) 'dateOfBirth': _toIsoDate(dob),
+        if (address.isNotEmpty) 'address': address,
       };
 
       final success = await context.read<UserProvider>().updateUser(data);

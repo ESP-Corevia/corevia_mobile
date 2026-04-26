@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:corevia_mobile/l10n/app_localizations.dart';
+import '../../../booking/domain/entities/appointment.dart';
 import '../../../booking/presentation/providers/booking_provider.dart';
 
 enum CalendarTab { programme, list }
@@ -22,9 +25,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
   @override
   void initState() {
     super.initState();
+    initializeDateFormatting('fr_FR');
     _selectedTab = widget.initialTab;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<BookingProvider>().loadDoctors();
+      final provider = context.read<BookingProvider>();
+      provider.loadDoctors();
+      provider.loadMyAppointments();
     });
   }
 
@@ -147,12 +153,208 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Widget _buildSchedule() {
-    return Center(
-      child: Text(
-        context.l10n.consultDoctorsToBook,
-        textAlign: TextAlign.center,
+    return Consumer<BookingProvider>(
+      builder: (context, provider, _) {
+        final appointments = provider.appointments;
+
+        if (provider.isLoadingAppointments && appointments.isEmpty) {
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFF34C759)),
+          );
+        }
+
+        if (provider.error != null && appointments.isEmpty) {
+          return _buildDoctorsError(
+            provider.error!,
+            onRetry: () => provider.loadMyAppointments(),
+          );
+        }
+
+        if (appointments.isEmpty) {
+          return RefreshIndicator(
+            color: const Color(0xFF34C759),
+            onRefresh: () => provider.loadMyAppointments(),
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: const [
+                SizedBox(height: 80),
+                Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 24),
+                    child: Text(
+                      'Aucun rendez-vous pour le moment.\nConsultez la liste des medecins pour en prendre un.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Color(0xFF6B7280),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return RefreshIndicator(
+          color: const Color(0xFF34C759),
+          onRefresh: () => provider.loadMyAppointments(),
+          child: ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: appointments.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 10),
+            itemBuilder: (context, index) =>
+                _buildAppointmentCard(appointments[index]),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAppointmentCard(Appointment appointment) {
+    final parsedDate = DateTime.tryParse(appointment.date);
+    final dateLabel = parsedDate != null
+        ? _capitalize(
+            DateFormat('EEEE d MMMM yyyy', 'fr_FR').format(parsedDate),
+          )
+        : appointment.date;
+    final doctorName = appointment.doctor?.name ?? 'Medecin';
+    final specialty = appointment.doctor?.specialty ?? '';
+    final address = appointment.doctor?.address ?? '';
+    final status = _statusMeta(appointment.status);
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8F6EC),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.local_hospital_rounded,
+                  color: Color(0xFF34C759),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      doctorName,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                    if (specialty.isNotEmpty)
+                      Text(
+                        specialty,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF6B7280),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: status.bgColor,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  status.label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: status.textColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _infoRow(Icons.event_rounded, dateLabel),
+          const SizedBox(height: 6),
+          _infoRow(Icons.access_time_rounded, appointment.time),
+          if (address.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            _infoRow(Icons.location_on_rounded, address),
+          ],
+        ],
       ),
     );
+  }
+
+  Widget _infoRow(IconData icon, String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 14, color: const Color(0xFF6B7280)),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF374151),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  _AppointmentStatusMeta _statusMeta(String raw) {
+    switch (raw.toUpperCase()) {
+      case 'CONFIRMED':
+        return const _AppointmentStatusMeta(
+          label: 'Confirme',
+          textColor: Color(0xFF047857),
+          bgColor: Color(0xFFD1FAE5),
+        );
+      case 'COMPLETED':
+        return const _AppointmentStatusMeta(
+          label: 'Termine',
+          textColor: Color(0xFF3730A3),
+          bgColor: Color(0xFFE0E7FF),
+        );
+      case 'CANCELLED':
+        return const _AppointmentStatusMeta(
+          label: 'Annule',
+          textColor: Color(0xFFB42318),
+          bgColor: Color(0xFFFEE4E2),
+        );
+      default:
+        return const _AppointmentStatusMeta(
+          label: 'En attente',
+          textColor: Color(0xFFB45309),
+          bgColor: Color(0xFFFEF3C7),
+        );
+    }
+  }
+
+  String _capitalize(String text) {
+    if (text.isEmpty) return text;
+    return text[0].toUpperCase() + text.substring(1);
   }
 
   Widget _buildDoctors() {
@@ -269,7 +471,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                       context.push(
                                         '/calendar/booking',
                                         extra: {
-                                          'doctorId': doctor.id,
+                                          'doctorId': doctor.userId.isNotEmpty
+                                              ? doctor.userId
+                                              : doctor.id,
                                           'doctorName': doctor.name,
                                           'specialty': doctor.specialty,
                                           'address': doctor.address,
@@ -327,4 +531,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
+}
+
+class _AppointmentStatusMeta {
+  const _AppointmentStatusMeta({
+    required this.label,
+    required this.textColor,
+    required this.bgColor,
+  });
+
+  final String label;
+  final Color textColor;
+  final Color bgColor;
 }
