@@ -838,7 +838,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             unawaited(controller.insertMessage(err, index: 0));
           } else {
             final updated = _assistantMessage!.copyWith(
-              text: '${_assistantBuffer}\n\n$message',
+              text: '$_assistantBuffer\n\n$message',
               updatedAt: DateTime.now(),
             );
             unawaited(controller.updateMessage(_assistantMessage!, updated));

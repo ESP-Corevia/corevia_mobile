@@ -33,3 +33,12 @@ jobs:
 
       - name: Run Flutter Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Run Flutter Tests with Coverage
+        run: flutter test --coverage
+
+      - name: Upload Flutter Coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-coverage
+          path: coverage/lcov.info
